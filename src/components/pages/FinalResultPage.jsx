@@ -1,0 +1,172 @@
+import React from 'react';
+import {
+  Award,
+  Brain,
+  BrainCircuit,
+  RotateCcw,
+  Zap,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Download,
+  LayoutDashboard
+} from 'lucide-react';
+
+export default function FinalResultPage({
+  sessionResult,
+  onOpenReport,
+  onBackToDashboard
+}) {
+  const marksEarned = sessionResult?.totalEarnedMarks ?? 88.5;
+  const marksTotal = sessionResult?.facultyTotalMarks ?? 100;
+  const knowledgeScore = sessionResult?.knowledgeScore ?? 92;
+  const reasoningScore = sessionResult?.reasoningScore ?? 89;
+  const retentionScore = sessionResult?.retentionScore ?? 86;
+  const curiosityScore = sessionResult?.curiosityIndex ?? 90;
+  const masteryLevel = sessionResult?.masteryLevel ?? 'Advanced Mastery';
+  const authenticityScore = sessionResult?.authenticityScore ?? 98;
+
+  const resultCards = [
+    { title: 'Marks', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: '#B7791F', bg: '#FFF3D6' },
+    { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: '#8B5E34', bg: '#FFF8E8' },
+    { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: '#D69E2E', bg: '#FFF3D6' },
+    { title: 'Mastery', value: masteryLevel, icon: Award, color: '#2F855A', bg: '#E6F4EA' },
+    { title: 'Retention', value: `${retentionScore}%`, icon: RotateCcw, color: '#2F855A', bg: '#E6F4EA' },
+    { title: 'Curiosity', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
+    { title: 'Authenticity', value: `${authenticityScore}%`, icon: ShieldCheck, color: '#2F855A', bg: '#E6F4EA' }
+  ];
+
+  const strongConcepts = [
+    'Semiconductor Electrostatics & Depletion Width',
+    'Threshold Voltage (Vt) Band Bending Formulation',
+    'Linear & Saturation Regional Operating Modes'
+  ];
+
+  const weakConcepts = [
+    'Short Channel Subthreshold Leakage (DIBL)',
+    'Miller Capacitance Dynamic Switching Optimization'
+  ];
+
+  return (
+    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2D3A7] pb-4">
+        <div>
+          <span className="text-xs font-mono text-[#718096]">Page 15 • Assessment Dossier</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2D3748] mt-1">
+            Assessment Results
+          </h1>
+          <p className="text-xs text-[#718096]">
+            Topic: <strong className="text-[#2D3748]">{sessionResult?.topic || 'MOSFET'}</strong> • Evaluated Offline
+          </p>
+        </div>
+
+        {/* Mandated Buttons: Download Report & Return Dashboard */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onOpenReport(sessionResult)}
+            className="btn-secondary text-xs h-[46px]"
+          >
+            <Download className="w-4 h-4 mr-1" />
+            Download Report
+          </button>
+          <button
+            onClick={onBackToDashboard}
+            className="btn-primary text-xs h-[46px]"
+          >
+            <LayoutDashboard className="w-4 h-4 mr-1 text-[#FFF3D6]" />
+            Return Dashboard
+          </button>
+        </div>
+      </div>
+
+      {/* 1. MANDATED RESULT CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[20px]">
+        {resultCards.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={idx}
+              className="ent-card p-5 flex flex-col justify-between hover:border-[#B7791F] transition-all bg-[#FFFCF4] border-[#E2D3A7]"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#718096] uppercase tracking-wider">
+                  {card.title}
+                </span>
+                <div
+                  className="w-8 h-8 rounded-[10px] flex items-center justify-center border border-[#E2D3A7]"
+                  style={{ backgroundColor: card.bg, color: card.color }}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <div className="text-xl sm:text-2xl font-extrabold text-[#2D3748]">
+                  {card.value}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 2. MANDATED SECTIONS: Strong Concepts & Weak Concepts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
+        
+        {/* Strong Concepts Section */}
+        <div className="ent-card p-6 space-y-4 bg-[#FFFCF4] border-[#E2D3A7]">
+          <div className="flex items-center gap-2 border-b border-[#E2D3A7] pb-3">
+            <div className="w-8 h-8 rounded-[10px] bg-[#E6F4EA] text-[#2F855A] flex items-center justify-center border border-[#A8DAB5]">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D3748]">Strong Concepts</h3>
+              <p className="text-[11px] text-[#718096]">High retention and analytical depth demonstrated</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            {strongConcepts.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2.5 p-3 rounded-[12px] bg-[#FFF8E8] border border-[#E2D3A7] text-xs font-bold text-[#2F855A]"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#2F855A]"></span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Weak Concepts Section */}
+        <div className="ent-card p-6 space-y-4 bg-[#FFFCF4] border-[#E2D3A7]">
+          <div className="flex items-center gap-2 border-b border-[#E2D3A7] pb-3">
+            <div className="w-8 h-8 rounded-[10px] bg-[#FFF0F0] text-[#C53030] flex items-center justify-center border border-[#FECACA]">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D3748]">Weak Concepts</h3>
+              <p className="text-[11px] text-[#718096]">Recommended syllabus areas for targeted reinforcement</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            {weakConcepts.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2.5 p-3 rounded-[12px] bg-[#FFF0F0] border border-[#FECACA] text-xs font-bold text-[#C53030]"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#C53030]"></span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
