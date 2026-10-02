@@ -279,3 +279,5 @@ VIVA ANALYSER/
 ## 📄 License & Certification
 
 Built for academic assessment integrity, high-stakes university viva voce examinations, and student learning acceleration. Works 100% offline with zero cloud dependency.
+#   V I V A  
+ 
