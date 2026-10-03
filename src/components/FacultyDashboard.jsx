@@ -22,7 +22,8 @@ import {
   FileText,
   Check,
   Send,
-  Download
+  Download,
+  FolderOpen
 } from 'lucide-react';
 import {
   getAllStudents,
@@ -34,7 +35,8 @@ import {
   updateQuizConfig,
   getCohortAssignments,
   saveCohortAssignment,
-  generateCohortStudentMarkFiles
+  generateCohortStudentMarkFiles,
+  openLocalFolderInExplorer
 } from '../services/db';
 
 export default function FacultyDashboard({ currentUser, onOpenReport }) {
@@ -108,7 +110,18 @@ export default function FacultyDashboard({ currentUser, onOpenReport }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={async () => {
+              await openLocalFolderInExplorer();
+            }}
+            className="btn-secondary text-xs py-2.5 px-4 flex items-center gap-2 font-bold cursor-pointer"
+            title="Open Viva_Records folder in Windows File Explorer"
+          >
+            <FolderOpen className="w-4 h-4 text-[#00F5D4]" />
+            <span>Open in File Manager</span>
+          </button>
+
           <button
             onClick={() => onOpenReport && onOpenReport({ isFacultySummary: true })}
             className="btn-primary text-xs py-2.5 px-4 flex items-center gap-2 font-bold shadow-md"
@@ -481,7 +494,18 @@ export default function FacultyDashboard({ currentUser, onOpenReport }) {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={async () => {
+                  await openLocalFolderInExplorer();
+                }}
+                className="btn-primary text-xs py-2 px-3.5 flex items-center gap-2 font-bold cursor-pointer"
+                title="Open Viva_Records directory in Windows File Explorer"
+              >
+                <FolderOpen className="w-4 h-4 text-[#0D1117]" />
+                <span>Open Folder on PC</span>
+              </button>
+
               <button
                 onClick={() => {
                   const blob = new Blob([JSON.stringify(studentMarkFiles, null, 2)], { type: 'application/json' });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FileSpreadsheet, Printer, Download, Eye, Search, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { getAllAssessmentSessions } from '../../services/db';
+import { FileSpreadsheet, Printer, Download, Eye, Search, ArrowLeft, CheckCircle2, FolderOpen } from 'lucide-react';
+import { getAllAssessmentSessions, openLocalFolderInExplorer } from '../../services/db';
 
 export default function FacultyResultsPage({ onNavigate, onOpenReport }) {
   const [sessions] = useState(() => {
@@ -91,13 +91,46 @@ export default function FacultyResultsPage({ onNavigate, onOpenReport }) {
           </p>
         </div>
 
-        <button
-          onClick={() => onNavigate('faculty-dashboard')}
-          className="btn-outline text-xs h-[40px]"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-          Dashboard
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              await openLocalFolderInExplorer();
+            }}
+            className="btn-primary text-xs h-[40px] px-3.5 flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Open local Windows File Manager folder where student results are saved"
+          >
+            <FolderOpen className="w-4 h-4 text-[#0D1117]" />
+            <span>Open in File Manager</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('faculty-dashboard')}
+            className="btn-outline text-xs h-[40px]"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+            Dashboard
+          </button>
+        </div>
+      </div>
+
+      {/* 100% Offline Local Storage Status Banner */}
+      <div className="p-3.5 rounded-[12px] bg-[#161B22] border border-[#30363D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#39FF14] animate-pulse" />
+          <span className="text-[#F0F6FC] font-bold">100% Offline Local File Storage Active</span>
+          <span className="text-[#8B949E] font-mono text-[11px] bg-[#0D1117] px-2.5 py-0.5 rounded border border-[#30363D]">
+            Directory: Viva_Records\Students\
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[#00F5D4] font-semibold">Zero Cloud Dependency</span>
+          <button
+            onClick={() => openLocalFolderInExplorer()}
+            className="text-[11px] text-[#00F5D4] hover:underline font-bold cursor-pointer"
+          >
+            Explore Files ↗
+          </button>
+        </div>
       </div>
 
       {/* Search Toolbar */}

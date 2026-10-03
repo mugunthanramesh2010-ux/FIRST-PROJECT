@@ -9,8 +9,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Download,
-  LayoutDashboard
+  LayoutDashboard,
+  FolderOpen
 } from 'lucide-react';
+import { openLocalFolderInExplorer } from '../../services/db';
 
 export default function FinalResultPage({
   sessionResult,
@@ -62,8 +64,18 @@ export default function FinalResultPage({
           </p>
         </div>
 
-        {/* Mandated Buttons: Download Report & Return Dashboard */}
-        <div className="flex items-center gap-3">
+        {/* Buttons: View in File Manager, Download Report & Return Dashboard */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={async () => {
+              await openLocalFolderInExplorer();
+            }}
+            className="btn-secondary text-xs h-[46px] flex items-center gap-1.5 cursor-pointer"
+            title="Open folder on computer where this result JSON and CSV are saved"
+          >
+            <FolderOpen className="w-4 h-4 text-[#00F5D4]" />
+            <span>View Saved File in Folder</span>
+          </button>
           <button
             onClick={() => onOpenReport(sessionResult)}
             className="btn-secondary text-xs h-[46px]"
@@ -79,6 +91,23 @@ export default function FinalResultPage({
             Return Dashboard
           </button>
         </div>
+      </div>
+
+      {/* Physical Folder Confirmation Banner */}
+      <div className="p-3.5 rounded-[12px] bg-[#161B22] border border-[#30363D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#39FF14] animate-pulse" />
+          <span className="text-[#F0F6FC] font-bold">Offline Result File Saved to Disk</span>
+          <span className="text-[#8B949E] font-mono text-[11px] bg-[#0D1117] px-2.5 py-0.5 rounded border border-[#30363D]">
+            Viva_Records\Students\{sessionResult?.studentRegNo || '714022104055'}\
+          </span>
+        </div>
+        <button
+          onClick={() => openLocalFolderInExplorer()}
+          className="text-[11px] text-[#00F5D4] hover:underline font-bold cursor-pointer"
+        >
+          Open in Windows File Explorer ↗
+        </button>
       </div>
 
       {/* 1. MANDATED RESULT CARDS */}

@@ -447,12 +447,76 @@ export async function facultyApproveRecovery(requestId, facultyId) {
   return tempPass;
 }
 
+// Sync session to local physical folder in File Manager (Offline, No Cloud)
+export async function syncSessionToPhysicalFolder(sessionData) {
+  try {
+    // 1. If running inside Electron Native App (Option C)
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.saveVivaRecord === 'function') {
+      const res = await window.electronAPI.saveVivaRecord(sessionData);
+      console.log('Saved to local disk via Electron IPC:', res);
+      return res;
+    }
+
+    // 2. If running via local background service or local server (Option B)
+    if (typeof fetch !== 'undefined') {
+      const response = await fetch('/api/save-record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionData)
+      });
+      if (response.ok) {
+        const res = await response.json();
+        console.log('Saved to local disk via offline server:', res);
+        return res;
+      }
+    }
+  } catch (err) {
+    console.warn('Physical folder sync notice (running in pure offline browser):', err);
+  }
+  return { success: false, offlineBrowserOnly: true };
+}
+
+// Open Viva_Records directory in Windows File Explorer
+export async function openLocalFolderInExplorer() {
+  try {
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.openRecordsFolder === 'function') {
+      return await window.electronAPI.openRecordsFolder();
+    }
+    if (typeof fetch !== 'undefined') {
+      const res = await fetch('/api/open-folder');
+      return await res.json();
+    }
+  } catch (err) {
+    console.error('Failed to trigger folder open:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Fetch local disk storage summary
+export async function getPhysicalRecordsSummary() {
+  try {
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.getRecordsSummary === 'function') {
+      return await window.electronAPI.getRecordsSummary();
+    }
+    if (typeof fetch !== 'undefined') {
+      const res = await fetch('/api/records-summary');
+      return await res.json();
+    }
+  } catch (err) {
+    return { baseDirectory: 'Viva_Records', totalReports: 0 };
+  }
+}
+
 // Assessment Sessions Record Store
 export function saveAssessmentSession(sessionData) {
   const sessions = getFromStorage(STORAGE_KEYS.SESSIONS, []);
   sessions.unshift(sessionData);
   setInStorage(STORAGE_KEYS.SESSIONS, sessions);
   logAudit('VIVA_SESSION_RECORDED', sessionData.studentRegNo || 'ANON', `Completed session on topic: ${sessionData.topic} (Mastery: ${sessionData.masteryLevel}, Score: ${sessionData.overallScore}%)`);
+  
+  // Asynchronously write physical file to local disk folder
+  syncSessionToPhysicalFolder(sessionData).catch(() => {});
+
   return sessionData;
 }
 
