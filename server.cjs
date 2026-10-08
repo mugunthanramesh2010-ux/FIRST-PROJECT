@@ -52,8 +52,13 @@ function readBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  let pathname = '/';
+  try {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    pathname = parsedUrl.pathname;
+  } catch (e) {
+    pathname = req.url.split('?')[0];
+  }
 
   // Enable local CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -155,6 +160,18 @@ const server = http.createServer(async (req, res) => {
       res.end(content);
     });
   });
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is in use. Retrying or waiting...`);
+  } else {
+    console.error('Server error:', err);
+  }
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception in server:', err);
 });
 
 server.listen(PORT, HOST, () => {

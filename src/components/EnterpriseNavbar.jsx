@@ -1,12 +1,13 @@
 import React from 'react';
-import { Menu, Cpu, User, LogOut } from 'lucide-react';
+import { Menu, Cpu, User, LogOut, Smartphone } from 'lucide-react';
 
 export default function EnterpriseNavbar({
   currentUser,
   isSidebarCollapsed,
   setIsSidebarCollapsed,
   onNavigate,
-  onLogout
+  onLogout,
+  onOpenInstallModal
 }) {
   return (
     <header className="h-[72px] bg-[#FFF7E2] border-b border-[#E2D3A7] sticky top-0 z-30 px-6 sm:px-8">
@@ -42,8 +43,19 @@ export default function EnterpriseNavbar({
 
         {/* Center: Clean (Nothing as specified) */}
 
-        {/* Right: Profile & Logout */}
-        <div className="flex items-center gap-3">
+        {/* Right: Install App + Profile & Logout */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {onOpenInstallModal && (
+            <button
+              onClick={onOpenInstallModal}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-[14px] bg-[#B7791F] hover:bg-[#975A16] text-[#FFF8E8] font-bold text-xs shadow-sm transition-all cursor-pointer"
+              title="Install as Phone App (Works with PC Off)"
+            >
+              <Smartphone className="w-4 h-4 text-[#FFF3D6]" />
+              <span className="hidden sm:inline">Install Phone App</span>
+            </button>
+          )}
+
           <button
             onClick={() => onNavigate('profile')}
             className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-2 rounded-[14px] border border-[#E2D3A7] hover:border-[#B7791F] bg-[#FFFCF4] transition-colors shadow-xs"
@@ -65,7 +77,7 @@ export default function EnterpriseNavbar({
           {onLogout && (
             <button
               onClick={onLogout}
-              className="w-9 h-9 rounded-[12px] border border-[#E2D3A7] bg-[#FFFCF4] hover:bg-[#FEE2E2] hover:border-[#FECACA] text-[#718096] hover:text-[#C53030] flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-[12px] border border-[#E2D3A7] bg-[#FFFCF4] hover:bg-[#FEE2E2] hover:border-[#FECACA] text-[#718096] hover:text-[#C53030] flex items-center justify-center transition-colors cursor-pointer"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />

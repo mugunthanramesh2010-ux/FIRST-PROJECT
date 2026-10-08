@@ -7,10 +7,11 @@ import {
   Brain,
   Network,
   Cpu,
-  Sparkles
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 
-export default function LandingPage({ onNavigate }) {
+export default function LandingPage({ onNavigate, onOpenInstallModal }) {
   const featureCards = [
     {
       title: 'Adaptive Viva',
@@ -62,8 +63,18 @@ export default function LandingPage({ onNavigate }) {
 
           {/* Center: Clean (Nothing as specified) */}
 
-          {/* Right: Student Login, Faculty Login, Register */}
+          {/* Right: Install App, Student Login, Faculty Login, Register */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {onOpenInstallModal && (
+              <button
+                onClick={onOpenInstallModal}
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF3D6] border border-[#B7791F]/40 text-[#8B5E34] hover:bg-[#B7791F] hover:text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Install as Phone App (Runs 100% Offline with PC Off)"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>📲 Install Phone App</span>
+              </button>
+            )}
             <button
               onClick={() => onNavigate('student-login')}
               className="text-sm font-bold text-[#4A5568] hover:text-[#B7791F] px-3 py-2 rounded-xl hover:bg-[#FFF3D6] transition-colors"
@@ -115,7 +126,7 @@ export default function LandingPage({ onNavigate }) {
             </div>
           </div>
 
-          {/* Mandated Action Buttons: Student Login, Faculty Login, Create Account */}
+          {/* Mandated Action Buttons: Student Login, Faculty Login, Create Account, Install App */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={() => onNavigate('student-login')}
@@ -140,6 +151,16 @@ export default function LandingPage({ onNavigate }) {
               <UserPlus className="w-4 h-4 mr-1" />
               <span>Create Account</span>
             </button>
+
+            {onOpenInstallModal && (
+              <button
+                onClick={onOpenInstallModal}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-[16px] bg-[#B7791F] hover:bg-[#975A16] text-[#FFF8E8] font-bold text-sm shadow-md transition-all cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4 mr-2 text-[#FFF3D6]" />
+                <span>📲 Install on Phone (Runs Offline)</span>
+              </button>
+            )}
           </div>
 
         </div>

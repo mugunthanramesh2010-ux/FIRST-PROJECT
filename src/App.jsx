@@ -42,6 +42,8 @@ import ProfilePage from './components/pages/ProfilePage';
 // Modals
 import ReportModal from './components/ReportModal';
 import DomainBrowserModal from './components/DomainBrowserModal';
+import InstallAppModal from './components/InstallAppModal';
+import { Smartphone } from 'lucide-react';
 
 // Engines & Local Database (100% Retained)
 import {
@@ -73,6 +75,7 @@ export default function App() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [activeSessionReport, setActiveSessionReport] = useState(null);
   const [domainBrowserOpen, setDomainBrowserOpen] = useState(false);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
 
   // Core Intelligence Engines (100% Offline AI & Adaptive Engine)
   const [topicModel, setTopicModel] = useState(() => generateUniversalTopicModel('General Engineering', 'Engineering', 10));
@@ -335,7 +338,10 @@ export default function App() {
       {isPublicPage && (
         <div className="flex-1 w-full">
           {activeTab === 'landing' && (
-            <LandingPage onNavigate={setActiveTab} />
+            <LandingPage
+              onNavigate={setActiveTab}
+              onOpenInstallModal={() => setInstallModalOpen(true)}
+            />
           )}
 
           {activeTab === 'register-type' && (
@@ -360,6 +366,7 @@ export default function App() {
             <StudentLoginPage
               onNavigate={setActiveTab}
               onAuthSuccess={handleAuthSuccess}
+              onOpenInstallModal={() => setInstallModalOpen(true)}
             />
           )}
 
@@ -367,6 +374,7 @@ export default function App() {
             <FacultyLoginPage
               onNavigate={setActiveTab}
               onAuthSuccess={handleAuthSuccess}
+              onOpenInstallModal={() => setInstallModalOpen(true)}
             />
           )}
 
@@ -413,6 +421,7 @@ export default function App() {
               setIsSidebarCollapsed={setIsSidebarCollapsed}
               onNavigate={setActiveTab}
               onLogout={handleLogout}
+              onOpenInstallModal={() => setInstallModalOpen(true)}
             />
 
             {/* Main Page Router (Max 5-7 major elements per screen, 1280px Content Width) */}
@@ -642,6 +651,22 @@ export default function App() {
           setDomainBrowserOpen(false);
         }}
       />
+
+      {/* PWA Phone Installation Modal (100% Offline with PC Off) */}
+      <InstallAppModal
+        isOpen={installModalOpen}
+        onClose={() => setInstallModalOpen(false)}
+      />
+
+      {/* Floating Mobile/Desktop Install App Trigger */}
+      <button
+        onClick={() => setInstallModalOpen(true)}
+        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 px-3.5 py-2 rounded-full bg-[#B7791F] hover:bg-[#975A16] text-white font-bold text-xs shadow-lg hover:shadow-xl flex items-center gap-2 transition-all cursor-pointer border border-[#FFF3D6]/40 active:scale-95 animate-bounce-subtle"
+        title="Install App to Phone (Runs 100% Offline with PC Off)"
+      >
+        <Smartphone className="w-4 h-4 text-[#FFF3D6]" />
+        <span>Install App</span>
+      </button>
 
     </div>
   );

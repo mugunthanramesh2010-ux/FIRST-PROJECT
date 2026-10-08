@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Users, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Users, AlertCircle, CheckCircle2, Smartphone } from 'lucide-react';
 import { loginUser } from '../../services/db';
 
-export default function FacultyLoginPage({ onNavigate, onAuthSuccess }) {
+export default function FacultyLoginPage({ onNavigate, onAuthSuccess, onOpenInstallModal }) {
   const [identifier, setIdentifier] = useState('FAC-ECE-01'); // Default seed faculty
   const [password, setPassword] = useState('password123'); // Default seed password
   const [loading, setLoading] = useState(false);
@@ -63,6 +63,17 @@ export default function FacultyLoginPage({ onNavigate, onAuthSuccess }) {
               <p className="text-xs text-[#718096]">Manage viva assignments, assess cohorts & review analytics</p>
             </div>
           </div>
+
+          {onOpenInstallModal && (
+            <button
+              type="button"
+              onClick={onOpenInstallModal}
+              className="w-full p-2.5 rounded-[12px] bg-[#FFF3D6] border border-[#B7791F]/40 hover:bg-[#B7791F] hover:text-white text-[#8B5E34] text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+            >
+              <Smartphone className="w-4 h-4 text-[#B7791F]" />
+              <span>📲 Install as Phone App (Runs 100% Offline with PC Off)</span>
+            </button>
+          )}
 
           {error && (
             <div className="p-3 rounded-[12px] bg-[#FFF0F0] border border-[#FECACA] text-[#C53030] text-xs flex items-center gap-2">
