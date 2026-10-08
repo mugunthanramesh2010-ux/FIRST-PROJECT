@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "1. Run Standalone Offline Server (Recommended)",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/server.cjs"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "2. Run Vite Dev Server (Hot Reload)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "3. Launch Desktop App (Electron)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "desktop"]
+    }
+  ]
+}
