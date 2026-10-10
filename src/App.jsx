@@ -53,7 +53,8 @@ import {
   saveAssessmentSession,
   saveLocalEnterpriseRecord,
   getQuizConfig,
-  updateUserStats
+  updateUserStats,
+  markAssignmentCompleted
 } from './services/db';
 import { generateUniversalTopicModel } from './services/universalOntology';
 import { AdaptiveEngine } from './services/adaptiveEngine';
@@ -70,6 +71,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('student-login');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
   const [activeAssignmentMode, setActiveAssignmentMode] = useState('Mixed');
+  const [activeAssignmentId, setActiveAssignmentId] = useState(null); // Locked after single attempt for faculty; null for unlimited self-learning
 
   // Modals state
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -129,7 +131,8 @@ export default function App() {
   };
 
   // Topic & Subject Selection (Any Subject, 1 to 100 Questions, Assigned Mode)
-  const handleTopicSelected = (newModel, subjectName = '', totalMarks = 100, mode = 'Mixed') => {
+  const handleTopicSelected = (newModel, subjectName = '', totalMarks = 100, mode = 'Mixed', assignmentId = null) => {
+    setActiveAssignmentId(assignmentId || null);
     setTopicModel(newModel);
     if (subjectName) setActiveSubjectName(subjectName);
     if (totalMarks) setActiveFacultyTotalMarks(totalMarks);
@@ -247,13 +250,59 @@ export default function App() {
     setActiveTab('answer-evaluation');
   };
 
-  // Advance Question or Finalize Session (Page 14 -> Page 12 or Page 15)
+  // Advance Question or Finalize Session with Adaptive Calibration based on Student Intelligence
   const handleNextQuestion = () => {
     soundEffects.playClick();
-    const questions = topicModel?.questions || [];
+    const questions = [...(topicModel?.questions || [])];
+    const nextIdx = currentQuestionIndex + 1;
     
-    if (currentQuestionIndex + 1 < questions.length) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (nextIdx < questions.length) {
+      // DYNAMIC ADAPTIVE GENERATION: Adjust next question based on intelligence of previous answer
+      const lastEval = currentEvaluation;
+      const targetQ = { ...questions[nextIdx] };
+      const currentTopic = topicModel?.title || 'Subject';
+
+      if (lastEval) {
+        if (lastEval.status === 'Correct') {
+          // High intelligence shown -> Adapt upward to deeper Bloom synthesis and failure analysis
+          targetQ.bloomLevel = nextIdx % 2 === 0 ? 'Synthesis' : 'Evaluation';
+          targetQ.difficulty = '4.5 / 5 (Advanced Analysis)';
+          targetQ.adaptiveNote = 'Elevated to higher cognitive depth following accurate reasoning in previous question';
+          if (!targetQ.questionText.includes('[Advanced Analysis]')) {
+            targetQ.questionText = `[Advanced Synthesis & Edge Analysis]: Evaluating boundary non-linearities and failure modes in ${currentTopic} — ${targetQ.questionText}`;
+          }
+        } else if (lastEval.status === 'Needs Improvement') {
+          // Conceptual gaps detected -> Adapt to foundational scaffolding and governing equations
+          targetQ.bloomLevel = 'Understanding';
+          targetQ.difficulty = '2.5 / 5 (Foundational Reinforcement)';
+          targetQ.adaptiveNote = 'Calibrated to reinforce foundational principles and governing equations';
+          if (!targetQ.questionText.includes('[Foundations]')) {
+            targetQ.questionText = `[Foundational Reinforcement]: Reviewing the underlying causal mechanism for ${currentTopic} — ${targetQ.questionText}`;
+          }
+        } else {
+          // Partially correct -> Test intermediate boundary parameters
+          targetQ.bloomLevel = 'Application';
+          targetQ.difficulty = '3.5 / 5 (Targeted Exploration)';
+          targetQ.adaptiveNote = 'Calibrated to test intermediate governing constraints';
+        }
+
+        // Shuffle options for next question so correct answer is randomly positioned (A, B, C, or D)
+        if (targetQ.options && Array.isArray(targetQ.options) && targetQ.options.length >= 2) {
+          const orig = typeof targetQ.correctIndex === 'number' ? targetQ.correctIndex : 0;
+          const indexed = targetQ.options.map((opt, i) => ({ text: opt, isCorrect: i === orig }));
+          for (let i = indexed.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+          }
+          targetQ.options = indexed.map(item => item.text);
+          targetQ.correctIndex = indexed.findIndex(item => item.isCorrect);
+        }
+
+        questions[nextIdx] = targetQ;
+        setTopicModel(prev => ({ ...prev, questions }));
+      }
+
+      setCurrentQuestionIndex(nextIdx);
       setActiveHintLevel(0);
       setIsHintModalOpen(false);
       setCurrentEvaluation(null);
@@ -332,6 +381,8 @@ export default function App() {
 
     const sessionRecord = {
       id: 'session_' + Date.now(),
+      assignmentId: activeAssignmentId || null,
+      isPracticeSession: !activeAssignmentId,
       topic: topicModel.title,
       subject: activeSubjectName || topicModel.domain || topicModel.title,
       domain: topicModel.domain,
@@ -358,6 +409,11 @@ export default function App() {
     // Store in offline DB and in Local Hierarchical Enterprise Storage / File Manager
     saveAssessmentSession(sessionRecord);
     saveLocalEnterpriseRecord(sessionRecord, currentUser?.facultyInCharge || 'FAC-ECE-01');
+
+    // If this was a faculty assignment, permanently lock it from re-taking!
+    if (activeAssignmentId && currentUser?.regNo) {
+      markAssignmentCompleted(activeAssignmentId, currentUser.regNo, sessionRecord);
+    }
 
     setLatestSessionResult(sessionRecord);
     setActiveTab('final-result');
@@ -494,7 +550,7 @@ export default function App() {
                     />
                   )}
 
-                  {/* Page 9: My Assignments */}
+                  {/* Page 9: My Assignments (Single-Attempt Faculty Viva) */}
                   {activeTab === 'my-assignments' && (
                     <MyAssignmentsPage
                       currentUser={currentUser}
@@ -503,8 +559,9 @@ export default function App() {
                         const subject = assignmentItem?.subject || assignmentItem?.assignmentName || topic;
                         const marks = assignmentItem?.marks || assignmentItem?.totalMarks || 100;
                         const mode = assignmentItem?.mode || 'Mixed';
+                        const assignmentId = assignmentItem?.id || null;
                         const model = generateUniversalTopicModel(topic, subject, targetCount);
-                        handleTopicSelected(model, subject, marks, mode);
+                        handleTopicSelected(model, subject, marks, mode, assignmentId);
                       }}
                       onViewResult={(assignment) => {
                         handleOpenReport(null);
@@ -512,11 +569,11 @@ export default function App() {
                     />
                   )}
 
-                  {/* Page 10: Self Learning */}
+                  {/* Page 10: Self Learning (Unlimited Practice until Mastery) */}
                   {activeTab === 'self-learning' && (
                     <SelfLearningPage
                       onTopicSelected={(model, customSubject) => {
-                        handleTopicSelected(model, customSubject || model.title, 100, 'Mixed');
+                        handleTopicSelected(model, customSubject || model.title, 100, 'Mixed', null);
                       }}
                     />
                   )}

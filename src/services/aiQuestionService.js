@@ -118,6 +118,19 @@ function normalizeQuestion(q, idx, topic) {
           `Synthesize how input variation alters the equilibrium condition.`
         ];
 
+  let qOptions = q.options && q.options.length === 4 ? q.options : null;
+  let qCorrect = typeof q.correctIndex === 'number' ? q.correctIndex : 0;
+  if (qOptions && qOptions.length >= 2) {
+    const orig = qCorrect;
+    const indexed = qOptions.map((opt, i) => ({ text: opt, isCorrect: i === orig }));
+    for (let i = indexed.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+    }
+    qOptions = indexed.map(item => item.text);
+    qCorrect = indexed.findIndex(item => item.isCorrect);
+  }
+
   return {
     id: `q_ai_${idx + 1}_${Date.now()}`,
     level: idx < 3 ? 1 : idx < 7 ? 2 : 3,
@@ -125,8 +138,8 @@ function normalizeQuestion(q, idx, topic) {
     type: q.type || (idx % 2 === 1 ? 'mcq' : 'text'),
     questionText: q.questionText || q.text || `Explain the core mechanism of ${topic}`,
     text: q.questionText || q.text || `Explain the core mechanism of ${topic}`,
-    options: q.options && q.options.length === 4 ? q.options : null,
-    correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
+    options: qOptions,
+    correctIndex: qCorrect >= 0 ? qCorrect : 0,
     hints: hintsArray,
     expectedKeywords: q.expectedKeywords || [topic.toLowerCase(), 'analysis', 'mechanism', 'calculation', 'parameter']
   };
@@ -807,19 +820,32 @@ export function generateQuestionsFromDocument(documentText, topic, count = 10) {
     const sentences = para.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 15);
     const keySentence = sentences[0] || para.slice(0, 100);
 
+    let fOptions = null;
+    let fCorrect = 0;
+    if (idx % 2 === 0) {
+      const rawOpts = [
+        `It establishes the foundational mechanism and operational constraints described in the document`,
+        `It represents an arbitrary assumption that has no physical or mathematical relevance`,
+        `It contradicts fundamental scientific laws and is rejected in practice`,
+        `It operates with zero consideration of boundary parameters`
+      ];
+      const indexed = rawOpts.map((opt, i) => ({ text: opt, isCorrect: i === 0 }));
+      for (let i = indexed.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+      }
+      fOptions = indexed.map(item => item.text);
+      fCorrect = indexed.findIndex(item => item.isCorrect);
+    }
+
     questions.push({
       id: `q_doc_${idx + 1}_${Date.now()}`,
       level: (idx % 3) + 1,
       bloomLevel: idx % 3 === 0 ? 'Understanding' : idx % 3 === 1 ? 'Application' : 'Analysis',
       type: idx % 2 === 0 ? 'mcq' : 'text',
       questionText: `Based on the uploaded course material: Explain the technical significance of "${keySentence}". How does this impact the study of ${cleanTopic}?`,
-      options: idx % 2 === 0 ? [
-        `It establishes the foundational mechanism and operational constraints described in the document`,
-        `It represents an arbitrary assumption that has no physical or mathematical relevance`,
-        `It contradicts fundamental scientific laws and is rejected in practice`,
-        `It operates with zero consideration of boundary parameters`
-      ] : null,
-      correctIndex: 0,
+      options: fOptions,
+      correctIndex: fCorrect,
       hints: [
         `Review the specific section of your uploaded study material discussing this topic.`,
         `Identify the governing variables and relationships stated in the text.`,

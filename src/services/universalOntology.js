@@ -1082,6 +1082,20 @@ export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic',
       baseText = `${prefixes[cycle % prefixes.length]}${baseText}`;
     }
     
+    let qOptions = tmpl.options || null;
+    let qCorrectIndex = tmpl.correctIndex ?? null;
+
+    if (qOptions && Array.isArray(qOptions) && qOptions.length >= 2) {
+      const origCorrect = typeof qCorrectIndex === 'number' ? qCorrectIndex : 0;
+      const indexed = qOptions.map((opt, idx) => ({ text: opt, isCorrect: idx === origCorrect }));
+      for (let i = indexed.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+      }
+      qOptions = indexed.map(item => item.text);
+      qCorrectIndex = indexed.findIndex(item => item.isCorrect);
+    }
+
     questions.push({
       id: `q_dyn_${qNum}_${Date.now()}_${tIdx}`,
       level: tmpl.level,
@@ -1089,8 +1103,8 @@ export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic',
       text: baseText,
       bloomLevel: tmpl.bloomLevel,
       type: tmpl.type,
-      options: tmpl.options || null,
-      correctIndex: tmpl.correctIndex ?? null,
+      options: qOptions,
+      correctIndex: qCorrectIndex,
       hints: tmpl.hints,
       expectedKeywords: [topicName.toLowerCase(), 'analysis', 'mechanism', 'design', 'optimization', 'stability', 'protocol']
     });

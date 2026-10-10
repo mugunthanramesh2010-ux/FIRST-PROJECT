@@ -13,7 +13,12 @@ import {
   EyeOff,
   Copy,
   Terminal,
-  Activity
+  Activity,
+  X,
+  Gauge,
+  Layers,
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { BehavioralEngine } from '../../services/behavioralEngine';
 import { soundEffects } from '../../services/soundEffects';
@@ -40,13 +45,16 @@ export default function QuestionPage({
   const [questionSecondsElapsed, setQuestionSecondsElapsed] = useState(0);
   const [secondsRemaining, setSecondsRemaining] = useState(120);
 
+  // Dedicated Proctoring & Telemetry Drawer / Modal State
+  const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState(false);
+
   // Live Anti-Cheat Tracking State
   const [tabSwitches, setTabSwitches] = useState(0);
   const [copyAttempts, setCopyAttempts] = useState(0);
   const [pasteAttempts, setPasteAttempts] = useState(0);
   const [disqualificationModal, setDisqualificationModal] = useState(false);
 
-  // Dynamic Metrics (Real, never hardcoded 98%)
+  // Dynamic Metrics (Real, never hardcoded)
   const totalViolations = tabSwitches + copyAttempts + pasteAttempts;
   const liveAuthenticity = Math.max(0, 100 - (tabSwitches * 20 + pasteAttempts * 25 + copyAttempts * 15));
   
@@ -55,18 +63,36 @@ export default function QuestionPage({
   const correctCount = sessionQuestionHistory?.filter(q => q.status === 'Correct').length || 0;
   const dynamicAccuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 100;
 
-  // Fallback options if question does not have options defined
-  const topicTerm = question?.expectedKeywords?.[0] || 'the core mechanism';
-  const defaultOptions = [
-    `Primary operating mechanism governed by ${topicTerm} and boundary electrostatic conditions`,
-    `Thermal carrier depletion and non-linear saturation preventing sustained equilibrium`,
-    `Spontaneous drift without closed-loop regulatory damping or boundary enforcement`,
-    `Parasitic capacitance feedback limiting bandwidth and high-frequency dynamic response`
-  ];
+  // Options: Shuffle options so correct answer is NOT always option A (0)
+  const [shuffledOptions, setShuffledOptions] = useState([]);
+  const [resolvedCorrectIndex, setResolvedCorrectIndex] = useState(0);
 
-  const availableOptions = (question?.options && question.options.length > 0)
-    ? question.options
-    : defaultOptions;
+  useEffect(() => {
+    const topicTerm = question?.expectedKeywords?.[0] || 'the core mechanism';
+    let baseOpts = (question?.options && Array.isArray(question.options) && question.options.length >= 2)
+      ? [...question.options]
+      : [
+          `Primary operating mechanism governed by ${topicTerm} and boundary electrostatic conditions`,
+          `Thermal carrier depletion and non-linear saturation preventing sustained equilibrium`,
+          `Spontaneous drift without closed-loop regulatory damping or boundary enforcement`,
+          `Parasitic capacitance feedback limiting bandwidth and high-frequency dynamic response`
+        ];
+
+    const origCorrect = typeof question?.correctIndex === 'number' && question.correctIndex >= 0 && question.correctIndex < baseOpts.length
+      ? question.correctIndex
+      : 0;
+
+    // Fisher-Yates Shuffle
+    const indexed = baseOpts.map((opt, idx) => ({ text: opt, isCorrect: idx === origCorrect }));
+    for (let i = indexed.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+    }
+
+    setShuffledOptions(indexed.map(item => item.text));
+    const newCorrect = indexed.findIndex(item => item.isCorrect);
+    setResolvedCorrectIndex(newCorrect >= 0 ? newCorrect : 0);
+  }, [questionIndex, question]);
 
   const getInitialMode = () => {
     if (isTextOnly) return 'text';
@@ -190,6 +216,11 @@ export default function QuestionPage({
     metrics.copyAttempts = copyAttempts;
     metrics.authenticityScore = liveAuthenticity;
 
+    // Attach resolved correct index to question payload so evaluation is accurate
+    if (question) {
+      question.correctIndex = resolvedCorrectIndex;
+    }
+
     if (answerMode === 'mcq') {
       if (selectedOption === null || selectedOption === undefined) return;
       onSubmitAnswer(selectedOption, metrics, questionSecondsElapsed);
@@ -206,11 +237,12 @@ export default function QuestionPage({
   };
 
   const questionTitle = question?.questionText || question?.text || 'Explain the conceptual mechanism and governing equations for this topic.';
+  const adaptiveNote = question?.adaptiveNote || null;
 
   return (
-    <div className="w-full max-w-none py-2 px-2 sm:px-4 space-y-6 animate-fade-in text-left">
+    <div className="w-full py-2 px-2 sm:px-4 space-y-6 animate-fade-in text-left">
       
-      {/* DISQUALIFICATION MODAL (AUTO-TERMINATES ON 3 VIOLATIONS) */}
+      {/* 1. DISQUALIFICATION MODAL (AUTO-TERMINATES ON 3 VIOLATIONS) */}
       {disqualificationModal && (
         <div className="fixed inset-0 z-50 bg-[#0F172A]/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="max-w-[540px] w-full bg-[#FFF0F0] border-4 border-[#C53030] rounded-3xl p-8 text-center space-y-5 shadow-2xl animate-bounce">
@@ -238,17 +270,142 @@ export default function QuestionPage({
         </div>
       )}
 
-      {/* TOP PIPELINE HEADER */}
+      {/* 2. DEDICATED PROCTORING & TELEMETRY MODAL / DRAWER (NOT JOINED WITH QUESTION) */}
+      {isTelemetryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#FFFDF8] border-2 border-[#E2D3A7] rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh] text-left">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#E2D3A7] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF3D6] border-2 border-[#E2D3A7] flex items-center justify-center text-[#B7791F]">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-[#2D3748]">
+                    Live Candidate Telemetry & Security Hub
+                  </h3>
+                  <p className="text-xs text-[#718096]">
+                    Real-time anti-cheat signals, attending cadence, and authenticity metrics
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsTelemetryModalOpen(false)}
+                className="w-10 h-10 rounded-xl bg-[#FFF8E8] hover:bg-[#FFF3D6] border border-[#E2D3A7] text-[#2D3748] flex items-center justify-center cursor-pointer transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* The 8 Metrics Displayed In Clean Modern Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              
+              {/* 1. Attending Time */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">1. Attending Time</span>
+                <span className="text-2xl font-black font-mono text-[#B7791F] block">{formatTimer(questionSecondsElapsed)}</span>
+                <span className="text-[11px] text-[#718096] block">120s Question Budget</span>
+              </div>
+
+              {/* 2. Authenticity Shield */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">2. Authenticity Shield</span>
+                <span className={`text-2xl font-black font-mono block ${liveAuthenticity > 70 ? 'text-[#2F855A]' : 'text-[#C53030]'}`}>
+                  {liveAuthenticity}%
+                </span>
+                <span className="text-[11px] text-[#718096] block">Biometric Integrity</span>
+              </div>
+
+              {/* 3. Live Accuracy */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">3. Live Accuracy</span>
+                <span className="text-2xl font-black font-mono text-[#2B6CB0] block">{dynamicAccuracy}%</span>
+                <span className="text-[11px] text-[#718096] block">{answeredCount} Answered so far</span>
+              </div>
+
+              {/* 4. Malpractice Quota */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">4. Malpractice Quota</span>
+                <span className={`text-2xl font-black font-mono block ${totalViolations === 0 ? 'text-[#2F855A]' : 'text-[#C53030]'}`}>
+                  {totalViolations} / 3 Strikes
+                </span>
+                <span className="text-[11px] text-[#718096] block">{Math.max(0, 3 - totalViolations)} strikes remaining</span>
+              </div>
+
+              {/* 5. Blocked Pastes */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">5. Blocked Pastes</span>
+                <span className="text-2xl font-black font-mono text-[#C53030] block">{pasteAttempts} Intercepted</span>
+                <span className="text-[11px] text-[#718096] block">Anti-paste defense active</span>
+              </div>
+
+              {/* 6. Blocked Copies */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">6. Blocked Copies</span>
+                <span className="text-2xl font-black font-mono text-[#C05621] block">{copyAttempts} Intercepted</span>
+                <span className="text-[11px] text-[#718096] block">Clipboard secure lock</span>
+              </div>
+
+              {/* 7. Tab Switches */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">7. Tab Switches</span>
+                <span className="text-2xl font-black font-mono text-[#805AD5] block">{tabSwitches} Events</span>
+                <span className="text-[11px] text-[#718096] block">Focus blur tracker</span>
+              </div>
+
+              {/* 8. Answering Pace */}
+              <div className="p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] space-y-1">
+                <span className="text-[11px] font-extrabold text-[#718096] uppercase tracking-wider block">8. Answering Pace</span>
+                <span className="text-2xl font-black font-mono text-[#2F855A] block">
+                  {questionSecondsElapsed < 45 ? 'Optimal' : questionSecondsElapsed < 90 ? 'Moderate' : 'Deep Thinking'}
+                </span>
+                <span className="text-[11px] text-[#718096] block">Cadence baseline</span>
+              </div>
+
+            </div>
+
+            {/* Security Guarantee Box */}
+            <div className="p-4 rounded-2xl bg-[#E6F4EA] border border-[#A8DAB5] flex items-center justify-between text-xs text-[#2F855A]">
+              <div className="flex items-center gap-2 font-bold">
+                <ShieldCheck className="w-5 h-5 text-[#2F855A]" />
+                <span>Zero Cloud Footprint • All Telemetry Checked Locally on Device</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTelemetryModalOpen(false)}
+                className="px-4 py-1.5 rounded-xl bg-[#2F855A] text-white font-bold cursor-pointer hover:bg-[#276749]"
+              >
+                Close Hub
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 3. TOP PIPELINE HEADER (Clean, with Telemetry Icon Button) */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-sm">
+        
+        {/* Left: Question Counter & Difficulty */}
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-sm font-black text-[#B7791F]">
+          <span className="px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-sm font-black text-[#B7791F]">
             Question {questionIndex + 1} of {totalQuestions}
           </span>
           <span className="text-sm font-extrabold text-[#2D3748]">
             Difficulty: <span className="text-[#B7791F]">{difficulty || 'Bloom Scale'}</span>
           </span>
+          {adaptiveNote && (
+            <span className="hidden md:inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#E6F4EA] border border-[#A8DAB5] text-xs font-bold text-[#2F855A]">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{adaptiveNote}</span>
+            </span>
+          )}
         </div>
 
+        {/* Right: Marks, Timer, and the SEPARATE TELEMETRY / PROCTORING ICON BUTTON */}
         <div className="flex items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-black text-[#8B5E34]">
             {assignedMarks} Marks Available
@@ -262,119 +419,144 @@ export default function QuestionPage({
             <Clock className="w-4 h-4 text-[#B7791F]" />
             <span>Time Left: {formatTimer(secondsRemaining)}</span>
           </div>
+
+          {/* SEPARATE ICON BUTTON FOR SCORES & TELEMETRY */}
+          <button
+            type="button"
+            onClick={() => setIsTelemetryModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border-2 border-[#E2D3A7] hover:bg-[#B7791F] hover:text-white transition-all cursor-pointer text-xs font-bold text-[#8B5E34] shadow-xs"
+            title="Open Live Proctoring & Candidate Telemetry Monitor"
+          >
+            <ShieldAlert className="w-4 h-4 text-[#B7791F]" />
+            <span className="hidden sm:inline">Telemetry & Scores</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              totalViolations === 0 ? 'bg-[#E6F4EA] text-[#2F855A]' : 'bg-[#FEE2E2] text-[#B91C1C]'
+            }`}>
+              {totalViolations}/3 Strikes
+            </span>
+          </button>
         </div>
+
       </div>
 
-      {/* MAIN WIDE 2-COLUMN WORKSPACE: LEFT (Question & Input) | RIGHT (The 8 Big Status Boxes) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* 4. 100% FULL SCREEN QUESTION & ANSWERING WORKSPACE (NOT CRAMPED BY TELEMETRY BOXES) */}
+      <div className="w-full space-y-6">
         
-        {/* LEFT COLUMN (8 of 12 columns): Question Statement, Options, Textarea, Hints, Submit */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Main Question Card with Slightly Big Letters */}
-          <div className="bg-[#FFFCF4] border-2 border-[#E2D3A7] rounded-3xl p-6 sm:p-8 shadow-md shadow-[#B7791F]/5 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E2D3A7] pb-3">
-              <span className="text-xs font-mono font-bold text-[#8B5E34] uppercase tracking-wider">
-                Cognitive Depth: {bloomLevel}
-              </span>
-              <span className="text-xs font-bold text-[#718096]">
-                Question #{questionIndex + 1}
-              </span>
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#2D3748] leading-relaxed tracking-tight">
-              {questionTitle}
-            </h2>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-            {isMcqOnly ? (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
-                <CheckSquare className="w-4 h-4 text-[#B7791F]" />
-                <span>Format: <strong>Choice Based (MCQ)</strong></span>
-              </div>
-            ) : isTextOnly ? (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
-                <FileText className="w-4 h-4 text-[#B7791F]" />
-                <span>Format: <strong>Conceptual Text Explanation</strong></span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-1 bg-[#FFF3D6] rounded-xl border border-[#E2D3A7]">
-                <button
-                  type="button"
-                  onClick={() => setAnswerMode('mcq')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    answerMode === 'mcq'
-                      ? 'bg-[#B7791F] text-white shadow-xs'
-                      : 'text-[#8B5E34] hover:bg-[#FFF8E8]'
-                  }`}
-                >
-                  Choice Based (MCQ)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAnswerMode('text')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    answerMode === 'text'
-                      ? 'bg-[#B7791F] text-white shadow-xs'
-                      : 'text-[#8B5E34] hover:bg-[#FFF8E8]'
-                  }`}
-                >
-                  Text Explanation
-                </button>
-              </div>
-            )}
-
-            <span className="text-xs font-bold text-[#718096]">
-              {answerMode === 'mcq' ? 'Select matching option below' : 'Type explanation in your own words (Paste blocked)'}
+        {/* Main Question Card with Big Letters */}
+        <div className="bg-[#FFFCF4] border-2 border-[#E2D3A7] rounded-3xl p-6 sm:p-10 shadow-md shadow-[#B7791F]/5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2D3A7] pb-3">
+            <span className="text-xs sm:text-sm font-mono font-bold text-[#8B5E34] uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#B7791F]" />
+              <span>Cognitive Depth: {bloomLevel}</span>
+            </span>
+            <span className="text-xs sm:text-sm font-bold text-[#718096]">
+              Question #{questionIndex + 1}
             </span>
           </div>
 
-          {/* Answer Input Area */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {answerMode === 'mcq' ? (
-              <div className="grid grid-cols-1 gap-3.5">
-                {availableOptions.map((opt, idx) => {
-                  const isSelected = selectedOption === idx;
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectedOption(idx)}
-                      className={`p-4 sm:p-5 rounded-2xl border-2 cursor-pointer flex items-center gap-4 transition-all shadow-sm ${
-                        isSelected
-                          ? 'border-[#B7791F] bg-[#FFF3D6] ring-4 ring-[#B7791F]/20 scale-[1.01]'
-                          : 'border-[#E2D3A7] bg-[#FFFCF4] hover:border-[#B7791F] hover:bg-[#FFFDF8]'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black text-sm shrink-0 ${
-                        isSelected
-                          ? 'border-[#B7791F] bg-[#B7791F] text-white shadow-xs'
-                          : 'border-[#E2D3A7] bg-[#FFF8E8] text-[#8B5E34]'
-                      }`}>
-                        {String.fromCharCode(65 + idx)}
-                      </div>
-                      <span className="text-base sm:text-lg font-bold text-[#2D3748] flex-1 leading-snug">
-                        {opt}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <textarea
-                  value={textAnswer}
-                  onChange={(e) => setTextAnswer(e.target.value)}
-                  placeholder="State your technical answer clearly. Articulate physical operational mechanisms, governing laws, or analytical derivations..."
-                  className="w-full h-[220px] text-base sm:text-lg font-medium p-5 rounded-2xl bg-[#FFFDF8] border-2 border-[#E2D3A7] text-[#2D3748] outline-none resize-vertical leading-relaxed shadow-inner focus:border-[#B7791F] focus:ring-4 focus:ring-[#B7791F]/15 transition-all"
-                  required
-                />
-              </div>
-            )}
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#2D3748] leading-relaxed tracking-tight">
+            {questionTitle}
+          </h2>
 
-            {/* Bottom Action Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          {adaptiveNote && (
+            <div className="pt-2 flex items-center gap-2 text-xs font-bold text-[#2F855A]">
+              <Sparkles className="w-4 h-4" />
+              <span>Adaptive AI Calibration: {adaptiveNote}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          {isMcqOnly ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
+              <CheckSquare className="w-4 h-4 text-[#B7791F]" />
+              <span>Format: <strong>Choice Based (MCQ)</strong></span>
+            </div>
+          ) : isTextOnly ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
+              <FileText className="w-4 h-4 text-[#B7791F]" />
+              <span>Format: <strong>Conceptual Text Explanation</strong></span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-1 bg-[#FFF3D6] rounded-xl border border-[#E2D3A7]">
+              <button
+                type="button"
+                onClick={() => setAnswerMode('mcq')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  answerMode === 'mcq'
+                    ? 'bg-[#B7791F] text-white shadow-xs'
+                    : 'text-[#8B5E34] hover:bg-[#FFF8E8]'
+                }`}
+              >
+                Choice Based (MCQ)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnswerMode('text')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  answerMode === 'text'
+                    ? 'bg-[#B7791F] text-white shadow-xs'
+                    : 'text-[#8B5E34] hover:bg-[#FFF8E8]'
+                }`}
+              >
+                Text Explanation
+              </button>
+            </div>
+          )}
+
+          <span className="text-xs sm:text-sm font-bold text-[#718096]">
+            {answerMode === 'mcq' ? 'Select matching option below' : 'Type explanation in your own words (Paste blocked)'}
+          </span>
+        </div>
+
+        {/* Answer Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* MCQ Mode: Shuffled across A, B, C, D */}
+          {answerMode === 'mcq' ? (
+            <div className="grid grid-cols-1 gap-4">
+              {shuffledOptions.map((opt, idx) => {
+                const isSelected = selectedOption === idx;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedOption(idx)}
+                    className={`p-5 sm:p-6 rounded-2xl border-2 cursor-pointer flex items-center gap-5 transition-all shadow-sm ${
+                      isSelected
+                        ? 'border-[#B7791F] bg-[#FFF3D6] ring-4 ring-[#B7791F]/20 scale-[1.008]'
+                        : 'border-[#E2D3A7] bg-[#FFFCF4] hover:border-[#B7791F] hover:bg-[#FFFDF8]'
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center font-black text-base shrink-0 ${
+                      isSelected
+                        ? 'border-[#B7791F] bg-[#B7791F] text-white shadow-xs'
+                        : 'border-[#E2D3A7] bg-[#FFF8E8] text-[#8B5E34]'
+                    }`}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <span className="text-lg sm:text-xl font-bold text-[#2D3748] flex-1 leading-snug">
+                      {opt}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={textAnswer}
+                onChange={(e) => setTextAnswer(e.target.value)}
+                placeholder="State your technical answer clearly. Articulate physical operational mechanisms, governing laws, or analytical derivations..."
+                className="w-full h-[240px] text-lg font-medium p-6 rounded-2xl bg-[#FFFDF8] border-2 border-[#E2D3A7] text-[#2D3748] outline-none resize-vertical leading-relaxed shadow-inner focus:border-[#B7791F] focus:ring-4 focus:ring-[#B7791F]/15 transition-all"
+                required
+              />
+            </div>
+          )}
+
+          {/* Action Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#E2D3A7]">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onRequestHint}
@@ -385,198 +567,27 @@ export default function QuestionPage({
               </button>
 
               <button
-                type="submit"
-                disabled={answerMode === 'mcq' ? selectedOption === null : !textAnswer.trim()}
-                className="px-10 py-4 rounded-xl bg-[#B7791F] hover:bg-[#975A16] disabled:opacity-50 text-white font-extrabold text-base sm:text-lg shadow-lg shadow-[#B7791F]/25 flex items-center gap-2 transition-all cursor-pointer"
+                type="button"
+                onClick={() => setIsTelemetryModalOpen(true)}
+                className="px-4 py-3.5 rounded-xl bg-[#FFF8E8] hover:bg-[#FFF3D6] border border-[#E2D3A7] text-[#718096] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
               >
-                <span>Submit Answer</span>
-                <Send className="w-5 h-5 ml-1" />
+                <Gauge className="w-4 h-4 text-[#B7791F]" />
+                <span>View Live Proctoring Signals</span>
               </button>
             </div>
-          </form>
 
-        </div>
-
-        {/* RIGHT COLUMN (4 of 12 columns): 4 BIG CORE STATUS BOXES */}
-        <div className="lg:col-span-4 space-y-4">
-          
-          <div className="flex items-center gap-2 px-2 pb-1 border-b border-[#E2D3A7]">
-            <Activity className="w-5 h-5 text-[#B7791F]" />
-            <h3 className="text-sm font-extrabold text-[#2D3748] uppercase tracking-wider">
-              Live Examination Status (Right Side)
-            </h3>
+            <button
+              type="submit"
+              disabled={answerMode === 'mcq' ? selectedOption === null : !textAnswer.trim()}
+              className="px-12 py-4 rounded-xl bg-[#B7791F] hover:bg-[#975A16] disabled:opacity-50 text-white font-extrabold text-lg shadow-lg shadow-[#B7791F]/25 flex items-center gap-3 transition-all cursor-pointer"
+            >
+              <span>Submit Answer</span>
+              <Send className="w-5 h-5 ml-1" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            
-            {/* BOX 1: ATTENDING TIMER */}
-            <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-              <div>
-                <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                  1. Attending Time
-                </span>
-                <span className="text-3xl sm:text-4xl font-black font-mono text-[#B7791F] tracking-tight block mt-1">
-                  {formatTimer(questionSecondsElapsed)}
-                </span>
-                <span className="text-xs font-bold text-[#718096] block mt-1">
-                  120s Question Budget
-                </span>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#FFF3D6] border-2 border-[#E2D3A7] flex items-center justify-center text-[#B7791F]">
-                <Clock className="w-8 h-8" />
-              </div>
-            </div>
+        </form>
 
-            {/* BOX 2: DYNAMIC AUTHENTICITY SCORE */}
-            <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-              <div>
-                <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                  2. Authenticity Shield
-                </span>
-                <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block mt-1 ${
-                  liveAuthenticity > 70 ? 'text-[#2F855A]' : 'text-[#C53030]'
-                }`}>
-                  {liveAuthenticity}%
-                </span>
-                <span className="text-xs font-bold text-[#718096] block mt-1">
-                  Live Behavioral Integrity
-                </span>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#E6F4EA] border-2 border-[#A8DAB5] flex items-center justify-center text-[#2F855A]">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-            </div>
-
-            {/* BOX 3: LIVE DYNAMIC ACCURACY */}
-            <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-              <div>
-                <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                  3. Live Accuracy
-                </span>
-                <span className="text-3xl sm:text-4xl font-black font-mono text-[#1E3A8A] tracking-tight block mt-1">
-                  {dynamicAccuracy}%
-                </span>
-                <span className="text-xs font-bold text-[#718096] block mt-1">
-                  Calculated from Responses
-                </span>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#EBF8FF] border-2 border-[#BEE3F8] flex items-center justify-center text-[#1E3A8A]">
-                <CheckSquare className="w-8 h-8" />
-              </div>
-            </div>
-
-            {/* BOX 4: TOTAL VIOLATIONS & 3-VIOLATION QUOTA */}
-            <div className={`p-5 sm:p-6 rounded-3xl border-2 shadow-md flex items-center justify-between ${
-              totalViolations >= 2
-                ? 'bg-[#FFF0F0] border-[#C53030] text-[#C53030]'
-                : 'bg-[#FFFCF4] border-[#E2D3A7]'
-            }`}>
-              <div>
-                <span className="text-xs sm:text-sm font-black uppercase tracking-wider block">
-                  4. Malpractice Quota
-                </span>
-                <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight block mt-1">
-                  {totalViolations} / 3 Strikes
-                </span>
-                <span className="text-xs font-bold block mt-1">
-                  {3 - totalViolations} remaining before Disqualification
-                </span>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#FED7D7] border-2 border-[#C53030] flex items-center justify-center text-[#C53030]">
-                <AlertTriangle className="w-8 h-8" />
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* DOWNSIDE SPACE COVER: 4 WIDE TELEMETRY INTERCEPTION BOXES (Spans Full Width) */}
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center gap-2 px-2 pb-1 border-b border-[#E2D3A7]">
-          <ShieldAlert className="w-5 h-5 text-[#B7791F]" />
-          <h3 className="text-sm font-extrabold text-[#2D3748] uppercase tracking-wider">
-            Downside Telemetry & Anti-Cheat Interceptors (Covering Bottom Space)
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* BOX 5: BLOCKED PASTES */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-            <div>
-              <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                5. Blocked Pastes
-              </span>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#C53030] block mt-1">
-                {pasteAttempts} Blocked
-              </span>
-              <span className="text-xs font-bold text-[#718096] block mt-1">
-                Ctrl+V Real-Time Guard
-              </span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#FFF0F0] border border-[#FECACA] flex items-center justify-center text-[#C53030]">
-              <ShieldAlert className="w-7 h-7" />
-            </div>
-          </div>
-
-          {/* BOX 6: BLOCKED COPIES */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-            <div>
-              <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                6. Blocked Copies
-              </span>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#D97706] block mt-1">
-                {copyAttempts} Blocked
-              </span>
-              <span className="text-xs font-bold text-[#718096] block mt-1">
-                Clipboard Security Lock
-              </span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] flex items-center justify-center text-[#D97706]">
-              <Copy className="w-7 h-7" />
-            </div>
-          </div>
-
-          {/* BOX 7: WINDOW TAB SWITCHES */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-            <div>
-              <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                7. Tab Switches
-              </span>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#9333EA] block mt-1">
-                {tabSwitches} Events
-              </span>
-              <span className="text-xs font-bold text-[#718096] block mt-1">
-                Window Blur / Alt+Tab
-              </span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#FAF5FF] border border-[#E9D5FF] flex items-center justify-center text-[#9333EA]">
-              <EyeOff className="w-7 h-7" />
-            </div>
-          </div>
-
-          {/* BOX 8: STUDENT PACE & BASELINE */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-[#FFFCF4] border-2 border-[#E2D3A7] shadow-md flex items-center justify-between">
-            <div>
-              <span className="text-xs sm:text-sm font-extrabold text-[#718096] uppercase tracking-wider block">
-                8. Answering Pace
-              </span>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#2D3748] block mt-1">
-                {questionSecondsElapsed < 60 ? 'Optimal Pace' : 'Extended Time'}
-              </span>
-              <span className="text-xs font-bold text-[#718096] block mt-1">
-                Target 45s per Question
-              </span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] flex items-center justify-center text-[#B7791F]">
-              <Zap className="w-7 h-7" />
-            </div>
-          </div>
-
-        </div>
       </div>
 
     </div>

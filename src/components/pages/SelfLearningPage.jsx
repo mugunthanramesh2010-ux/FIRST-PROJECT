@@ -62,11 +62,17 @@ export default function SelfLearningPage({ onTopicSelected }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto px-4 py-2 rounded-2xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
-          <Sparkles className="w-4 h-4 text-[#B7791F]" />
-          <span>
-            {ollamaStatus.available ? `Hidden AI: Ollama (${ollamaStatus.activeModel})` : 'Offline Domain Engine Active'}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <span className="px-3 py-1.5 rounded-xl bg-[#E6F4EA] border border-[#A8DAB5] text-xs font-bold text-[#2F855A] flex items-center gap-1.5">
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Unlimited Practice • Retake Until Mastery</span>
           </span>
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
+            <Sparkles className="w-4 h-4 text-[#B7791F]" />
+            <span>
+              {ollamaStatus.available ? `Hidden AI: Ollama (${ollamaStatus.activeModel})` : 'Offline Domain Engine Active'}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -628,6 +628,29 @@ export function saveCohortAssignment(assignment) {
   return newAssignment;
 }
 
+// Check if student has already completed an assigned faculty viva
+export function isAssignmentCompletedByStudent(assignmentId, studentRegNo) {
+  if (!assignmentId || !studentRegNo) return false;
+  const completedKey = `viva_completed_assignments_${studentRegNo}`;
+  const completed = getFromStorage(completedKey, []);
+  if (completed.includes(assignmentId)) return true;
+
+  const sessions = getAllAssessmentSessions();
+  return sessions.some(s => s.studentRegNo === studentRegNo && s.assignmentId === assignmentId);
+}
+
+// Mark assignment completed and locked permanently for student
+export function markAssignmentCompleted(assignmentId, studentRegNo, sessionData = {}) {
+  if (!assignmentId || !studentRegNo) return;
+  const completedKey = `viva_completed_assignments_${studentRegNo}`;
+  const completed = getFromStorage(completedKey, []);
+  if (!completed.includes(assignmentId)) {
+    completed.push(assignmentId);
+    setInStorage(completedKey, completed);
+  }
+  logAudit('ASSIGNMENT_COMPLETED_LOCKED', studentRegNo, `Completed assignment ${assignmentId}. Retake locked.`);
+}
+
 // Generate Individual Student Mark Record Files (for up to 1000+ class members)
 export function generateCohortStudentMarkFiles(cohortSize = 50) {
   const students = getAllStudents();
