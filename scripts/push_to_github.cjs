@@ -24,11 +24,15 @@ async function run() {
     const token = await getCredentials();
     const repoUrl = `https://${token}@github.com/mugunthanramesh2010-ux/FIRST-PROJECT.git`;
     
-    console.log('Setting remote url for first-project...');
-    execSync(`git remote set-url first-project "${repoUrl}"`, { stdio: 'inherit' });
+    console.log('Setting remote url for origin...');
+    try {
+      execSync(`git remote set-url origin "${repoUrl}"`, { stdio: 'ignore' });
+    } catch (e) {
+      execSync(`git remote add origin "${repoUrl}"`, { stdio: 'ignore' });
+    }
     
     console.log('Pushing to github.com/mugunthanramesh2010-ux/FIRST-PROJECT.git main branch...');
-    execSync('git push -u first-project main', {
+    execSync('git push -u origin main', {
       env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
       stdio: 'inherit'
     });
