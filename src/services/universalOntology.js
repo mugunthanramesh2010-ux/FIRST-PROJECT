@@ -1,8 +1,5 @@
 // Universal Domain & Subject Ontology Engine
-// Fully domain-independent. Covers ALL 14 Domain Categories, ALL Engineering Branches,
-// ALL Sciences, Medical, Commerce, Law, Humanities, Languages, Agriculture, Creative, Skills,
-// Competitive Exams, Research, and Future Tech Domains.
-// Plus dynamic progressive question evolution (Fundamental -> Why/Comparative -> Design -> Optimization).
+import { generateOfflineDeepQuestions } from './aiQuestionService';
 
 export const DOMAIN_CATEGORIES = [
   {
@@ -721,91 +718,12 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
       { from: 'node_inter', to: 'node_adv' },
       { from: 'node_adv', to: 'node_future' }
     ],
-    questions: [
-      {
-        id: `q_dyn_1_${Date.now()}`,
-        level: 1,
-        evolutionStage: 'Stage 1: Fundamentals (What)',
-        type: 'text',
-        mode: 'Text',
-        text: `What is the core operational principle of ${cleanTopic}? Define its fundamental mechanism and state the governing boundary conditions under which it operates.`,
-        bloomLevel: 'Understanding',
-        expectedKeywords: [words[0]?.toLowerCase() || 'system', 'principle', 'mechanism', 'efficiency', 'constraint', 'optimization', 'output', 'boundary'],
-        hints: {
-          level1: `Identify the primary objective, input parameters, and target domain of ${cleanTopic}.`,
-          level2: `Break down the system into input state, transformation mechanism, and output state.`,
-          level3: `Discuss the specific laws or constraints (e.g. energy, latency, stability, accuracy, legality) that govern ${cleanTopic}.`,
-          level4: `Synthesize the exact causal pathway: how a change in the primary input directly alters the equilibrium state of ${cleanTopic}.`
-        },
-        reasonWhy: `Stage 1 Fundamental Check: Establishes conceptual baseline for "${cleanTopic}" before advancing to edge diagnostics.`,
-        industryApplication: `Core foundation for design validation, quality assurance, and architecture specification.`
-      },
-      {
-        id: `q_dyn_2_${Date.now()}`,
-        level: 2,
-        evolutionStage: 'Stage 2: Comparative & Causal (Why)',
-        type: 'mcq',
-        mode: 'MCQ',
-        text: `Why is ${cleanTopic} preferred over conventional or legacy approaches in high-demand environments?`,
-        options: [
-          `It delivers superior throughput and resilience by eliminating non-linear bottlenecks`,
-          `It requires zero initial capital expenditure and violates conservation of energy`,
-          `It functions without any prerequisite foundational knowledge or operational bounds`,
-          `It introduces permanent random noise that prevents systematic optimization`
-        ],
-        correctIndex: 0,
-        bloomLevel: 'Analysis',
-        hints: {
-          level1: `Consider the fundamental limitation of legacy paradigms that ${cleanTopic} was designed to overcome.`,
-          level2: `Look for the option that describes structural performance gain and systemic bottleneck mitigation.`,
-          level3: `Modern methodologies replace unscalable bottlenecks with modular, decoupled, or mathematically optimized architectures.`,
-          level4: `The correct answer identifies superior throughput and resilience achieved through systemic optimization.`
-        },
-        reasonWhy: `Stage 2 Comparative Reasoning: Evaluates whether the student understands why ${cleanTopic} emerged as a superior paradigm.`,
-        industryApplication: 'Critical for selecting technology stacks and defending architectural decisions in executive reviews.'
-      },
-      {
-        id: `q_dyn_3_${Date.now()}`,
-        level: 3,
-        evolutionStage: 'Stage 3: Engineering Design & Case Study',
-        type: 'mixed',
-        mode: 'Case Study',
-        text: `Case Study: An enterprise system deploying ${cleanTopic} suffers a catastrophic 40% performance degradation under peak load. Outline a systematic 3-phase diagnostic and remediation protocol to isolate root causes and restore SLA compliance.`,
-        bloomLevel: 'Application & Synthesis',
-        expectedKeywords: ['telemetry', 'monitoring', 'bottleneck', 'root cause', 'mitigation', 'redundancy', 'profiling', 'isolation'],
-        hints: {
-          level1: `Structure your response into: 1. Telemetry/Observation, 2. Root Cause Isolation, 3. Architectural Remediation.`,
-          level2: `What specific telemetry metrics would you inspect first in ${cleanTopic}?`,
-          level3: `How do you determine whether the failure originates at the ingestion, compute, or dissipation interface?`,
-          level4: `Provide concrete remediations such as buffer resizing, parameter tuning, horizontal scaling, or active failover.`
-        },
-        reasonWhy: `Stage 3 Engineering Design: Tests diagnostic reasoning under real-world operational stress.`,
-        industryApplication: `Directly tested in senior technical vivas, defense boards, and elite placement technical rounds.`
-      },
-      {
-        id: `q_dyn_4_${Date.now()}`,
-        level: 4,
-        evolutionStage: 'Stage 4: Optimization & Research Frontier',
-        type: 'mixed',
-        mode: 'Research Paper Mode',
-        text: `Research Paper Inquiry: Analyze the theoretical upper bound or scaling limits of ${cleanTopic}. What novel mathematical, algorithmic, or physical modification would be required to achieve an order-of-magnitude breakthrough?`,
-        bloomLevel: 'Creation & Evaluation',
-        expectedKeywords: ['theoretical limit', 'scaling law', 'optimization', 'novel', 'paradigm', 'frontier', 'breakthrough', 'efficiency'],
-        hints: {
-          level1: 'Identify the fundamental physical or computational bound (e.g., Shannon limit, Landauer limit, O(N^2) complexity, thermodynamic dissipation).',
-          level2: 'Why do incremental improvements fail to surpass this asymptotic bound?',
-          level3: 'Propose a paradigm shift (e.g. quantum acceleration, neuromorphic event-driven compute, decentralized consensus, novel materials).',
-          level4: 'Synthesize how this alternative paradigm mathematically bypasses the legacy constraint.'
-        },
-        reasonWhy: `Stage 4 Research Frontier: Identifies innovative research aptitude and patent-level intellectual depth.`,
-        industryApplication: 'Standard benchmark for doctoral dissertations, R&D labs, and deep-tech startup venture pitches.'
-      }
-    ],
-    innovationChallenge: `What disruptive paradigm or architectural modification could render conventional approaches to ${cleanTopic} obsolete within the next 5 years?`,
+    questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10),
+    innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
     industryReadiness: {
-      engineerPerspective: `Focuses on reliability, MTBF (mean time between failures), and integration with legacy infrastructure.`,
-      researcherPerspective: `Analyzes mathematical bounds, theoretical limits, and publishable novel algorithmic variations.`,
-      startupFounderPerspective: `Identifies addressable market size, unit economics, and competitive defensive moats.`
+      engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,
+      researcherPerspective: `Analyzes mathematical models, governing equations, and novel theoretical approaches for ${cleanTopic}.`,
+      startupFounderPerspective: `Identifies real-world industrial deployment, efficiency gains, and operational economics for ${cleanTopic}.`
     }
   };
     model = synthesized;
@@ -822,7 +740,14 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
 export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic', targetCount = 10) {
   const t = topicName || 'Topic';
   const count = Math.min(100, Math.max(1, targetCount || 5));
-  const questions = [...baseQuestions];
+
+  // Subject-accurate AI domain generator (100% subject-pure questions, options, hints)
+  const deepQuestions = generateOfflineDeepQuestions(t, count);
+  if (deepQuestions && deepQuestions.length > 0) {
+    return deepQuestions.slice(0, count);
+  }
+
+  return baseQuestions.slice(0, count);
 
   const templates = [
     {

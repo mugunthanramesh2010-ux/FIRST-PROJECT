@@ -121,6 +121,28 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Get LAN network info so other PCs can connect
+  if (pathname === '/api/lan-info') {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    let localIp = 'localhost';
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if ('IPv4' === iface.family && !iface.internal) {
+          localIp = iface.address;
+          break;
+        }
+      }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      hostIp: localIp,
+      port: PORT,
+      studentUrl: `http://${localIp}:${PORT}/`
+    }));
+    return;
+  }
+
   // --- STATIC FILE SERVING (from dist/) ---
   let filePath = path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname);
 

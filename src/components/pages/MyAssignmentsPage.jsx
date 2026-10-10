@@ -5,53 +5,44 @@ import { getCohortAssignments } from '../../services/db';
 export default function MyAssignmentsPage({ currentUser, onStartAssignment, onViewResult }) {
   const [assignments] = useState(() => {
     const list = getCohortAssignments();
-    if (!list || list.length === 0) {
-      return [
-        {
-          id: 'asg-1',
-          assignmentName: 'Semiconductor Inversion & MOSFET Viva',
-          subject: 'Solid State Semiconductor Devices',
-          topic: 'MOSFET',
-          faculty: 'Dr. S. Ramanathan',
-          deadline: 'Today, 5:00 PM',
-          marks: 100,
-          questionCount: 10,
-          status: 'ACTIVE'
-        },
-        {
-          id: 'asg-2',
-          assignmentName: 'Deep Learning Convolutions & Backprop',
-          subject: 'Artificial Intelligence & Neural Networks',
-          topic: 'CNN',
-          faculty: 'Dr. K. Jayanthi',
-          deadline: 'Tomorrow, 11:59 PM',
-          marks: 100,
-          questionCount: 20,
-          status: 'IN_PROGRESS'
-        },
-        {
-          id: 'asg-3',
-          assignmentName: 'Constitutional Basic Structure Oral Review',
-          subject: 'Constitutional Law & Jurisprudence',
-          topic: 'Law',
-          faculty: 'Prof. M. S. Narayana',
-          deadline: 'Completed on 28 Sep',
-          marks: 100,
-          questionCount: 5,
-          status: 'COMPLETED'
-        }
-      ];
-    }
-    return list.map((a, idx) => ({
+    const userYear = currentUser?.year || 'III';
+    const userSection = currentUser?.section || 'A';
+    const userDept = currentUser?.department || '';
+
+    // Filter to ensure only this student's class and section assignments are shown
+    const matching = (list && list.length > 0 ? list : [
+      {
+        id: 'asg-1',
+        assignmentName: 'Strength of Materials & Stress Analysis Viva',
+        subject: 'Solid Mechanics & Strength of Materials',
+        topic: 'Stress in Strength of Materials',
+        targetYear: userYear,
+        targetSection: userSection,
+        faculty: 'Dr. S. Ramanathan',
+        deadline: 'Active Session',
+        marks: 100,
+        questionCount: 10,
+        status: 'ACTIVE'
+      }
+    ]).filter(a => {
+      const yearMatch = !a.targetYear || a.targetYear === 'All Years' || a.targetYear === userYear;
+      const secMatch = !a.targetSection || a.targetSection === 'All Sections' || a.targetSection === userSection;
+      return yearMatch && secMatch;
+    });
+
+    return matching.map((a, idx) => ({
       id: a.id || `asg-${idx}`,
       assignmentName: a.subjectName || a.assignmentName || 'Adaptive Viva Assessment',
-      subject: a.subject || 'Electronics and Communication',
-      topic: a.topic || 'MOSFET',
+      subject: a.subject || 'Strength of Materials',
+      topic: a.topic || 'Stress in Strength of Materials',
       faculty: a.facultyName || a.faculty || 'Faculty In-Charge',
       deadline: a.deadlineMinutes ? `${a.deadlineMinutes} mins session` : (a.deadline || 'Active Deadline'),
       marks: a.totalMarks || 100,
-      questionCount: a.questionCount || (idx === 1 ? 20 : 10),
-      status: a.status || (idx === 0 ? 'ACTIVE' : (idx === 1 ? 'IN_PROGRESS' : 'COMPLETED'))
+      questionCount: a.questionCount || 10,
+      mode: a.mode || 'Mixed',
+      targetYear: a.targetYear || userYear,
+      targetSection: a.targetSection || userSection,
+      status: a.status || (idx === 0 ? 'ACTIVE' : 'IN_PROGRESS')
     }));
   });
 

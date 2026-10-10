@@ -18,8 +18,8 @@ export default function ReportModal({ isOpen, onClose, sessionData, user }) {
   if (!isOpen) return null;
 
   const data = sessionData || {
-    topic: 'MOSFET',
-    domain: 'Electronics and Communication Engineering (ECE)',
+    topic: 'Stress in Strength of Materials',
+    domain: 'Mechanical & Civil Engineering',
     masteryLevel: 'Mastered',
     facultyTotalMarks: 100,
     totalEarnedMarks: 88.5,
@@ -29,7 +29,7 @@ export default function ReportModal({ isOpen, onClose, sessionData, user }) {
     curiosityIndex: 91,
     innovationIndex: 88,
     retentionScore: 86,
-    authenticityScore: 98,
+    authenticityScore: 100,
     humanConfidenceScore: 96,
     wpm: 64,
     tabSwitches: 0,

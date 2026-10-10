@@ -13,6 +13,7 @@ import {
   Sparkles,
   ArrowUpRight
 } from 'lucide-react';
+import { getAllAssessmentSessions } from '../services/db';
 
 export default function AnalyticsView({ topicModel, onNavigateToViva }) {
   const [selectedSubject, setSelectedSubject] = useState(topicModel?.title || 'MOSFET');
@@ -59,8 +60,8 @@ export default function AnalyticsView({ topicModel, onNavigateToViva }) {
     },
     {
       title: 'Authenticity Index',
-      value: '98.9%',
-      delta: 'Certified',
+      value: `${getAllAssessmentSessions().length ? Math.round(getAllAssessmentSessions().reduce((acc, s) => acc + (s.authenticityScore || 100), 0) / getAllAssessmentSessions().length) : 100}%`,
+      delta: 'Dynamic Verified',
       trend: 'stable',
       subtitle: 'Zero malpractice detected',
       color: 'text-[#39FF14]'

@@ -144,14 +144,23 @@ export default function VivaArena({
     behavioralEngineRef.current = new BehavioralEngine((reason, metrics) => {
       setBehaviorMetrics({ ...metrics });
       soundEffects.playWarning();
+      const total = (metrics.tabSwitches || 0) + (metrics.pasteAttempts || 0) + (metrics.copyAttempts || 0);
+      if (total >= 3) {
+        handleDisqualifyViva();
+      }
     });
     behavioralEngineRef.current.startSession();
 
     const handleBlur = () => {
       if (behavioralEngineRef.current) {
         behavioralEngineRef.current.handleTabSwitch();
-        setBehaviorMetrics(behavioralEngineRef.current.getMetrics());
+        const m = behavioralEngineRef.current.getMetrics();
+        setBehaviorMetrics(m);
         soundEffects.playWarning();
+        const total = (m.tabSwitches || 0) + (m.pasteAttempts || 0) + (m.copyAttempts || 0);
+        if (total >= 3) {
+          handleDisqualifyViva();
+        }
       }
     };
 
@@ -161,6 +170,38 @@ export default function VivaArena({
       stopSpeaking();
     };
   }, []);
+
+  const handleDisqualifyViva = () => {
+    soundEffects.playWarning();
+    const sessionRecord = {
+      id: 'session_' + Date.now(),
+      topic: topicModel?.title || 'Viva Assessment',
+      domain: topicModel?.domain || 'Engineering',
+      studentRegNo: currentUser?.regNo || 'GUEST_STUDENT',
+      studentName: currentUser?.fullName || 'Student',
+      timestamp: new Date().toISOString(),
+      masteryLevel: 'Disqualified (Malpractice)',
+      facultyTotalMarks: quizConfig.totalMarks,
+      totalEarnedMarks: 0,
+      overallScore: 0,
+      knowledgeScore: 0,
+      reasoningScore: 0,
+      retentionScore: 0,
+      curiosityIndex: 0,
+      innovationIndex: 0,
+      authenticityScore: 0,
+      humanConfidenceScore: 0,
+      tabSwitches: behaviorMetrics.tabSwitches + 1,
+      pasteAttempts: behaviorMetrics.pasteAttempts,
+      copyAttempts: behaviorMetrics.copyAttempts,
+      disqualified: true,
+      disqualificationReason: 'Automated Disqualification: 3 focus or clipboard security violations detected.',
+      questionTimingHistory: sessionQuestionHistory
+    };
+
+    saveAssessmentSession(sessionRecord);
+    if (onOpenReport) onOpenReport(sessionRecord);
+  };
 
   // Update Quiz Config & Questions when topic changes
   useEffect(() => {

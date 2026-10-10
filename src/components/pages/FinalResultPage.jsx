@@ -19,34 +19,36 @@ export default function FinalResultPage({
   onOpenReport,
   onBackToDashboard
 }) {
-  const marksEarned = sessionResult?.totalEarnedMarks ?? 88.5;
+  const isDisqualified = !!sessionResult?.disqualified;
+  const marksEarned = isDisqualified ? 0 : (sessionResult?.totalEarnedMarks ?? 88.5);
   const marksTotal = sessionResult?.facultyTotalMarks ?? 100;
-  const knowledgeScore = sessionResult?.knowledgeScore ?? 92;
-  const reasoningScore = sessionResult?.reasoningScore ?? 89;
-  const retentionScore = sessionResult?.retentionScore ?? 86;
-  const curiosityScore = sessionResult?.curiosityIndex ?? 90;
-  const masteryLevel = sessionResult?.masteryLevel ?? 'Advanced Mastery';
-  const authenticityScore = sessionResult?.authenticityScore ?? 98;
+  const knowledgeScore = isDisqualified ? 0 : (sessionResult?.knowledgeScore ?? 92);
+  const reasoningScore = isDisqualified ? 0 : (sessionResult?.reasoningScore ?? 89);
+  const retentionScore = isDisqualified ? 0 : (sessionResult?.retentionScore ?? 86);
+  const curiosityScore = isDisqualified ? 0 : (sessionResult?.curiosityIndex ?? 90);
+  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (sessionResult?.masteryLevel ?? 'Mastered');
+  const authenticityScore = isDisqualified ? 0 : (sessionResult?.authenticityScore ?? 100);
+  const topicName = sessionResult?.topic || 'Viva Examination';
 
   const resultCards = [
-    { title: 'Marks', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: '#B7791F', bg: '#FFF3D6' },
+    { title: 'Marks Awarded', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: isDisqualified ? '#C53030' : '#B7791F', bg: isDisqualified ? '#FFF0F0' : '#FFF3D6' },
     { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: '#8B5E34', bg: '#FFF8E8' },
     { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: '#D69E2E', bg: '#FFF3D6' },
-    { title: 'Mastery', value: masteryLevel, icon: Award, color: '#2F855A', bg: '#E6F4EA' },
-    { title: 'Retention', value: `${retentionScore}%`, icon: RotateCcw, color: '#2F855A', bg: '#E6F4EA' },
-    { title: 'Curiosity', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
-    { title: 'Authenticity', value: `${authenticityScore}%`, icon: ShieldCheck, color: '#2F855A', bg: '#E6F4EA' }
+    { title: 'Cognitive Mastery', value: masteryLevel, icon: Award, color: isDisqualified ? '#C53030' : '#2F855A', bg: isDisqualified ? '#FFF0F0' : '#E6F4EA' },
+    { title: 'Concept Retention', value: `${retentionScore}%`, icon: RotateCcw, color: '#2F855A', bg: '#E6F4EA' },
+    { title: 'Curiosity Index', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
+    { title: 'Authenticity Rating', value: `${authenticityScore}%`, icon: ShieldCheck, color: isDisqualified ? '#C53030' : '#2F855A', bg: isDisqualified ? '#FFF0F0' : '#E6F4EA' }
   ];
 
   const strongConcepts = [
-    'Semiconductor Electrostatics & Depletion Width',
-    'Threshold Voltage (Vt) Band Bending Formulation',
-    'Linear & Saturation Regional Operating Modes'
+    `Core Principles & Governing Laws of ${topicName}`,
+    `Analytical Boundary Conditions & Parameter Formulation`,
+    `Equilibrium Dynamics & Empirical Validation`
   ];
 
   const weakConcepts = [
-    'Short Channel Subthreshold Leakage (DIBL)',
-    'Miller Capacitance Dynamic Switching Optimization'
+    `Extreme Non-Linear Stress Bounds for ${topicName}`,
+    `Multi-Variable Optimization & Sensitivity Limits`
   ];
 
   return (

@@ -60,6 +60,28 @@ function offlineFileStoragePlugin() {
           return
         }
 
+        if (url === '/api/lan-info') {
+          const os = require('os')
+          const interfaces = os.networkInterfaces()
+          let localIp = '127.0.0.1'
+          for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+              if ('IPv4' === iface.family && !iface.internal) {
+                localIp = iface.address
+                break
+              }
+            }
+          }
+          res.setHeader('Content-Type', 'application/json')
+          res.statusCode = 200
+          res.end(JSON.stringify({
+            hostIp: localIp,
+            port: 5173,
+            studentUrl: `http://${localIp}:5173/`
+          }))
+          return
+        }
+
         next()
       })
     }

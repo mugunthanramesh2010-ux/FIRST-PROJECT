@@ -264,6 +264,40 @@ export default function App() {
     }
   };
 
+  const handleDisqualifyStudent = (reason, violations) => {
+    soundEffects.playWarning();
+    const sessionRecord = {
+      id: 'session_' + Date.now(),
+      topic: topicModel?.title || 'Viva Assessment',
+      subject: activeSubjectName || topicModel?.domain || 'Oral Examination',
+      domain: topicModel?.domain || 'Engineering',
+      studentRegNo: currentUser?.regNo || '714022104055',
+      studentName: currentUser?.fullName || 'Student',
+      timestamp: new Date().toISOString(),
+      masteryLevel: 'Disqualified (Malpractice)',
+      facultyTotalMarks: activeFacultyTotalMarks || 100,
+      totalEarnedMarks: 0,
+      overallScore: 0,
+      knowledgeScore: 0,
+      reasoningScore: 0,
+      retentionScore: 0,
+      curiosityIndex: 0,
+      authenticityScore: 0,
+      accuracyRate: 0,
+      tabSwitches: violations?.tabSwitches || 0,
+      pasteAttempts: violations?.pasteAttempts || 0,
+      copyAttempts: violations?.copyAttempts || 0,
+      disqualified: true,
+      disqualificationReason: reason || 'Malpractice: 3 Focus/Clipboard breaches detected.',
+      questionTimingHistory: sessionQuestionHistory
+    };
+
+    saveAssessmentSession(sessionRecord);
+    saveLocalEnterpriseRecord(sessionRecord, currentUser?.facultyInCharge || 'FAC-ECE-01');
+    setLatestSessionResult(sessionRecord);
+    setActiveTab('final-result');
+  };
+
   const handleFinalizeAssessment = () => {
     soundEffects.playSuccess();
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -271,13 +305,25 @@ export default function App() {
     const totalEarned = sessionQuestionHistory.reduce((sum, item) => sum + item.earnedMarks, 0);
     const totalFacultyMarks = activeFacultyTotalMarks || 100;
 
+    // Calculate real dynamic accuracy based on correct answers
+    const correctCount = sessionQuestionHistory.filter(q => q.status === 'Correct').length;
+    const realAccuracy = sessionQuestionHistory.length > 0
+      ? Math.round((correctCount / sessionQuestionHistory.length) * 100)
+      : Math.min(100, Math.round((totalEarned / totalFacultyMarks) * 100));
+
+    // Calculate real dynamic authenticity from student violations
+    const totalTabSwitches = sessionQuestionHistory.reduce((acc, q) => acc + (q.behaviorMetrics?.tabSwitches || 0), 0) + (currentEvaluation?.behaviorMetrics?.tabSwitches || 0);
+    const totalPastes = sessionQuestionHistory.reduce((acc, q) => acc + (q.behaviorMetrics?.pasteAttempts || 0), 0) + (currentEvaluation?.behaviorMetrics?.pasteAttempts || 0);
+    const totalCopies = sessionQuestionHistory.reduce((acc, q) => acc + (q.behaviorMetrics?.copyAttempts || 0), 0) + (currentEvaluation?.behaviorMetrics?.copyAttempts || 0);
+    const realAuthenticity = Math.max(15, 100 - (totalTabSwitches * 20 + totalPastes * 25 + totalCopies * 15));
+
     let mastery = { masteryLevel: 'Mastered' };
     try {
       if (adaptiveEngine && typeof adaptiveEngine.calculateMasteryStatus === 'function') {
         mastery = adaptiveEngine.calculateMasteryStatus(
           topicModel.questions.length,
           topicModel.questions.length,
-          98
+          realAccuracy
         );
       }
     } catch (e) {
@@ -296,13 +342,16 @@ export default function App() {
       facultyTotalMarks: totalFacultyMarks,
       totalEarnedMarks: totalEarned,
       overallScore: Math.min(100, Math.round((totalEarned / totalFacultyMarks) * 100)),
+      accuracyRate: realAccuracy,
       knowledgeScore: adaptiveEngine?.knowledgeScore || 78,
       reasoningScore: adaptiveEngine?.reasoningScore || 80,
       retentionScore: adaptiveEngine?.retentionScore || 82,
       curiosityIndex: adaptiveEngine?.twin?.curiosityIndex || 85,
-      authenticityScore: 98,
+      authenticityScore: realAuthenticity,
+      tabSwitches: totalTabSwitches,
+      pasteAttempts: totalPastes,
+      copyAttempts: totalCopies,
       wpm: currentEvaluation?.behaviorMetrics?.wpm || 64,
-      pasteAttempts: currentEvaluation?.behaviorMetrics?.pasteAttempts || 0,
       questionTimingHistory: sessionQuestionHistory
     };
 
@@ -494,6 +543,8 @@ export default function App() {
                       onRequestHint={handleRequestHint}
                       onSubmitAnswer={handleSubmitAnswer}
                       activeHintCount={activeHintLevel}
+                      onDisqualify={handleDisqualifyStudent}
+                      sessionQuestionHistory={sessionQuestionHistory}
                     />
                   )}
 

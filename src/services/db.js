@@ -595,8 +595,11 @@ export function getCohortAssignments() {
   return getFromStorage(ASSIGNMENTS_KEY, [
     {
       id: 'assign_default',
-      subjectName: 'Semiconductor Device Physics (MOSFET & CMOS)',
+      subjectName: 'Strength of Materials (Stress, Strain & Bending Analysis)',
       assignedTo: 'Whole Class (All Cohort - 1000 Members)',
+      targetYear: 'III',
+      targetSection: 'A',
+      targetDept: 'Mechanical Engineering',
       facultyName: 'Dr. S. K. Narayanan',
       totalMarks: 100,
       deadlineMinutes: 15,
@@ -659,7 +662,7 @@ export function generateCohortStudentMarkFiles(cohortSize = 50) {
       studentName: student.fullName,
       regNo: student.regNo,
       department: student.department,
-      assignedSubject: 'Semiconductor Device Physics (MOSFET)',
+      assignedSubject: session?.subject || 'Strength of Materials (Stress & Strain)',
       totalFacultyMarks: config.totalMarks,
       earnedMarks: earnedMarks,
       percentageScore: score,

@@ -50,7 +50,7 @@ export default function FacultyDashboard({ currentUser, onOpenReport }) {
 
   // Cohort Subject Assignment & 1000 Member File State
   const [cohortAssignments, setCohortAssignments] = useState(getCohortAssignments());
-  const [assignedSubjectInput, setAssignedSubjectInput] = useState('Semiconductor Device Physics (MOSFET)');
+  const [assignedSubjectInput, setAssignedSubjectInput] = useState('Strength of Materials (Stress & Strain)');
   const [assignedCohortTarget, setAssignedCohortTarget] = useState('Whole Class (All Cohort - 1000 Members)');
   const [assignedMarksInput, setAssignedMarksInput] = useState(100);
   const [assignedDurationInput, setAssignedDurationInput] = useState(15);
@@ -67,7 +67,7 @@ export default function FacultyDashboard({ currentUser, onOpenReport }) {
 
   // Knowledge Gap Heatmap Mock Aggregate
   const conceptTopics = [
-    { topic: 'Semiconductor Inversion (MOSFET)', masteredCount: 18, moderateCount: 6, weakCount: 3 },
+    { topic: 'Stress & Strain Hooke’s Law (SOM)', masteredCount: 20, moderateCount: 5, weakCount: 2 },
     { topic: 'Convolution Kernels (CNN)', masteredCount: 22, moderateCount: 4, weakCount: 1 },
     { topic: 'Constitutional Basic Structure', masteredCount: 12, moderateCount: 9, weakCount: 6 },
     { topic: 'Spaced Memory Retention (Ebbinghaus)', masteredCount: 20, moderateCount: 5, weakCount: 2 },
@@ -902,23 +902,31 @@ export default function FacultyDashboard({ currentUser, onOpenReport }) {
           </div>
 
           {/* Authenticity & AI Misuse Alerts Banner */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 flex items-center gap-3 text-xs">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <div>
-                <strong className="text-emerald-950 font-bold block">Authenticity Telemetry: 98.4% Clean Rate</strong>
-                <span className="text-emerald-800">984 out of 1,000 submissions certified authentic with 0 clipboard pastes.</span>
-              </div>
-            </div>
+          {(() => {
+            const completedCount = sessions.length || 42;
+            const cleanCount = sessions.filter(s => (s.tabSwitchCount || 0) + (s.copyPasteCount || 0) === 0).length || Math.max(1, Math.round(completedCount * 0.94));
+            const calculatedCleanRate = ((cleanCount / completedCount) * 100).toFixed(1);
+            const flaggedCount = sessions.filter(s => (s.tabSwitchCount || 0) + (s.copyPasteCount || 0) > 0).length || Math.max(0, completedCount - cleanCount);
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 flex items-center gap-3 text-xs">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <strong className="text-emerald-950 font-bold block">Authenticity Telemetry: {calculatedCleanRate}% Verified Clean</strong>
+                    <span className="text-emerald-800">{cleanCount} out of {completedCount} submissions certified authentic with 0 clipboard/tab violations.</span>
+                  </div>
+                </div>
 
-            <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200 flex items-center gap-3 text-xs">
-              <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
-              <div>
-                <strong className="text-rose-950 font-bold block">AI Misuse Alerts: 16 Flagged for Audit</strong>
-                <span className="text-rose-800">Instant keystroke dumps and burst WPM (&gt;180 WPM) intercepted and locked.</span>
+                <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200 flex items-center gap-3 text-xs">
+                  <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+                  <div>
+                    <strong className="text-rose-950 font-bold block">Integrity Alerts: {flaggedCount} Monitored</strong>
+                    <span className="text-rose-800">Any session with clipboard tampering or rapid tab switching is recorded.</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Student Ranking Heatmap */}
           <div className="glass-panel p-6 sm:p-7 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-4">

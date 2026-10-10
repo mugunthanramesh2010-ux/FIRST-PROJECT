@@ -102,7 +102,7 @@ export default function Sidebar({
         )}
 
         {/* 2. Exactly 8 Main Menu Items (Icons + Labels) */}
-        <nav className="p-3 space-y-1.5 mt-2">
+        <nav className="p-3.5 space-y-2.5 mt-2 flex-1 flex flex-col justify-evenly">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -111,19 +111,19 @@ export default function Sidebar({
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 title={isCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-[12px] text-[14px] font-semibold transition-all ${
+                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-[15px] font-bold transition-all ${
                   isActive
-                    ? 'bg-[#00F5D4] text-[#0D1117] font-bold shadow-md shadow-[#00F5D4]/20'
+                    ? 'bg-[#00F5D4] text-[#0D1117] font-extrabold shadow-md shadow-[#00F5D4]/20'
                     : 'text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]'
                 } ${isCollapsed ? 'justify-center px-0' : ''}`}
               >
                 <Icon
-                  className={`w-5 h-5 shrink-0 ${
+                  className={`w-6 h-6 shrink-0 ${
                     isActive ? 'text-[#0D1117]' : 'text-[#8B949E]'
                   }`}
                 />
                 {!isCollapsed && (
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate text-left tracking-wide">{item.label}</span>
                 )}
               </button>
             );
