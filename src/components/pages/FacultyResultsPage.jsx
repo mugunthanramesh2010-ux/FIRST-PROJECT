@@ -244,7 +244,7 @@ export default function FacultyResultsPage({ onNavigate, onOpenReport }) {
   };
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-2 text-left">
+    <div className="space-y-[32px] animate-fade-in w-full py-2 text-left">
       
       {/* Toast Notification */}
       {toastMessage && (

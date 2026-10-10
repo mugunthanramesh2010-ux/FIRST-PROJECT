@@ -208,7 +208,7 @@ export default function QuestionPage({
   const questionTitle = question?.questionText || question?.text || 'Explain the conceptual mechanism and governing equations for this topic.';
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto py-4 px-2 sm:px-4 space-y-6 animate-fade-in text-left">
+    <div className="w-full max-w-none py-2 px-2 sm:px-4 space-y-6 animate-fade-in text-left">
       
       {/* DISQUALIFICATION MODAL (AUTO-TERMINATES ON 3 VIOLATIONS) */}
       {disqualificationModal && (

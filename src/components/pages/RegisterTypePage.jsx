@@ -6,7 +6,7 @@ export default function RegisterTypePage({ onNavigate }) {
     <div className="min-h-screen bg-[#EEF4FF] flex flex-col justify-between p-4 sm:p-8">
       
       {/* Top Header / Back Link */}
-      <div className="max-w-[1280px] w-full mx-auto flex items-center justify-between">
+      <div className="w-full flex items-center justify-between">
         <button
           onClick={() => onNavigate('landing')}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#334155] hover:text-[#1E3A8A] transition-colors"
@@ -21,7 +21,7 @@ export default function RegisterTypePage({ onNavigate }) {
       </div>
 
       {/* Main Choice Section */}
-      <main className="max-w-3xl w-full mx-auto my-auto py-10 space-y-8 animate-fade-in">
+      <main className="max-w-4xl w-full mx-auto my-auto py-10 space-y-8 animate-fade-in">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F5F2] text-[#0F766E] text-xs font-semibold border border-[#CBD5E1]">
             <Shield className="w-3.5 h-3.5" />

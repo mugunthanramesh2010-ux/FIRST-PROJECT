@@ -124,7 +124,7 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
   };
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">
+    <div className="space-y-6 animate-fade-in w-full py-2 text-left">
       
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-[#E2D3A7] pb-4">
@@ -146,8 +146,8 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
         </button>
       </div>
 
-      {/* Main Form Container - Expanded to Wide Layout */}
-      <div className="w-full max-w-[900px] mx-auto">
+      {/* Main Form Container - Expanded to 100% Full Width */}
+      <div className="w-full">
         <div className="ent-card p-6 sm:p-10 space-y-8 bg-[#FFFCF4] border-2 border-[#E2D3A7] rounded-3xl shadow-xl shadow-[#B7791F]/10">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E2D3A7] pb-5">

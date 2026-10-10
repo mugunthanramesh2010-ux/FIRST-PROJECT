@@ -52,7 +52,7 @@ export default function FinalResultPage({
   ];
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">
+    <div className="space-y-[32px] animate-fade-in w-full py-4 text-left">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2D3A7] pb-4">

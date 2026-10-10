@@ -751,8 +751,8 @@ export default function VivaArena({
         </div>
       )}
 
-      {/* CENTERED QUESTION CARD (Width: 900px, Centered) */}
-      <div className="max-w-[900px] w-full mx-auto space-y-6">
+      {/* FULL WIDTH VIVA QUESTION CARD */}
+      <div className="w-full space-y-6">
         
         {/* PRIMARY VIVA WORKSPACE */}
         <div className="space-y-6">

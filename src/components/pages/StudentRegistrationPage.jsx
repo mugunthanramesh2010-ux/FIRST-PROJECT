@@ -87,7 +87,7 @@ export default function StudentRegistrationPage({ onNavigate, onAuthSuccess }) {
     <div className="min-h-screen bg-[#FFF8E8] flex flex-col justify-between p-4 sm:p-8 text-left">
       
       {/* Top Header Bar */}
-      <div className="max-w-[1280px] w-full mx-auto flex items-center justify-between pb-3 border-b border-[#E2D3A7]">
+      <div className="w-full flex items-center justify-between pb-3 border-b border-[#E2D3A7]">
         <button
           onClick={() => onNavigate('student-login')}
           className="inline-flex items-center gap-2 text-sm font-bold text-[#8B5E34] hover:text-[#B7791F] transition-colors cursor-pointer"
@@ -102,7 +102,7 @@ export default function StudentRegistrationPage({ onNavigate, onAuthSuccess }) {
       </div>
 
       {/* Main Full-Page 2-Column Registration Container */}
-      <main className="w-full max-w-[1100px] mx-auto my-6 animate-fade-in">
+      <main className="w-full max-w-none my-6 animate-fade-in">
         <div className="ent-card p-6 sm:p-10 space-y-8 bg-[#FFFCF4] border-2 border-[#E2D3A7] rounded-3xl shadow-xl shadow-[#B7791F]/10">
           
           {/* Header Title Banner */}

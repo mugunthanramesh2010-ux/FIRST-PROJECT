@@ -68,7 +68,7 @@ export default function FacultyRegistrationPage({ onNavigate, onAuthSuccess }) {
     <div className="min-h-screen bg-[#EEF4FF] flex flex-col justify-between p-4 sm:p-8">
       
       {/* Top Bar */}
-      <div className="max-w-[1280px] w-full mx-auto flex items-center justify-between">
+      <div className="w-full flex items-center justify-between">
         <button
           onClick={() => onNavigate('register-type')}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#334155] hover:text-[#1E3A8A] transition-colors"
@@ -79,8 +79,8 @@ export default function FacultyRegistrationPage({ onNavigate, onAuthSuccess }) {
         <span className="text-xs text-[#64748B] font-mono">Page 4 of 24 • Faculty Registration</span>
       </div>
 
-      {/* Main Form Container (Strict 520px Width Rule) */}
-      <main className="w-full max-w-[520px] mx-auto my-6 animate-fade-in">
+      {/* Main Form Container */}
+      <main className="w-full max-w-4xl mx-auto my-6 animate-fade-in">
         <div className="ent-card p-6 sm:p-8 space-y-6">
           
           <div className="flex items-center gap-3 border-b border-[#CBD5E1] pb-4">

@@ -47,7 +47,7 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
   });
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto text-left py-4">
+    <div className="space-y-[32px] animate-fade-in w-full text-left py-2">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2D3A7] pb-4">
