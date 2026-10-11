@@ -4,13 +4,19 @@ import { registerFaculty } from '../../services/db';
 
 const DEPARTMENTS = [
   'Electronics and Communication Engineering (ECE)',
-  'Electrical and Electronics Engineering (EEE)',
   'Computer Science and Engineering (CSE)',
-  'Information Technology (IT)',
-  'Artificial Intelligence & Data Science',
+  'Electrical and Electronics Engineering (EEE)',
+  'Biotechnology',
+  'Textile Technology',
+  'Fashion Technology',
+  'Automobile Engineering',
+  'Aeronautical Engineering',
   'Mechanical Engineering',
+  'Mechatronics Engineering',
+  'Information Technology (IT)',
+  'Artificial Intelligence and Data Science (AI & DS)',
   'Civil Engineering',
-  'Biomedical Engineering'
+  'Electronics & Instrumentation Engineering (E&I)'
 ];
 
 export default function FacultyRegistrationPage({ onNavigate, onAuthSuccess }) {

@@ -472,3 +472,26 @@ h3, .card-heading {
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* GUARANTEED SIDEBAR OFFSETS - ZERO CONTENT OVERLAP ON ANY RESOLUTION */
+.enterprise-workspace-collapsed {
+  margin-left: 92px !important;
+  width: calc(100% - 92px) !important;
+  transition: all 0.25s ease-in-out;
+}
+
+.enterprise-workspace-expanded {
+  margin-left: 288px !important;
+  width: calc(100% - 288px) !important;
+  transition: all 0.25s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .enterprise-workspace-collapsed,
+  .enterprise-workspace-expanded {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-left: 88px !important;
+  }
+}
+

@@ -143,6 +143,221 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // --- OLLAMA & LOCAL LLM INFERENCE PROXY (Zero CORS, 100% Offline) ---
+  if (pathname === '/api/ollama/status' && req.method === 'GET') {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+      const ollamaRes = await fetch('http://127.0.0.1:11434/api/tags', { signal: controller.signal });
+      clearTimeout(timeout);
+      if (ollamaRes.ok) {
+        const data = await ollamaRes.json();
+        const models = (data.models || []).map(m => m.name);
+        const activeModel = models.find(m => m.includes('1b')) || models.find(m => m.includes('llama')) || models.find(m => m.includes('qwen')) || models[0] || 'llama3.2:1b';
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ available: true, models, activeModel }));
+        return;
+      }
+    } catch (e) {
+      // Ollama not reachable
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ available: false, models: [], activeModel: null }));
+    return;
+  }
+
+  if (pathname === '/api/ollama/generate' && req.method === 'POST') {
+    try {
+      const data = await readBody(req);
+      const model = data.model || 'llama3.2:1b';
+      const prompt = data.prompt || '';
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
+      const ollamaRes = await fetch('http://127.0.0.1:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: model,
+          prompt: prompt,
+          stream: false,
+          format: 'json',
+          options: {
+            temperature: 0.75,
+            top_p: 0.9,
+            num_ctx: 4096,
+            num_predict: 2048
+          }
+        })
+      });
+      clearTimeout(timeout);
+
+      if (ollamaRes.ok) {
+        const ollamaData = await ollamaRes.json();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, response: ollamaData.response, model }));
+        return;
+      } else {
+        const errText = await ollamaRes.text();
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: errText }));
+        return;
+      }
+    } catch (err) {
+      console.error('Ollama generate proxy error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+      return;
+    }
+  }
+
+  // --- UNIFIED AI QUESTION GENERATION ENDPOINT (Ollama + OpenAI Structured Outputs) ---
+  if (pathname === '/api/ai/generate' && req.method === 'POST') {
+    try {
+      const data = await readBody(req);
+      const { provider = 'auto', topic = 'Engineering', count = 5, model, apiKey, apiBaseUrl = 'https://api.openai.com/v1', documentContext = '' } = data;
+
+      // 1. If OpenAI API requested or API key provided
+      if ((provider === 'openai' || apiKey) && apiKey) {
+        try {
+          const schema = {
+            name: 'viva_examination',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                topic: { type: 'string' },
+                questions: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      questionText: { type: 'string' },
+                      type: { type: 'string', enum: ['mcq', 'text'] },
+                      options: { type: 'array', items: { type: 'string' } },
+                      correctIndex: { type: 'integer' },
+                      bloomLevel: { type: 'string', enum: ['Remembering', 'Understanding', 'Application', 'Analysis', 'Evaluation'] },
+                      hints: { type: 'array', items: { type: 'string' } },
+                      modelAnswer: { type: 'string' },
+                      expectedKeywords: { type: 'array', items: { type: 'string' } }
+                    },
+                    required: ['questionText', 'type', 'options', 'correctIndex', 'bloomLevel', 'hints', 'modelAnswer', 'expectedKeywords'],
+                    additionalProperties: false
+                  }
+                }
+              },
+              required: ['topic', 'questions'],
+              additionalProperties: false
+            }
+          };
+
+          const openAiRes = await fetch(`${apiBaseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: model || 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are an authoritative oral viva examiner and university professor. Generate rigorous technical questions with 4 progressive hints. Hints must guide student thinking without leaking answers. Provide 4 plausible options for MCQs.'
+                },
+                {
+                  role: 'user',
+                  content: `Generate ${count} oral viva questions for topic: "${topic}". ${documentContext ? `Context:\n${documentContext.slice(0, 3000)}` : ''}`
+                }
+              ],
+              response_format: { type: 'json_schema', json_schema: schema }
+            })
+          });
+
+          if (openAiRes.ok) {
+            const aiData = await openAiRes.json();
+            const messageContent = aiData.choices?.[0]?.message?.content;
+            const parsed = JSON.parse(messageContent);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, provider: 'openai', data: parsed }));
+            return;
+          }
+        } catch (openaiErr) {
+          console.warn('OpenAI API call failed, falling back to Ollama:', openaiErr.message);
+        }
+      }
+
+      // 2. Try Local Ollama
+      try {
+        const ollamaModel = model || 'llama3.2:1b';
+        const prompt = `You are a university professor conducting an oral viva exam on "${topic}".
+${documentContext ? `SYLLABUS & MATERIAL:\n${documentContext.slice(0, 2500)}\n` : ''}
+Generate exactly ${count} rigorous viva examination questions.
+Return ONLY valid JSON in this exact structure:
+{
+  "topic": "${topic}",
+  "questions": [
+    {
+      "questionText": "Technical question text here",
+      "type": "mcq",
+      "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+      "correctIndex": 0,
+      "bloomLevel": "Understanding",
+      "hints": [
+        "Hint 1: Conceptual clue",
+        "Hint 2: Governing formula or principle clue",
+        "Hint 3: Methodology clue",
+        "Hint 4: Specific technical insight"
+      ],
+      "modelAnswer": "Model answer explaining the concept",
+      "expectedKeywords": ["keyword1", "keyword2"]
+    }
+  ]
+}`;
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 45000);
+        const ollamaRes = await fetch('http://127.0.0.1:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: ollamaModel,
+            prompt: prompt,
+            stream: false,
+            format: 'json',
+            options: {
+              temperature: 0.75,
+              top_p: 0.9,
+              num_ctx: 4096,
+              num_predict: 2048
+            }
+          })
+        });
+        clearTimeout(timeout);
+
+        if (ollamaRes.ok) {
+          const ollamaData = await ollamaRes.json();
+          const parsed = JSON.parse(ollamaData.response);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, provider: 'ollama', model: ollamaModel, data: parsed }));
+          return;
+        }
+      } catch (ollamaErr) {
+        console.warn('Ollama proxy call failed:', ollamaErr.message);
+      }
+
+      // If both AI options failed or timed out, inform client to use offline ontology
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, fallbackToOffline: true }));
+      return;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+      return;
+    }
+  }
+
   // --- STATIC FILE SERVING (from dist/) ---
   let filePath = path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname);
 

@@ -1,5 +1,6 @@
 // Universal Domain & Subject Ontology Engine
-import { generateOfflineDeepQuestions } from './aiQuestionService';
+import { generateOfflineDeepQuestions, generateQuestionsWithAI } from './aiQuestionService.js';
+
 
 export const DOMAIN_CATEGORIES = [
   {
@@ -658,15 +659,15 @@ const BENCHMARK_TOPICS = {
 };
 
 // Universal Dynamic Topic Synthesizer:
-// Supports customizable question counts: 5, 10, 20, up to 30 questions on demand!
-export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Domain', targetCount = null) {
-  const cleanTopic = rawTopic.trim();
+// Supports customizable question counts: 5, 10, 20, up to 100 questions on demand!
+export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Domain', targetCount = null, documentText = '') {
+  const cleanTopic = (rawTopic || 'Subject').trim();
   const lower = cleanTopic.toLowerCase();
 
   let model = null;
-  // Check if topic matches curated library
+  // Check if topic matches curated library with strict key matching
   for (const [key, bModel] of Object.entries(BENCHMARK_TOPICS)) {
-    if (lower === key || lower.includes(key) || key.includes(lower)) {
+    if (lower === key || (key.length >= 4 && lower.includes(key))) {
       model = JSON.parse(JSON.stringify(bModel));
       break;
     }
@@ -677,72 +678,90 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
     const words = cleanTopic.split(/\s+/).filter(Boolean);
     const primaryTerm = words.slice(0, 3).join(' ');
 
-  const synthesized = {
-    title: cleanTopic,
-    fullName: cleanTopic,
-    domain: domainHint || 'Universal Cognitive Domain',
-    category: 'Universal Dynamic Synthesis',
-    complexity: Math.min(5, Math.max(3, Math.ceil(words.length / 2) + 2)),
-    prerequisites: [
-      {
-        id: 'prereq_1',
-        name: `Foundational Axioms of ${words[0] || 'Core Subject'}`,
-        level: 'Fundamental',
-        desc: `Underlying mathematical, empirical, or theoretical tenets required before analyzing ${cleanTopic}.`
-      },
-      {
-        id: 'prereq_2',
-        name: `Mechanisms & Boundary Equations of ${primaryTerm}`,
-        level: 'Intermediate',
-        desc: `Core operational parameters, protocol dynamics, and causal relationships in ${cleanTopic}.`
-      },
-      {
-        id: 'prereq_3',
-        name: `Applied Synthesis & Stress Testing of ${cleanTopic}`,
-        level: 'Advanced',
-        desc: `Empirical edge conditions, trade-offs, and industrial reliability parameters.`
+    const synthesized = {
+      title: cleanTopic,
+      fullName: cleanTopic,
+      domain: domainHint || 'Universal Cognitive Domain',
+      category: 'Universal Dynamic Synthesis',
+      complexity: Math.min(5, Math.max(3, Math.ceil(words.length / 2) + 2)),
+      prerequisites: [
+        {
+          id: 'prereq_1',
+          name: `Foundational Axioms of ${words[0] || 'Core Subject'}`,
+          level: 'Fundamental',
+          desc: `Underlying mathematical, empirical, or theoretical tenets required before analyzing ${cleanTopic}.`
+        },
+        {
+          id: 'prereq_2',
+          name: `Mechanisms & Boundary Equations of ${primaryTerm}`,
+          level: 'Intermediate',
+          desc: `Core operational parameters, protocol dynamics, and causal relationships in ${cleanTopic}.`
+        },
+        {
+          id: 'prereq_3',
+          name: `Applied Synthesis & Stress Testing of ${cleanTopic}`,
+          level: 'Advanced',
+          desc: `Empirical edge conditions, trade-offs, and industrial reliability parameters.`
+        }
+      ],
+      graphNodes: [
+        { id: 'node_base', label: `Fundamentals of ${words[0] || 'Domain'}`, status: 'mastered', x: 80, y: 160 },
+        { id: 'node_arch', label: `Core Architecture of ${primaryTerm}`, status: 'mastered', x: 260, y: 120 },
+        { id: 'node_curr', label: `${cleanTopic} Dynamics`, status: 'active', x: 440, y: 180 },
+        { id: 'node_inter', label: `Boundary Conditions & Limits`, status: 'unvisited', x: 620, y: 130 },
+        { id: 'node_adv', label: `Stress Scaling & Edge Failure`, status: 'unvisited', x: 800, y: 190 },
+        { id: 'node_future', label: `Frontier Innovation in ${cleanTopic}`, status: 'unvisited', x: 920, y: 140 }
+      ],
+      graphEdges: [
+        { from: 'node_base', to: 'node_arch' },
+        { from: 'node_arch', to: 'node_curr' },
+        { from: 'node_curr', to: 'node_inter' },
+        { from: 'node_inter', to: 'node_adv' },
+        { from: 'node_adv', to: 'node_future' }
+      ],
+      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText),
+      innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
+      industryReadiness: {
+        engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,
+        researcherPerspective: `Analyzes mathematical models, governing equations, and novel theoretical approaches for ${cleanTopic}.`,
+        startupFounderPerspective: `Identifies real-world industrial deployment, efficiency gains, and operational economics for ${cleanTopic}.`
       }
-    ],
-    graphNodes: [
-      { id: 'node_base', label: `Fundamentals of ${words[0] || 'Domain'}`, status: 'mastered', x: 80, y: 160 },
-      { id: 'node_arch', label: `Core Architecture of ${primaryTerm}`, status: 'mastered', x: 260, y: 120 },
-      { id: 'node_curr', label: `${cleanTopic} Dynamics`, status: 'active', x: 440, y: 180 },
-      { id: 'node_inter', label: `Boundary Conditions & Limits`, status: 'unvisited', x: 620, y: 130 },
-      { id: 'node_adv', label: `Stress Scaling & Edge Failure`, status: 'unvisited', x: 800, y: 190 },
-      { id: 'node_future', label: `Frontier Innovation in ${cleanTopic}`, status: 'unvisited', x: 920, y: 140 }
-    ],
-    graphEdges: [
-      { from: 'node_base', to: 'node_arch' },
-      { from: 'node_arch', to: 'node_curr' },
-      { from: 'node_curr', to: 'node_inter' },
-      { from: 'node_inter', to: 'node_adv' },
-      { from: 'node_adv', to: 'node_future' }
-    ],
-    questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10),
-    innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
-    industryReadiness: {
-      engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,
-      researcherPerspective: `Analyzes mathematical models, governing equations, and novel theoretical approaches for ${cleanTopic}.`,
-      startupFounderPerspective: `Identifies real-world industrial deployment, efficiency gains, and operational economics for ${cleanTopic}.`
-    }
-  };
+    };
     model = synthesized;
   }
 
   // Expand questions to requested count (e.g. 5, 10, 20, up to 100)
   const qCount = targetCount ? Math.min(100, Math.max(1, targetCount)) : Math.max(5, model.questions?.length || 5);
-  model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount);
+  model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount, documentText);
 
   return model;
 }
 
+// Asynchronously generates topic model using Ollama / OpenAI API with fallback
+export async function generateUniversalTopicModelAsync(rawTopic, domainCategory = 'Universal Domain', targetCount = 10, documentText = '', aiOptions = {}) {
+  const model = generateUniversalTopicModel(rawTopic, domainCategory, targetCount, documentText);
+  try {
+    const aiQuestions = await generateQuestionsWithAI(rawTopic, {
+      count: targetCount,
+      documentContext: documentText,
+      ...aiOptions
+    });
+    if (aiQuestions && Array.isArray(aiQuestions) && aiQuestions.length > 0) {
+      model.questions = aiQuestions;
+    }
+  } catch (err) {
+    console.warn('Async AI question generation bypassed, using instant generative model:', err.message);
+  }
+  return model;
+}
+
 // Generates and expands questions up to 100 for any topic across Bloom's Taxonomy
-export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic', targetCount = 10) {
+export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic', targetCount = 10, documentText = '') {
   const t = topicName || 'Topic';
   const count = Math.min(100, Math.max(1, targetCount || 5));
 
   // Subject-accurate AI domain generator (100% subject-pure questions, options, hints)
-  const deepQuestions = generateOfflineDeepQuestions(t, count);
+  const deepQuestions = generateOfflineDeepQuestions(t, count, documentText);
   if (deepQuestions && deepQuestions.length > 0) {
     return deepQuestions.slice(0, count);
   }

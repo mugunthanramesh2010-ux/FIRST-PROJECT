@@ -5,24 +5,30 @@ import { checkOllamaAvailability } from '../../services/aiQuestionService';
 
 const DEPARTMENTS = [
   'All Departments',
-  'Mechanical Engineering',
-  'Civil Engineering',
   'Electronics and Communication Engineering (ECE)',
-  'Electrical and Electronics Engineering (EEE)',
   'Computer Science and Engineering (CSE)',
+  'Electrical and Electronics Engineering (EEE)',
+  'Biotechnology',
+  'Textile Technology',
+  'Fashion Technology',
+  'Automobile Engineering',
+  'Aeronautical Engineering',
+  'Mechanical Engineering',
+  'Mechatronics Engineering',
   'Information Technology (IT)',
-  'Artificial Intelligence & Data Science',
-  'Biomedical Engineering'
+  'Artificial Intelligence and Data Science (AI & DS)',
+  'Civil Engineering',
+  'Electronics & Instrumentation Engineering (E&I)'
 ];
 
 export default function CreateAssignmentPage({ currentUser, onNavigate }) {
   const [formData, setFormData] = useState({
-    assignmentName: 'Strength of Materials & Stress Analysis Viva',
-    subject: 'Solid Mechanics & Strength of Materials',
-    topic: 'Stress in Strength of Materials',
+    assignmentName: '',
+    subject: '',
+    topic: '',
     targetYear: 'III',
     targetSection: 'A',
-    targetDepartment: 'Mechanical Engineering',
+    targetDepartment: 'Electronics and Communication Engineering',
     deadline: '15',
     marks: 100,
     questionCount: 10,
@@ -97,9 +103,10 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
 
       const saved = saveCohortAssignment({
         id: assignmentId,
-        subjectName: formData.assignmentName,
-        subject: formData.subject,
-        topic: formData.topic,
+        assignmentName: formData.assignmentName.trim(),
+        subjectName: formData.assignmentName.trim(),
+        subject: formData.subject.trim(),
+        topic: formData.topic.trim(),
         targetYear: formData.targetYear,
         targetSection: formData.targetSection,
         targetDepartment: formData.targetDepartment,

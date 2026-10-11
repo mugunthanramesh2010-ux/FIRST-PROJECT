@@ -379,6 +379,13 @@ export default function App() {
       console.warn('Mastery calculation caught:', e);
     }
 
+    const calculatedOverallScore = Math.min(100, Math.round((totalEarned / totalFacultyMarks) * 100));
+    const calculatedKnowledgeScore = realAccuracy;
+    const calculatedReasoningScore = Math.min(100, Math.max(15, Math.round(realAccuracy * 0.97)));
+    const calculatedRetentionScore = Math.min(100, Math.max(20, Math.round(realAccuracy * 0.94)));
+    const calculatedCuriosityIndex = Math.min(100, Math.max(35, 78 + Math.round(sessionQuestionHistory.length * 2)));
+    const calculatedMastery = realAccuracy >= 85 ? 'Mastered' : realAccuracy >= 70 ? 'Proficient' : realAccuracy >= 50 ? 'Competent' : 'Learner';
+
     const sessionRecord = {
       id: 'session_' + Date.now(),
       assignmentId: activeAssignmentId || null,
@@ -387,17 +394,17 @@ export default function App() {
       subject: activeSubjectName || topicModel.domain || topicModel.title,
       domain: topicModel.domain,
       studentRegNo: currentUser?.regNo || '714022104055',
-      studentName: currentUser?.fullName || 'Kanish M',
+      studentName: currentUser?.fullName || 'Student',
       timestamp: new Date().toISOString(),
-      masteryLevel: mastery?.masteryLevel || 'Mastered',
+      masteryLevel: calculatedMastery,
       facultyTotalMarks: totalFacultyMarks,
       totalEarnedMarks: totalEarned,
-      overallScore: Math.min(100, Math.round((totalEarned / totalFacultyMarks) * 100)),
+      overallScore: calculatedOverallScore,
       accuracyRate: realAccuracy,
-      knowledgeScore: adaptiveEngine?.knowledgeScore || 78,
-      reasoningScore: adaptiveEngine?.reasoningScore || 80,
-      retentionScore: adaptiveEngine?.retentionScore || 82,
-      curiosityIndex: adaptiveEngine?.twin?.curiosityIndex || 85,
+      knowledgeScore: calculatedKnowledgeScore,
+      reasoningScore: calculatedReasoningScore,
+      retentionScore: calculatedRetentionScore,
+      curiosityIndex: calculatedCuriosityIndex,
       authenticityScore: realAuthenticity,
       tabSwitches: totalTabSwitches,
       pasteAttempts: totalPastes,
@@ -409,6 +416,18 @@ export default function App() {
     // Store in offline DB and in Local Hierarchical Enterprise Storage / File Manager
     saveAssessmentSession(sessionRecord);
     saveLocalEnterpriseRecord(sessionRecord, currentUser?.facultyInCharge || 'FAC-ECE-01');
+
+    if (currentUser?.id) {
+      try {
+        updateUserStats(currentUser.id, {
+          knowledgeScore: calculatedKnowledgeScore,
+          reasoningScore: calculatedReasoningScore,
+          retentionScore: calculatedRetentionScore,
+          curiosityIndex: calculatedCuriosityIndex,
+          masteryLevel: calculatedMastery
+        });
+      } catch (err) {}
+    }
 
     // If this was a faculty assignment, permanently lock it from re-taking!
     if (activeAssignmentId && currentUser?.regNo) {
@@ -511,10 +530,16 @@ export default function App() {
             />
           )}
 
-          {/* 2. MAIN APPLICATION WORKSPACE (100% Full Screen Width, Never Overlapped by Sidebar) */}
+          {/* 2. MAIN APPLICATION WORKSPACE (Guaranteed Zero Overlap from Sidebar) */}
           <div
-            className={`flex-1 flex flex-col min-w-0 transition-all duration-300 pb-16 ${
-              isSidebarCollapsed ? 'pl-[96px] sm:pl-[104px]' : 'pl-[296px] sm:pl-[304px]'
+            style={{
+              marginLeft: isSidebarCollapsed ? '92px' : '288px',
+              width: isSidebarCollapsed ? 'calc(100% - 92px)' : 'calc(100% - 288px)',
+              minWidth: 0,
+              transition: 'margin-left 0.25s ease-in-out, width 0.25s ease-in-out'
+            }}
+            className={`flex-1 flex flex-col min-w-0 pb-16 ${
+              isSidebarCollapsed ? 'enterprise-workspace-collapsed' : 'enterprise-workspace-expanded'
             }`}
           >
             {/* Top Enterprise Header (Height 72px) */}
@@ -560,7 +585,7 @@ export default function App() {
                         const marks = assignmentItem?.marks || assignmentItem?.totalMarks || 100;
                         const mode = assignmentItem?.mode || 'Mixed';
                         const assignmentId = assignmentItem?.id || null;
-                        const model = generateUniversalTopicModel(topic, subject, targetCount);
+                        const model = generateUniversalTopicModel(topic, subject, targetCount, assignmentItem?.documentContext || '');
                         handleTopicSelected(model, subject, marks, mode, assignmentId);
                       }}
                       onViewResult={(assignment) => {

@@ -12,23 +12,26 @@ import {
   LayoutDashboard,
   FolderOpen
 } from 'lucide-react';
-import { openLocalFolderInExplorer } from '../../services/db';
+import { openLocalFolderInExplorer, getAllAssessmentSessions } from '../../services/db';
 
 export default function FinalResultPage({
   sessionResult,
   onOpenReport,
   onBackToDashboard
 }) {
-  const isDisqualified = !!sessionResult?.disqualified;
-  const marksEarned = isDisqualified ? 0 : (sessionResult?.totalEarnedMarks ?? 88.5);
-  const marksTotal = sessionResult?.facultyTotalMarks ?? 100;
-  const knowledgeScore = isDisqualified ? 0 : (sessionResult?.knowledgeScore ?? 92);
-  const reasoningScore = isDisqualified ? 0 : (sessionResult?.reasoningScore ?? 89);
-  const retentionScore = isDisqualified ? 0 : (sessionResult?.retentionScore ?? 86);
-  const curiosityScore = isDisqualified ? 0 : (sessionResult?.curiosityIndex ?? 90);
-  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (sessionResult?.masteryLevel ?? 'Mastered');
-  const authenticityScore = isDisqualified ? 0 : (sessionResult?.authenticityScore ?? 100);
-  const topicName = sessionResult?.topic || 'Viva Examination';
+  const latestDbSession = !sessionResult ? (getAllAssessmentSessions()[0] || null) : null;
+  const activeSession = sessionResult || latestDbSession;
+
+  const isDisqualified = !!activeSession?.disqualified;
+  const marksEarned = isDisqualified ? 0 : (activeSession?.totalEarnedMarks ?? 85);
+  const marksTotal = activeSession?.facultyTotalMarks ?? 100;
+  const knowledgeScore = isDisqualified ? 0 : (activeSession?.knowledgeScore ?? (activeSession?.accuracyRate ?? 85));
+  const reasoningScore = isDisqualified ? 0 : (activeSession?.reasoningScore ?? Math.round(knowledgeScore * 0.96));
+  const retentionScore = isDisqualified ? 0 : (activeSession?.retentionScore ?? Math.round(knowledgeScore * 0.93));
+  const curiosityScore = isDisqualified ? 0 : (activeSession?.curiosityIndex ?? 88);
+  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (activeSession?.masteryLevel ?? (knowledgeScore >= 85 ? 'Mastered' : 'Proficient'));
+  const authenticityScore = isDisqualified ? 0 : (activeSession?.authenticityScore ?? 100);
+  const topicName = activeSession?.topic || 'Viva Examination';
 
   const resultCards = [
     { title: 'Marks Awarded', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: isDisqualified ? '#C53030' : '#B7791F', bg: isDisqualified ? '#FFF0F0' : '#FFF3D6' },

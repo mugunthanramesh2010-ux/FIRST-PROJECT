@@ -30,20 +30,25 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
       return yearMatch && secMatch;
     });
 
-    return matching.map((a, idx) => ({
-      id: a.id || `asg-${idx}`,
-      assignmentName: a.subjectName || a.assignmentName || 'Adaptive Viva Assessment',
-      subject: a.subject || 'Strength of Materials',
-      topic: a.topic || 'Stress in Strength of Materials',
-      faculty: a.facultyName || a.faculty || 'Faculty In-Charge',
-      deadline: a.deadlineMinutes ? `${a.deadlineMinutes} mins session` : (a.deadline || 'Active Deadline'),
-      marks: a.totalMarks || 100,
-      questionCount: a.questionCount || 10,
-      mode: a.mode || 'Mixed',
-      targetYear: a.targetYear || userYear,
-      targetSection: a.targetSection || userSection,
-      status: a.status || (idx === 0 ? 'ACTIVE' : 'IN_PROGRESS')
-    }));
+    return matching.map((a, idx) => {
+      const resolvedSubject = (a.subject || a.subjectName || a.assignmentName || 'Engineering Viva').trim();
+      const resolvedTopic = (a.topic && a.topic.trim()) || resolvedSubject;
+      return {
+        id: a.id || `asg-${idx}`,
+        assignmentName: a.assignmentName || a.subjectName || resolvedSubject,
+        subject: resolvedSubject,
+        topic: resolvedTopic,
+        faculty: a.facultyName || a.faculty || 'Faculty In-Charge',
+        deadline: a.deadlineMinutes ? `${a.deadlineMinutes} mins session` : (a.deadline || 'Active Deadline'),
+        marks: a.totalMarks || a.marks || 100,
+        questionCount: a.questionCount || 10,
+        mode: a.mode || 'Mixed',
+        targetYear: a.targetYear || userYear,
+        targetSection: a.targetSection || userSection,
+        status: a.status || (idx === 0 ? 'ACTIVE' : 'IN_PROGRESS'),
+        documentContext: a.documentContext || ''
+      };
+    });
   });
 
   return (
@@ -172,7 +177,7 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
                   <>
                     {isActive && (
                       <button
-                        onClick={() => onStartAssignment(item.topic || item.assignmentName || 'Engineering Viva', item.questionCount || 10, item)}
+                        onClick={() => onStartAssignment(item.topic || item.subject || item.assignmentName, item.questionCount || 10, item)}
                         className="btn-primary w-full text-xs h-[46px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
                       >
                         <Play className="w-4 h-4 text-[#FFF3D6]" />
@@ -182,7 +187,7 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
 
                     {isInProgress && (
                       <button
-                        onClick={() => onStartAssignment(item.topic || item.assignmentName || 'Engineering Viva', item.questionCount || 10, item)}
+                        onClick={() => onStartAssignment(item.topic || item.subject || item.assignmentName, item.questionCount || 10, item)}
                         className="btn-warning w-full text-xs h-[46px] flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <RotateCw className="w-4 h-4" />

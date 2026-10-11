@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Cpu, Search, Sparkles, BookOpen, Layers, ShieldCheck, CheckCircle2, Zap, Brain, ArrowRight } from 'lucide-react';
-import { generateUniversalTopicModel } from '../../services/universalOntology';
+import { Cpu, Search, Sparkles, BookOpen, Layers, ShieldCheck, CheckCircle2, Zap, Brain, ArrowRight, RotateCcw, Loader2 } from 'lucide-react';
+import { generateUniversalTopicModel, generateUniversalTopicModelAsync } from '../../services/universalOntology';
 import { checkOllamaAvailability } from '../../services/aiQuestionService';
 
 export default function SelfLearningPage({ onTopicSelected }) {
   const [topicInput, setTopicInput] = useState('');
   const [questionCount, setQuestionCount] = useState(10);
-  const [ollamaStatus, setOllamaStatus] = useState({ available: false, activeModel: null });
+  const [ollamaStatus, setOllamaStatus] = useState({ available: false, models: [], activeModel: null });
+  const [selectedModel, setSelectedModel] = useState('llama3.2:1b');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    checkOllamaAvailability().then(res => setOllamaStatus(res));
+    checkOllamaAvailability().then(res => {
+      setOllamaStatus(res);
+      if (res.activeModel) setSelectedModel(res.activeModel);
+    });
   }, []);
 
   const exampleTopics = [
@@ -26,23 +31,43 @@ export default function SelfLearningPage({ onTopicSelected }) {
   ];
 
   const engineeringDomains = [
-    { name: 'Mechanical / Materials', topic: 'Stress in Strength of Materials', icon: '⚙️' },
-    { name: 'Fluid Mechanics', topic: 'Bernoulli’s Equation & Boundary Layer', icon: '🌊' },
-    { name: 'Thermodynamics', topic: 'Second Law & Carnot Efficiency', icon: '🔥' },
-    { name: 'Computer Science & IT', topic: 'QuickSort & Deadlock Prevention', icon: '💻' },
-    { name: 'Electrical & Electronics', topic: 'Op-Amp Circuits & Thevenin Theorem', icon: '⚡' },
-    { name: 'Artificial Intelligence', topic: 'Deep Learning & Regularization', icon: '🤖' },
-    { name: 'Civil Engineering', topic: 'Under-Reinforced RCC Beams', icon: '🏗️' },
-    { name: 'Applied Mathematics', topic: 'Eigenvectors & Linear Transformations', icon: '📐' }
+    { name: 'ECE (Electronics & Comm.)', topic: 'FPGA Architecture & Static Timing Analysis', icon: '📡' },
+    { name: 'CSE (Computer Science)', topic: 'Distributed Operating Systems & QuickSort', icon: '💻' },
+    { name: 'EEE (Electrical & Electronics)', topic: 'Three-Phase Induction Motors & Power Inverters', icon: '⚡' },
+    { name: 'AI & Data Science', topic: 'Transformer Multi-Head Attention & Deep Learning', icon: '🤖' },
+    { name: 'Mechanical Engineering', topic: 'Thermodynamics Carnot Cycle & Heat Transfer', icon: '⚙️' },
+    { name: 'Civil Engineering', topic: 'Under-Reinforced RCC Beams & Soil Mechanics', icon: '🏗️' },
+    { name: 'Automobile Engineering', topic: 'Internal Combustion Engines & ABS Hydraulics', icon: '🚗' },
+    { name: 'Aeronautical Engineering', topic: 'Airfoil Boundary Layer Separation & Supersonic Shock', icon: '✈️' },
+    { name: 'Mechatronics Engineering', topic: 'BLDC Servo Control & Denavit-Hartenberg Kinematics', icon: '🦾' },
+    { name: 'Electronics & Instrumentation', topic: '4-20mA Current Loops & Three-Wire Pt100 RTD', icon: '🎛️' },
+    { name: 'Biotechnology', topic: 'PCR Thermal Cycling & Michaelis-Menten Kinetics', icon: '🧬' },
+    { name: 'Textile Technology', topic: 'Ring Spinning vs Rotor Spinning & Fabric GSM', icon: '🧵' },
+    { name: 'Fashion Technology', topic: 'Pattern Grading & ASTM Class 301 Lockstitch', icon: '👗' },
+    { name: 'Information Technology', topic: 'Cloud Microservices & Cryptographic TLS Handshake', icon: '🌐' }
   ];
 
   const questionPresets = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
-  const handleStart = (topicName) => {
-    const chosen = topicName || topicInput.trim() || 'Stress in Strength of Materials';
+  const handleStart = async (topicName) => {
+    if (isGenerating) return;
+    const chosen = (topicName || topicInput.trim() || 'FPGA Architecture & Static Timing Analysis').trim();
     const count = Math.min(100, Math.max(1, parseInt(questionCount, 10) || 10));
-    const model = generateUniversalTopicModel(chosen, 'Universal Domain', count);
-    onTopicSelected(model, chosen);
+
+    setIsGenerating(true);
+    try {
+      // Generate dynamically with selected Ollama model or instant dynamic synthesizer
+      const model = await generateUniversalTopicModelAsync(chosen, 'Universal Domain', count, '', {
+        model: selectedModel
+      });
+      onTopicSelected(model, chosen);
+    } catch (err) {
+      console.warn('Ollama generation exception handled, falling back:', err);
+      const fallbackModel = generateUniversalTopicModel(chosen, 'Universal Domain', count);
+      onTopicSelected(fallbackModel, chosen);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -183,15 +208,61 @@ export default function SelfLearningPage({ onTopicSelected }) {
               </div>
             </div>
 
+            {/* Local Inference Model Selector (Ollama / Local Runtime / Dynamic Engine) */}
+            <div className="space-y-2.5 text-left pt-2 border-t border-[#E2D3A7]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-[#8B5E34] uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B7791F]" />
+                  <span>AI Inference Engine (100% Offline Local Model):</span>
+                </label>
+                <span className="text-[11px] font-bold text-[#2F855A] bg-[#E6F4EA] px-2 py-0.5 rounded-md border border-[#A8DAB5]">
+                  {ollamaStatus.available ? 'Ollama Server Connected' : 'Offline Engine Ready'}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {(ollamaStatus.models && ollamaStatus.models.length > 0 ? ollamaStatus.models : ['llama3.2:1b', 'llama3.2:latest', 'llama3:latest']).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSelectedModel(m)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      selectedModel === m
+                        ? 'bg-[#B7791F] text-white border-[#B7791F] shadow-xs'
+                        : 'bg-[#FFF8E8] text-[#4A5568] border-[#E2D3A7] hover:border-[#B7791F]'
+                    }`}
+                  >
+                    <span>{m}</span>
+                    {selectedModel === m && <CheckCircle2 className="w-3 h-3 text-[#FFF3D6]" />}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-[#718096]">
+                Questions, options, answers, and 4-tier progressive hints are synthesized instantly without transmitting any content to cloud services.
+              </p>
+            </div>
+
             {/* Big Start Button */}
-            <div className="pt-4">
+            <div className="pt-2">
               <button
+                disabled={isGenerating}
                 onClick={() => handleStart(topicInput)}
-                className="w-full py-4.5 rounded-2xl bg-[#B7791F] hover:bg-[#975A16] text-white text-base sm:text-lg font-black shadow-lg shadow-[#B7791F]/25 flex items-center justify-center gap-3 transition-all cursor-pointer text-center"
+                className={`w-full py-4.5 rounded-2xl text-white text-base sm:text-lg font-black shadow-lg shadow-[#B7791F]/25 flex items-center justify-center gap-3 transition-all cursor-pointer text-center ${
+                  isGenerating ? 'bg-[#D69E2E] cursor-wait opacity-90' : 'bg-[#B7791F] hover:bg-[#975A16]'
+                }`}
               >
-                <Sparkles className="w-5 h-5 text-[#FFF3D6]" />
-                <span>Start Adaptive Viva Examination ({questionCount} Questions)</span>
-                <ArrowRight className="w-5 h-5" />
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin text-[#FFF3D6]" />
+                    <span>Synthesizing Exam with {selectedModel}...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 text-[#FFF3D6]" />
+                    <span>Start Adaptive Viva Examination ({questionCount} Questions)</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </button>
             </div>
 

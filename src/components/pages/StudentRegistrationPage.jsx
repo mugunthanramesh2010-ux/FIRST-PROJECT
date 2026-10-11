@@ -3,14 +3,20 @@ import { ArrowLeft, CheckCircle2, AlertCircle, GraduationCap, Eye, EyeOff, User,
 import { registerStudent } from '../../services/db';
 
 const DEPARTMENTS = [
-  'Mechanical Engineering',
-  'Civil Engineering',
   'Electronics and Communication Engineering (ECE)',
-  'Electrical and Electronics Engineering (EEE)',
   'Computer Science and Engineering (CSE)',
+  'Electrical and Electronics Engineering (EEE)',
+  'Biotechnology',
+  'Textile Technology',
+  'Fashion Technology',
+  'Automobile Engineering',
+  'Aeronautical Engineering',
+  'Mechanical Engineering',
+  'Mechatronics Engineering',
   'Information Technology (IT)',
-  'Artificial Intelligence & Data Science',
-  'Biomedical Engineering'
+  'Artificial Intelligence and Data Science (AI & DS)',
+  'Civil Engineering',
+  'Electronics & Instrumentation Engineering (E&I)'
 ];
 
 export default function StudentRegistrationPage({ onNavigate, onAuthSuccess }) {

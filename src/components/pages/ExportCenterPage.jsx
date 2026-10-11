@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Folder,
-  File
+  File,
+  Printer
 } from 'lucide-react';
 import { getAllAssessmentSessions, getAllStudents, getLocalEnterpriseRecords } from '../../services/db';
 
