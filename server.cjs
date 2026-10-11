@@ -235,19 +235,21 @@ const server = http.createServer(async (req, res) => {
       const {
         questionId,
         studentAnswer,
+        answerText: rawAnswerText,
         correctIndex,
         options,
         type,
         expectedKeywords = [],
         hintsUsed = 0
       } = data;
+      const effectiveStudentAnswer = studentAnswer !== undefined ? studentAnswer : rawAnswerText;
 
       let isCorrect = false;
       let score = 0;
       let feedback = '';
 
       if (type === 'mcq' && typeof correctIndex === 'number') {
-        const studentIdx = typeof studentAnswer === 'number' ? studentAnswer : parseInt(studentAnswer, 10);
+        const studentIdx = typeof effectiveStudentAnswer === 'number' ? effectiveStudentAnswer : parseInt(effectiveStudentAnswer, 10);
         isCorrect = studentIdx === correctIndex;
         const penalty = Math.min(30, (hintsUsed || 0) * 8);
         score = isCorrect ? Math.max(50, 100 - penalty) : 20;
@@ -257,7 +259,7 @@ const server = http.createServer(async (req, res) => {
           : `Selected option does not articulate the required governing principle.`;
       } else {
         // Conceptual text / oral answer evaluation
-        const answerText = String(studentAnswer || '').trim();
+        const answerText = String(effectiveStudentAnswer || '').trim();
 
         if (isGibberish(answerText)) {
           score = 5;
