@@ -213,34 +213,93 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- SECURE AUTHORITATIVE ASSESSMENT EVALUATION ENDPOINT ---
+  function isGibberish(text) {
+    if (!text || typeof text !== 'string') return true;
+    const trimmed = text.trim();
+    if (trimmed.length < 3) return true;
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    if (words.length === 1 && words[0].length > 30) return true;
+    const letters = trimmed.replace(/[^a-zA-Z]/g, '');
+    if (letters.length === 0) return true;
+    if (/^(.)\1{4,}$/i.test(trimmed)) return true;
+    const vowels = letters.match(/[aeiouyAEIOUY]/g) || [];
+    const vowelRatio = vowels.length / letters.length;
+    if (letters.length > 15 && vowelRatio < 0.12) return true;
+    if (/[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]{7,}/i.test(trimmed)) return true;
+    return false;
+  }
+
   if (pathname === '/api/assessment/evaluate' && req.method === 'POST') {
     try {
       const data = await readBody(req);
-      const { questionId, studentAnswer, correctIndex, options, type, hintsUsed = 0 } = data;
+      const {
+        questionId,
+        studentAnswer,
+        correctIndex,
+        options,
+        type,
+        expectedKeywords = [],
+        hintsUsed = 0
+      } = data;
 
       let isCorrect = false;
-      let score = 75;
-      let feedback = 'Technical response evaluated.';
+      let score = 0;
+      let feedback = '';
 
       if (type === 'mcq' && typeof correctIndex === 'number') {
         const studentIdx = typeof studentAnswer === 'number' ? studentAnswer : parseInt(studentAnswer, 10);
         isCorrect = studentIdx === correctIndex;
         const penalty = Math.min(30, (hintsUsed || 0) * 8);
-        score = isCorrect ? Math.max(50, 100 - penalty) : 25;
+        score = isCorrect ? Math.max(50, 100 - penalty) : 20;
         const selectedText = (options && options[studentIdx]) ? options[studentIdx] : `Option ${studentIdx + 1}`;
         feedback = isCorrect
           ? `Correct technical option selected: "${selectedText}".`
           : `Selected option does not articulate the required governing principle.`;
       } else {
+        // Conceptual text / oral answer evaluation
         const answerText = String(studentAnswer || '').trim();
-        if (answerText.length > 20) {
-          score = 80;
-          feedback = 'Conceptual explanation verified with technical depth.';
+
+        if (isGibberish(answerText)) {
+          score = 5;
+          isCorrect = false;
+          feedback = 'Unparseable or nonsensical input detected. No valid physical or mathematical principles identified.';
         } else {
-          score = 55;
-          feedback = 'Foundational concept noted; expand on governing relationships.';
+          const lowerAnswer = answerText.toLowerCase();
+          const keywords = Array.isArray(expectedKeywords) && expectedKeywords.length > 0
+            ? expectedKeywords.map(k => String(k).toLowerCase().trim())
+            : ['principle', 'concept', 'formula', 'equilibrium'];
+
+          const matched = [];
+          const missing = [];
+
+          keywords.forEach(kw => {
+            if (lowerAnswer.includes(kw)) {
+              matched.push(kw);
+            } else {
+              missing.push(kw);
+            }
+          });
+
+          const matchRatio = matched.length / Math.max(1, keywords.length);
+          const penalty = Math.min(25, (hintsUsed || 0) * 6);
+
+          if (matchRatio >= 0.6 || matched.length >= 3) {
+            score = Math.max(75, Math.min(100, Math.round(75 + matchRatio * 25) - penalty));
+            isCorrect = true;
+            feedback = `Accurate conceptual reasoning! Key technical principles demonstrated (${matched.slice(0, 3).join(', ')}).`;
+          } else if (matchRatio >= 0.25 || matched.length >= 1) {
+            score = Math.max(45, Math.min(74, Math.round(45 + matchRatio * 30) - penalty));
+            isCorrect = false;
+            feedback = `Partially correct. Identified ${matched.join(', ')}, but missed core elements: ${missing.slice(0, 2).join(', ')}.`;
+          } else {
+            score = Math.max(10, Math.min(35, Math.round(15 + Math.min(15, answerText.length / 10)) - penalty));
+            isCorrect = false;
+            feedback = `Fundamental conceptual gaps detected. Missing critical domain parameters: ${missing.slice(0, 3).join(', ')}.`;
+          }
         }
       }
+
+      const status = score >= 80 ? 'Correct' : score >= 50 ? 'Partially Correct' : 'Needs Improvement';
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
@@ -248,7 +307,7 @@ const server = http.createServer(async (req, res) => {
         evaluation: {
           score,
           isCorrect,
-          status: score >= 80 ? 'Correct' : score >= 50 ? 'Partially Correct' : 'Needs Improvement',
+          status,
           feedback
         }
       }));

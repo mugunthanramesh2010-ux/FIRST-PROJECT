@@ -197,6 +197,9 @@ export default function App() {
           correctIndex: currentQ.correctIndex,
           options: currentQ.options,
           type: currentQ.type,
+          expectedKeywords: currentQ.expectedKeywords || [],
+          modelAnswer: currentQ.modelAnswer || '',
+          questionText: currentQ.questionText || currentQ.text || '',
           hintsUsed: activeHintLevel
         })
       });

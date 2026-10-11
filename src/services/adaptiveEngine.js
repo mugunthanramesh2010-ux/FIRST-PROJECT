@@ -84,6 +84,22 @@ export class AdaptiveEngine {
     };
   }
 
+  isGibberish(text) {
+    if (!text || typeof text !== 'string') return true;
+    const trimmed = text.trim();
+    if (trimmed.length < 3) return true;
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    if (words.length === 1 && words[0].length > 30) return true;
+    const letters = trimmed.replace(/[^a-zA-Z]/g, '');
+    if (letters.length === 0) return true;
+    if (/^(.)\1{4,}$/i.test(trimmed)) return true;
+    const vowels = letters.match(/[aeiouyAEIOUY]/g) || [];
+    const vowelRatio = vowels.length / letters.length;
+    if (letters.length > 15 && vowelRatio < 0.12) return true;
+    if (/[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]{7,}/i.test(trimmed)) return true;
+    return false;
+  }
+
   // Universal Conceptual Evaluator - Evaluates either Choice-Based MCQ or Text Answer
   evaluateConceptualAnswer(userAnswer, question, questionIndex = 0, totalQuestions = 10) {
     if (!question) {
@@ -130,6 +146,7 @@ export class AdaptiveEngine {
       return {
         score,
         isCorrect,
+        status: isCorrect ? 'Correct' : 'Needs Improvement',
         feedback,
         conceptMatched: isCorrect ? [selectedOpt] : [],
         missingConcepts: isCorrect ? [] : [correctOpt]
@@ -140,11 +157,10 @@ export class AdaptiveEngine {
     const textResult = this.evaluateTextAnswer(userAnswer, question);
     const cleanAnswer = typeof userAnswer === 'string' ? userAnswer.trim() : String(userAnswer || '').trim();
 
-    // Reward technical reasoning effort even for concise explanations
     let finalScore = textResult.score;
-    if (cleanAnswer.length > 10 && finalScore < 50) {
-      const keywordBoost = textResult.conceptMatched.length > 0 ? 30 : 15;
-      finalScore = Math.min(85, Math.max(45, 35 + keywordBoost + Math.min(25, Math.round(cleanAnswer.length / 4))));
+    // Only reward length if at least 1 core concept was matched! Never reward random typing
+    if (textResult.conceptMatched.length > 0 && cleanAnswer.length > 40) {
+      finalScore = Math.min(95, finalScore + Math.min(15, Math.round(cleanAnswer.length / 25)));
     }
 
     // Dynamic Learning DNA update from text response
@@ -155,9 +171,13 @@ export class AdaptiveEngine {
       this.twin.curiosityIndex = Math.min(99, this.twin.curiosityIndex + 2);
     }
 
+    const finalStatus = finalScore >= 80 ? 'Correct' : finalScore >= 50 ? 'Partially Correct' : 'Needs Improvement';
+
     return {
       ...textResult,
-      score: finalScore
+      score: finalScore,
+      isCorrect: finalScore >= 80,
+      status: finalStatus
     };
   }
 
@@ -167,7 +187,20 @@ export class AdaptiveEngine {
     if (!cleanAnswer) {
       return {
         score: 0,
+        status: 'Needs Improvement',
         feedback: 'No answer was provided.',
+        conceptMatched: [],
+        missingConcepts: question.expectedKeywords || [],
+        masteryIncrement: 0
+      };
+    }
+
+    if (this.isGibberish(cleanAnswer)) {
+      return {
+        score: 5,
+        status: 'Needs Improvement',
+        isCorrect: false,
+        feedback: 'Unparseable or nonsensical input detected. No valid physical or mathematical principles identified.',
         conceptMatched: [],
         missingConcepts: question.expectedKeywords || [],
         masteryIncrement: 0

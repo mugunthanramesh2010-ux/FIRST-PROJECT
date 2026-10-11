@@ -7,9 +7,9 @@ const assert = require('assert');
 async function runTests() {
   console.log('🧪 Starting VIVA ANALYSER Regression Test Suite...\n');
 
-  // Dynamic imports for ESM services
   const { validateQuestionPackage, normalizeQuestion, generateOfflineDeepQuestions } = await import('../src/services/aiQuestionService.js');
   const { generateUniversalTopicModel } = await import('../src/services/universalOntology.js');
+  const { AdaptiveEngine } = await import('../src/services/adaptiveEngine.js');
 
   let passed = 0;
   let total = 0;
@@ -18,10 +18,10 @@ async function runTests() {
     total++;
     try {
       fn();
-      console.log(`  ✅ [PASS ${total}/10]: ${name}`);
+      console.log(`  ✅ [PASS ${total}]: ${name}`);
       passed++;
     } catch (err) {
-      console.error(`  ❌ [FAIL ${total}/10]: ${name}`);
+      console.error(`  ❌ [FAIL ${total}]: ${name}`);
       console.error(`     Error: ${err.message}\n`);
     }
   }
@@ -236,6 +236,41 @@ async function runTests() {
     assert.ok(q0.id, 'Question must have stable ID');
     assert.ok(q0.questionText, 'Question must have questionText');
     assert.ok(q0.hints && q0.hints.length >= 1, 'Question must have hints');
+  });
+
+  // 11. Gibberish or random keyboard smash is strictly rejected as "Needs Improvement"
+  test('11. Random gibberish (e.g. dsrfatsyhujti9oy0p9...) is rejected as Needs Improvement with low score', () => {
+    const engine = new AdaptiveEngine();
+    const eulerQ = {
+      type: 'text',
+      questionText: 'Explain the Euler Critical Buckling Load formula for a long slender column. How does the effective length change between pinned versus fixed ends?',
+      expectedKeywords: ['euler', 'buckling', 'effective length', 'pinned', 'fixed', 'critical load']
+    };
+
+    const gibberishAnswer = 'dsrfatsyhujti9oy0p9-[=9990u09yiu8y7tr6ewqwe3r4t5ry6u';
+    const evalResult = engine.evaluateConceptualAnswer(gibberishAnswer, eulerQ);
+
+    assert.strictEqual(evalResult.status, 'Needs Improvement', 'Gibberish must be marked Needs Improvement');
+    assert.strictEqual(evalResult.isCorrect, false, 'Gibberish must NOT be marked isCorrect');
+    assert.ok(evalResult.score < 30, `Score must be low (got ${evalResult.score})`);
+    assert.ok(evalResult.feedback.includes('Unparseable') || evalResult.feedback.includes('gaps'), 'Feedback must warn about unparseable/missing concepts');
+  });
+
+  // 12. Authentic engineering explanation is awarded high score and marked "Correct"
+  test('12. Authentic engineering explanation with governing concepts is awarded Correct status', () => {
+    const engine = new AdaptiveEngine();
+    const eulerQ = {
+      type: 'text',
+      questionText: 'Explain the Euler Critical Buckling Load formula for a long slender column. How does the effective length change between pinned versus fixed ends?',
+      expectedKeywords: ['euler', 'buckling', 'effective length', 'pinned', 'fixed', 'critical load']
+    };
+
+    const authenticAnswer = 'Euler critical buckling load depends on column effective length squared and bending stiffness. For both ends pinned the effective length is Le = L, whereas for both ends fixed boundary restraint reduces effective length to Le = 0.5 L.';
+    const evalResult = engine.evaluateConceptualAnswer(authenticAnswer, eulerQ);
+
+    assert.strictEqual(evalResult.status, 'Correct', 'Accurate answer must be marked Correct');
+    assert.strictEqual(evalResult.isCorrect, true, 'isCorrect must be true');
+    assert.ok(evalResult.score >= 80, `Score must be >= 80 (got ${evalResult.score})`);
   });
 
   console.log(`\n========================================`);
