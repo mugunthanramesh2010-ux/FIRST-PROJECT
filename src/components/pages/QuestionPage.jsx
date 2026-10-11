@@ -63,44 +63,52 @@ export default function QuestionPage({
   const correctCount = sessionQuestionHistory?.filter(q => q.status === 'Correct').length || 0;
   const dynamicAccuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 100;
 
-  // Options: Shuffle options so correct answer is NOT always option A (0)
-  const [shuffledOptions, setShuffledOptions] = useState([]);
-  const [resolvedCorrectIndex, setResolvedCorrectIndex] = useState(0);
+  // Determine whether this question has legitimate, non-fabricated MCQ options
+  const hasValidOptions = Boolean(
+    question?.options &&
+    Array.isArray(question.options) &&
+    question.options.length >= 2
+  );
+
+  const getInitialMode = () => {
+    if (isTextOnly) return 'text';
+    if (isMcqOnly) return hasValidOptions ? 'mcq' : 'text';
+    if (question?.type === 'text') return 'text';
+    if (question?.type === 'mcq') return hasValidOptions ? 'mcq' : 'text';
+    return hasValidOptions ? 'mcq' : 'text';
+  };
+
+  // Options: Copy and shuffle options for display without mutating original question record
+  const [shuffledItems, setShuffledItems] = useState([]);
+  const [answerMode, setAnswerMode] = useState(getInitialMode);
 
   useEffect(() => {
-    const topicTerm = question?.expectedKeywords?.[0] || 'the core mechanism';
-    let baseOpts = (question?.options && Array.isArray(question.options) && question.options.length >= 2)
-      ? [...question.options]
-      : [
-          `Primary operating mechanism governed by ${topicTerm} and boundary electrostatic conditions`,
-          `Thermal carrier depletion and non-linear saturation preventing sustained equilibrium`,
-          `Spontaneous drift without closed-loop regulatory damping or boundary enforcement`,
-          `Parasitic capacitance feedback limiting bandwidth and high-frequency dynamic response`
-        ];
+    if (!hasValidOptions) {
+      setShuffledItems([]);
+      return;
+    }
 
-    const origCorrect = typeof question?.correctIndex === 'number' && question.correctIndex >= 0 && question.correctIndex < baseOpts.length
+    const origCorrect = typeof question?.correctIndex === 'number' &&
+      question.correctIndex >= 0 &&
+      question.correctIndex < question.options.length
       ? question.correctIndex
       : 0;
 
+    // Create copies with original index mapping without mutating question
+    const indexed = question.options.map((opt, idx) => ({
+      text: opt,
+      originalIndex: idx,
+      isCorrect: idx === origCorrect
+    }));
+
     // Fisher-Yates Shuffle
-    const indexed = baseOpts.map((opt, idx) => ({ text: opt, isCorrect: idx === origCorrect }));
     for (let i = indexed.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
     }
 
-    setShuffledOptions(indexed.map(item => item.text));
-    const newCorrect = indexed.findIndex(item => item.isCorrect);
-    setResolvedCorrectIndex(newCorrect >= 0 ? newCorrect : 0);
-  }, [questionIndex, question]);
-
-  const getInitialMode = () => {
-    if (isTextOnly) return 'text';
-    if (isMcqOnly) return 'mcq';
-    return (question?.options && question.options.length > 0) ? 'mcq' : 'mcq';
-  };
-
-  const [answerMode, setAnswerMode] = useState(getInitialMode);
+    setShuffledItems(indexed);
+  }, [questionIndex, question, hasValidOptions]);
   const [behaviorEngine] = useState(() => new BehavioralEngine());
   const timerRef = useRef(null);
 
@@ -216,14 +224,10 @@ export default function QuestionPage({
     metrics.copyAttempts = copyAttempts;
     metrics.authenticityScore = liveAuthenticity;
 
-    // Attach resolved correct index to question payload so evaluation is accurate
-    if (question) {
-      question.correctIndex = resolvedCorrectIndex;
-    }
-
     if (answerMode === 'mcq') {
       if (selectedOption === null || selectedOption === undefined) return;
-      onSubmitAnswer(selectedOption, metrics, questionSecondsElapsed);
+      const originalIdx = shuffledItems[selectedOption]?.originalIndex ?? selectedOption;
+      onSubmitAnswer(originalIdx, metrics, questionSecondsElapsed);
     } else {
       if (!textAnswer.trim()) return;
       onSubmitAnswer(textAnswer.trim(), metrics, questionSecondsElapsed);
@@ -516,7 +520,7 @@ export default function QuestionPage({
           {/* MCQ Mode: Shuffled across A, B, C, D */}
           {answerMode === 'mcq' ? (
             <div className="grid grid-cols-1 gap-4">
-              {shuffledOptions.map((opt, idx) => {
+              {shuffledItems.map((item, idx) => {
                 const isSelected = selectedOption === idx;
                 return (
                   <div
@@ -536,7 +540,7 @@ export default function QuestionPage({
                       {String.fromCharCode(65 + idx)}
                     </div>
                     <span className="text-lg sm:text-xl font-bold text-[#2D3748] flex-1 leading-snug">
-                      {opt}
+                      {item.text}
                     </span>
                   </div>
                 );

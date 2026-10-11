@@ -4,42 +4,61 @@ import { HelpCircle, ChevronRight, BrainCircuit, ShieldAlert } from 'lucide-reac
 export default function ProgressiveHintEngine({
   isOpen,
   onClose,
-  currentLevel, // 1 to 4
+  currentLevel = 1, // 1 to 4
   onRequestNextHint,
   question,
   adaptiveEngine
 }) {
   if (!isOpen) return null;
 
+  const qId = question?.id || 'q_active';
+  const qText = question?.questionText || question?.text || '';
+
+  // Ensure hints belong to this active question
+  const isStructural = /buckling|euler|column|slender|strut|beam|structural|mechanics of materials|som/i.test(qText);
+  const rawHints = Array.isArray(question?.hints) ? question.hints : [];
+
+  const safeHints = rawHints.map((h, i) => {
+    if (typeof h !== 'string' || !h.trim()) {
+      return `Review foundational principles and governing relationships for this topic.`;
+    }
+    // Cross-domain mismatch guard: Euler buckling formula must NEVER appear on non-structural questions
+    if (!isStructural && /euler.*buckling|pcr\s*=/i.test(h)) {
+      return `Analyze the governing laws, definitions, and operational constraints for this concept.`;
+    }
+    return h.trim();
+  });
+
   const hintTiers = [
     {
       level: 1,
-      title: 'Level 1: Tiny Clue',
-      description: question?.hints?.[0] || 'Consider the boundary condition at the semiconductor-oxide interface under equilibrium.',
+      title: 'Level 1: Concept Reminder',
+      description: safeHints[0] || 'Recall the foundational definition and operational boundary of this concept.',
       note: 'Foundational concept reminder'
     },
     {
       level: 2,
-      title: 'Level 2: Concept Direction',
-      description: question?.hints?.[1] || 'Relate the applied gate bias directly to band bending and surface potential (ψs = 2ψB).',
-      note: 'Directional principle hint'
+      title: 'Level 2: Reasoning Clue',
+      description: safeHints[1] || 'Relate the input parameters or governing laws to equilibrium conditions.',
+      note: 'Directional principle guidance'
     },
     {
       level: 3,
-      title: 'Level 3: Structured Guidance',
-      description: question?.hints?.[2] || 'Examine how mobile carrier inversion alters the electric field gradient across the depletion region.',
+      title: 'Level 3: Recall Support',
+      description: safeHints[2] || 'Examine how internal variables, units, or boundary conditions interact.',
       note: 'Structural analytical guidance'
     },
     {
       level: 4,
-      title: 'Level 4: Reasoning Path',
-      description: question?.hints?.[3] || 'Combine Gauss law with Poisson equation to derive the channel charge proportionality equation.',
+      title: 'Level 4: Stronger Guidance',
+      description: safeHints[3] || 'Synthesize the critical technical constraints to reach the solution.',
       note: 'Final cognitive pathway'
     }
   ];
 
-  const currentHint = hintTiers[currentLevel - 1] || hintTiers[0];
-  const isMaxLevel = currentLevel >= 4;
+  const effectiveLevel = Math.min(4, Math.max(1, currentLevel || 1));
+  const currentHint = hintTiers[effectiveLevel - 1] || hintTiers[0];
+  const isMaxLevel = effectiveLevel >= 4;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#2D3748]/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
@@ -87,7 +106,7 @@ export default function ProgressiveHintEngine({
         </div>
 
         {/* Active Hint Content Card (Previous Hint is Gone) */}
-        <div key={currentLevel} className="p-5 rounded-[16px] bg-[#FFF8E8] border border-[#E2D3A7] space-y-3 animate-fade-in">
+        <div key={`${qId}_${effectiveLevel}`} className="p-5 rounded-[16px] bg-[#FFF8E8] border border-[#E2D3A7] space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <span className="px-2.5 py-0.5 rounded-md bg-[#FFF3D6] border border-[#E2D3A7] text-[11px] font-bold text-[#8B5E34]">
               {currentHint.title}

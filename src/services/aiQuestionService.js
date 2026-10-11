@@ -184,69 +184,225 @@ function cleanOptionText(text) {
     .trim();
 }
 
-// Normalize question structure, enforce 4 progressive anti-leak hints, and Fisher-Yates shuffle options
-export function normalizeQuestion(q, idx, topic) {
-  const hintsArray = Array.isArray(q.hints)
-    ? q.hints.map(h => typeof h === 'string' ? h.trim() : String(h))
-    : typeof q.hints === 'object' && q.hints !== null
-      ? [q.hints.level1, q.hints.level2, q.hints.level3, q.hints.level4].filter(Boolean)
-      : [
-          `Focus on the foundational theoretical principles of ${topic}.`,
-          `Consider the governing equations and physical/mathematical relationships.`,
-          `Analyze the operational constraints and boundary behaviors.`,
-          `Synthesize how parameter variation alters the equilibrium condition.`
-        ];
-
-  // Guarantee exactly 4 progressive hints
-  while (hintsArray.length < 4) {
-    if (hintsArray.length === 1) hintsArray.push(`Analyze the governing equations and parameter dependencies.`);
-    else if (hintsArray.length === 2) hintsArray.push(`Evaluate operational boundary limits and edge conditions.`);
-    else hintsArray.push(`Synthesize the system response under stress or variation.`);
+// Reusable Question Package Validator (offline-capable, deterministic)
+export function validateQuestionPackage(pkg, topic = '') {
+  const errors = [];
+  if (!pkg || typeof pkg !== 'object') {
+    return { valid: false, errors: ['Question package must be an object'], sanitized: null };
   }
 
-  let qOptions = q.options && Array.isArray(q.options) && q.options.length >= 2
-    ? q.options.map(opt => cleanOptionText(opt))
-    : null;
+  const qText = (pkg.questionText || pkg.text || '').trim();
+  if (!qText) {
+    errors.push('Question statement must not be empty');
+  }
 
-  let qCorrect = typeof q.correctIndex === 'number' && q.correctIndex >= 0 ? q.correctIndex : 0;
+  const qId = pkg.id || `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const rawType = (pkg.type || '').toLowerCase();
+  let validatedType = rawType === 'mcq' ? 'mcq' : 'text';
 
-  // Fisher-Yates shuffle options so Option A is NEVER statically correct
-  if (qOptions && qOptions.length >= 2) {
-    if (qCorrect >= qOptions.length) qCorrect = 0;
-    const indexed = qOptions.map((opt, i) => ({ text: opt, isCorrect: i === qCorrect }));
+  let validatedOptions = null;
+  let validatedCorrectIndex = 0;
+
+  if (validatedType === 'mcq') {
+    if (!Array.isArray(pkg.options) || pkg.options.length < 2) {
+      errors.push('MCQ must contain at least 2 distinct options');
+      validatedType = 'text'; // Safe fallback without fabricating fake options
+    } else {
+      const cleanedOpts = pkg.options.map(opt => cleanOptionText(opt));
+      const uniqueOpts = new Set(cleanedOpts);
+      if (uniqueOpts.size !== cleanedOpts.length) {
+        errors.push('MCQ options contain duplicate entries');
+      }
+      if (cleanedOpts.some(opt => !opt.trim())) {
+        errors.push('MCQ option cannot be empty');
+      }
+      validatedOptions = cleanedOpts;
+
+      const cIdx = typeof pkg.correctIndex === 'number' ? pkg.correctIndex : parseInt(pkg.correctIndex, 10);
+      if (isNaN(cIdx) || cIdx < 0 || cIdx >= cleanedOpts.length) {
+        errors.push(`Invalid correctIndex: ${pkg.correctIndex}`);
+        validatedCorrectIndex = 0;
+      } else {
+        validatedCorrectIndex = cIdx;
+      }
+    }
+  }
+
+  // Hints validation & progressive structuring
+  let validatedHints = [];
+  if (Array.isArray(pkg.hints)) {
+    validatedHints = pkg.hints.map(h => (typeof h === 'string' ? h.trim() : String(h))).filter(Boolean);
+  } else if (pkg.hints && typeof pkg.hints === 'object') {
+    validatedHints = [pkg.hints.level1, pkg.hints.level2, pkg.hints.level3, pkg.hints.level4]
+      .map(h => (typeof h === 'string' ? h.trim() : String(h || '')))
+      .filter(Boolean);
+  }
+
+  if (validatedHints.length === 0) {
+    validatedHints = [
+      `Recall the fundamental definition and operational boundary of ${topic || 'the topic'}.`,
+      `Consider the primary governing laws, equations, or state transitions involved.`,
+      `Examine how boundary conditions or applied inputs influence equilibrium.`,
+      `Synthesize the critical trade-offs, units, or failure limits for ${topic || 'the concept'}.`
+    ];
+  }
+
+  // Anti-leakage & Cross-topic quarantine:
+  // Detect structural mechanics formula (Euler buckling) accidentally attached to non-structural questions
+  const isStructuralTopic = /buckling|euler|column|slender|strut|beam|structural|mechanics of materials|som/i.test(qText + ' ' + (topic || ''));
+  const hasEulerBucklingHint = validatedHints.some(h => /euler.*buckling|pcr\s*=/i.test(h));
+  if (hasEulerBucklingHint && !isStructuralTopic) {
+    errors.push('Cross-domain mismatch: Euler buckling formula attached to non-structural question');
+    // Replace contaminated hints with topic-relevant clues
+    validatedHints = [
+      `Focus on the foundational theoretical principles of ${topic || 'General Engineering'}.`,
+      `Consider the governing equations and physical/mathematical relationships.`,
+      `Analyze the operational constraints and boundary behaviors.`,
+      `Synthesize how parameter variation alters the equilibrium condition.`
+    ];
+  }
+
+  while (validatedHints.length < 4) {
+    if (validatedHints.length === 1) validatedHints.push('Analyze governing equations and parameter dependencies.');
+    else if (validatedHints.length === 2) validatedHints.push('Evaluate operational boundary limits and edge conditions.');
+    else validatedHints.push('Synthesize system response under stress or variation.');
+  }
+
+  const sanitized = {
+    id: qId,
+    level: pkg.level || 1,
+    bloomLevel: pkg.bloomLevel || 'Understanding',
+    type: validatedType,
+    questionText: qText || `Explain the core mechanism of ${topic || 'the system'}.`,
+    text: qText || `Explain the core mechanism of ${topic || 'the system'}.`,
+    options: validatedType === 'mcq' ? validatedOptions : null,
+    correctIndex: validatedType === 'mcq' ? validatedCorrectIndex : undefined,
+    hints: validatedHints.slice(0, 4),
+    modelAnswer: pkg.modelAnswer || `Comprehensive technical analysis of ${topic || 'the concept'} highlighting governing relations and parameters.`,
+    rubric: pkg.rubric || {
+      fullCredit: `Comprehensive explanation utilizing standard domain nomenclature, formulas, and edge conditions.`,
+      partialCredit: `Basic conceptual understanding with omissions in quantitative relations or boundary tolerances.`
+    },
+    expectedKeywords: Array.isArray(pkg.expectedKeywords) && pkg.expectedKeywords.length > 0
+      ? pkg.expectedKeywords
+      : [(topic || 'engineering').toLowerCase(), 'analysis', 'mechanism', 'parameter']
+  };
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    sanitized
+  };
+}
+
+// Normalize question structure, enforce 4 progressive anti-leak hints, and Fisher-Yates shuffle options
+export function normalizeQuestion(q, idx, topic) {
+  const validation = validateQuestionPackage(q, topic);
+  const sanitized = validation.sanitized;
+
+  // Preserve stable existing ID if provided
+  if (q.id) {
+    sanitized.id = q.id;
+  } else {
+    sanitized.id = `q_ai_${idx + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // Fisher-Yates shuffle MCQ options so correct answer is randomly distributed among choices
+  if (sanitized.type === 'mcq' && Array.isArray(sanitized.options) && sanitized.options.length >= 2) {
+    let qCorrect = typeof sanitized.correctIndex === 'number' ? sanitized.correctIndex : 0;
+    if (qCorrect >= sanitized.options.length) qCorrect = 0;
+
+    const indexed = sanitized.options.map((opt, i) => ({ text: opt, isCorrect: i === qCorrect }));
     for (let i = indexed.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
     }
-    qOptions = indexed.map(item => item.text);
-    qCorrect = indexed.findIndex(item => item.isCorrect);
-    if (qCorrect < 0) qCorrect = 0;
+    sanitized.options = indexed.map(item => item.text);
+    sanitized.correctIndex = indexed.findIndex(item => item.isCorrect);
+    if (sanitized.correctIndex < 0) sanitized.correctIndex = 0;
   }
 
-  const cleanQText = (q.questionText || q.text || `Explain the core mechanism of ${topic}`).trim();
-
-  return {
-    id: q.id || `q_ai_${idx + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    level: q.level || (idx < 3 ? 1 : idx < 7 ? 2 : 3),
-    bloomLevel: q.bloomLevel || (idx < 2 ? 'Understanding' : idx < 5 ? 'Application' : 'Analysis'),
-    type: q.type || (idx % 2 === 1 ? 'mcq' : 'text'),
-    questionText: cleanQText,
-    text: cleanQText,
-    options: qOptions,
-    correctIndex: qCorrect,
-    hints: hintsArray.slice(0, 4),
-    modelAnswer: q.modelAnswer || `Comprehensive technical derivation of ${topic} highlighting key constraints, governing relations, and edge parameters.`,
-    rubric: q.rubric || {
-      fullCredit: `Comprehensive explanation of ${topic} utilizing standard domain nomenclature, formulas, and edge conditions.`,
-      partialCredit: `Basic conceptual understanding with omissions in quantitative relations or boundary tolerances.`
-    },
-    expectedKeywords: q.expectedKeywords || [topic.toLowerCase(), 'analysis', 'mechanism', 'calculation', 'parameter']
-  };
+  return sanitized;
 }
 
 // Deep Subject-Specific Knowledge Base (Engineering, Sciences, CS, etc.)
 // Guarantees 100% subject-accurate questions for FPGA, VLSI, Strength of Materials, Thermodynamics, Civil, CS, etc.
 const SUBJECT_DOMAINS = {
+  // General Engineering, Engineering Mechanics & Fundamental Axioms
+  general_engineering: {
+    matchKeywords: ['general engineering', 'engineering physics', 'engineering mechanics', 'si units', 'fundamental engineering', 'basic engineering', 'first year engineering'],
+    questions: [
+      {
+        questionText: 'In General Engineering mechanics, which derived SI unit measures Mechanical Force, and what is its exact formulation in base SI units?',
+        type: 'mcq',
+        options: [
+          'Newton (N), formulated as 1 kg·m/s²',
+          'Joule (J), formulated as 1 kg·m²/s²',
+          'Watt (W), formulated as 1 kg·m²/s³',
+          'Pascal (Pa), formulated as 1 kg/(m·s²)'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Recall Newton’s Second Law of Motion relating force to mass and acceleration (F = m·a).',
+          'Mass is measured in kilograms (kg) and acceleration in meters per second squared (m/s²).',
+          'Combine the units: kg multiplied by m/s².',
+          'The resulting derived unit is the Newton, where 1 N = 1 kg·m/s².'
+        ],
+        expectedKeywords: ['newton', 'force', 'mass', 'acceleration', 'si unit', 'kg m/s2']
+      },
+      {
+        questionText: 'State Newton’s Second Law of Motion as a fundamental governing law of General Engineering, and explain how its dimensional SI units are derived from base physical quantities.',
+        type: 'text',
+        bloomLevel: 'Remembering',
+        hints: [
+          'Recall the foundational relationship between applied force, mass, and acceleration.',
+          'Identify the base SI units for mass (kg), length (m), and time (s).',
+          'Express acceleration in base units: meters per second squared.',
+          'Synthesize how derived unit Newton is defined dimensionally as [M][L][T]⁻².'
+        ],
+        expectedKeywords: ['newton', 'second law', 'force', 'mass', 'acceleration', 'si units', 'kg', 'm/s2']
+      },
+      {
+        questionText: 'In thermodynamics and General Engineering energy balance, which SI unit characterizes Work and Energy, and what is its base dimensional equivalence?',
+        type: 'mcq',
+        options: [
+          'Joule (J), equivalent to 1 N·m or 1 kg·m²/s²',
+          'Pascal (Pa), equivalent to 1 N/m²',
+          'Watt (W), equivalent to 1 J/s',
+          'Coulomb (C), equivalent to 1 A·s'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Work is formulated as force multiplied by displacement in the direction of the force.',
+          'Multiply the unit of force (Newton) by distance in meters.',
+          '1 N = 1 kg·m/s², so multiplying by meters yields kg·m²/s².',
+          'The derived SI unit for work and energy is the Joule (J).'
+        ],
+        expectedKeywords: ['joule', 'work', 'energy', 'newton meter', 'si unit']
+      },
+      {
+        questionText: 'In General Engineering fluid and solid mechanics, how is Pressure or Normal Stress defined, and what is its standard SI unit?',
+        type: 'mcq',
+        options: [
+          'Pascal (Pa), defined as 1 Newton per square meter (1 N/m² or 1 kg/(m·s²))',
+          'Newton (N), defined as 1 kilogram-meter per second squared',
+          'Joule (J), defined as 1 Newton-meter',
+          'Watt (W), defined as 1 Joule per second'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Pressure is defined as normal force distributed over contact surface area.',
+          'Divide the unit of force (Newton) by the unit of area (m²).',
+          '1 N/m² is named in honor of Blaise Pascal.',
+          'The derived SI unit is the Pascal (Pa).'
+        ],
+        expectedKeywords: ['pascal', 'pressure', 'stress', 'area', 'si unit', 'n/m2']
+      }
+    ]
+  },
   // FPGA, VLSI & Digital System Design
   fpga_vlsi: {
     matchKeywords: ['fpga', 'field programmable gate array', 'vlsi', 'verilog', 'vhdl', 'systemverilog', 'lut', 'clb', 'bram', 'dsp slice', 'timing closure', 'sta', 'rtl', 'asic', 'digital design', 'digital electronics', 'metastability', 'timing analysis', 'setup time', 'hold time', 'bitstream', 'vivado', 'quartus', 'clock skew', 'fsm', 'electronics and communication', 'ece'],
@@ -508,10 +664,10 @@ const SUBJECT_DOMAINS = {
         type: 'text',
         bloomLevel: 'Evaluation',
         hints: [
-          'Euler’s buckling load formula is Pcr = (π² · E · I) / (Le)²',
-          'For both ends pinned, effective length Le = L.',
-          'For both ends fixed, effective length Le = 0.5 L (reducing Le increases critical load 4-fold).',
-          'Synthesize how boundary restraints restrict lateral deflection and rotation.'
+          'Recall that column buckling capacity depends on bending stiffness (EI) and column effective length.',
+          'The critical load threshold is inversely proportional to the square of the effective length (Le²).',
+          'For both ends pinned, effective length Le = L; for both ends fixed, boundary restraint reduces Le to 0.5 L.',
+          'Reducing effective length to 0.5 L increases the critical buckling load by a factor of 4.'
         ],
         expectedKeywords: ['euler', 'buckling', 'effective length', 'pinned', 'fixed', 'critical load', 'slenderness ratio']
       },

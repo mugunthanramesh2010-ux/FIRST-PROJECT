@@ -1,5 +1,5 @@
 // Universal Domain & Subject Ontology Engine
-import { generateOfflineDeepQuestions, generateQuestionsWithAI } from './aiQuestionService.js';
+import { generateOfflineDeepQuestions, generateQuestionsWithAI, validateQuestionPackage } from './aiQuestionService.js';
 
 
 export const DOMAIN_CATEGORIES = [
@@ -747,7 +747,15 @@ export async function generateUniversalTopicModelAsync(rawTopic, domainCategory 
       ...aiOptions
     });
     if (aiQuestions && Array.isArray(aiQuestions) && aiQuestions.length > 0) {
-      model.questions = aiQuestions;
+      const validatedList = aiQuestions
+        .map(q => {
+          const res = validateQuestionPackage(q, rawTopic);
+          return res.sanitized;
+        })
+        .filter(Boolean);
+      if (validatedList.length > 0) {
+        model.questions = validatedList;
+      }
     }
   } catch (err) {
     console.warn('Async AI question generation bypassed, using instant generative model:', err.message);
