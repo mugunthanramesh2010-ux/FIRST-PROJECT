@@ -118,7 +118,7 @@ export default function StudentLoginPage({ onNavigate, onAuthSuccess, onOpenInst
                   Student Portal Login
                 </h1>
                 <p className="text-sm font-medium text-[#718096] mt-0.5">
-                  Two-Column Widescreen Layout: Left Personal Profile & Right Academic Security
+                  Enter your credentials to access your autonomous oral examination portal
                 </p>
               </div>
             </div>
@@ -156,15 +156,14 @@ export default function StudentLoginPage({ onNavigate, onAuthSuccess, onOpenInst
 
           <form onSubmit={handleLogin} className="space-y-6">
             
-            {/* TWO COLUMNS: Left Column (Name, Email, Mobile No) | Right Column (RegNo, Class, Section, Password) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
               
-              {/* LEFT COLUMN: Student Personal Details */}
+              {/* Personal Details */}
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-[#E2D3A7]">
                   <User className="w-5 h-5 text-[#B7791F]" />
                   <h2 className="text-base sm:text-lg font-extrabold text-[#2D3748] uppercase tracking-wide">
-                    Left Column: Personal Information
+                    Personal Information
                   </h2>
                 </div>
 
@@ -225,12 +224,12 @@ export default function StudentLoginPage({ onNavigate, onAuthSuccess, onOpenInst
 
               </div>
 
-              {/* RIGHT COLUMN: Academic Credentials & Password */}
+              {/* Academic Credentials & Password */}
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-[#E2D3A7]">
                   <Lock className="w-5 h-5 text-[#B7791F]" />
                   <h2 className="text-base sm:text-lg font-extrabold text-[#2D3748] uppercase tracking-wide">
-                    Right Column: Academic & Security
+                    Academic & Security
                   </h2>
                 </div>
 

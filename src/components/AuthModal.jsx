@@ -268,7 +268,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
               {/* Left Column: Name, Email, Mobile, Department */}
               <div className="space-y-4">
                 <div className="text-sm font-bold text-[#B7791F] uppercase tracking-wider pb-1 border-b border-[#E2D3A7]">
-                  Left Column: Contact Information
+                  Contact Information
                 </div>
 
                 <div className="space-y-1.5">
@@ -319,10 +319,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                 </div>
               </div>
 
-              {/* Right Column: Reg No, Year, Section, Password, Confirm Password */}
+              {/* Academic Credentials */}
               <div className="space-y-4">
                 <div className="text-sm font-bold text-[#B7791F] uppercase tracking-wider pb-1 border-b border-[#E2D3A7]">
-                  Right Column: Academic & Credentials
+                  Academic & Credentials
                 </div>
 
                 <div className="space-y-1.5">
