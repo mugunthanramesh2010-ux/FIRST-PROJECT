@@ -63,7 +63,7 @@ const server = http.createServer(async (req, res) => {
   // Enable local CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-token');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -71,7 +71,35 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- API ROUTES ---
+  // --- MODULAR API DISPATCHER ---
+  if (pathname.startsWith('/api/')) {
+    try {
+      if (!global.__apiDispatcher) {
+        const mod = await import('./server/src/apiDispatcher.js');
+        global.__apiDispatcher = mod.handleApiRequest;
+      }
+      if (global.__apiDispatcher) {
+        let body = {};
+        if (req.method === 'POST') {
+          body = await readBody(req);
+        }
+        const apiRes = await global.__apiDispatcher(pathname, req.method, body, req.headers);
+        if (apiRes) {
+          const status = apiRes.status || 200;
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(apiRes.body !== undefined ? apiRes.body : apiRes));
+          return;
+        }
+      }
+    } catch (apiErr) {
+      console.error('API Dispatcher Error:', apiErr);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: apiErr.message }));
+      return;
+    }
+  }
+
+  // --- LEGACY / FALLBACK API ROUTES ---
 
   // Health check
   if (pathname === '/api/health') {

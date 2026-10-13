@@ -295,7 +295,7 @@ export function validateQuestionPackage(pkg, topic = '') {
   };
 }
 
-// Normalize question structure, enforce 4 progressive anti-leak hints, and Fisher-Yates shuffle options
+// Normalize question structure, enforce 4 progressive anti-leak hints, and rotate/shuffle options
 export function normalizeQuestion(q, idx, topic) {
   const validation = validateQuestionPackage(q, topic);
   const sanitized = validation.sanitized;
@@ -307,19 +307,32 @@ export function normalizeQuestion(q, idx, topic) {
     sanitized.id = `q_ai_${idx + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  // Fisher-Yates shuffle MCQ options so correct answer is randomly distributed among choices
+  // Shuffle MCQ options and systematically rotate correct answer position across choices (A, B, C, D)
+  // Ensures Option A is NEVER statically correct; shifts dynamically to 1st, 2nd, 3rd, or 4th position
   if (sanitized.type === 'mcq' && Array.isArray(sanitized.options) && sanitized.options.length >= 2) {
     let qCorrect = typeof sanitized.correctIndex === 'number' ? sanitized.correctIndex : 0;
-    if (qCorrect >= sanitized.options.length) qCorrect = 0;
+    if (qCorrect >= sanitized.options.length || qCorrect < 0) qCorrect = 0;
 
     const indexed = sanitized.options.map((opt, i) => ({ text: opt, isCorrect: i === qCorrect }));
+    
+    // Fisher-Yates shuffle
     for (let i = indexed.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
     }
+
+    // Swiping / Rotating correct index across options so every question has a varied answer position (0, 1, 2, or 3)
+    const targetSlot = (idx + Math.floor(Math.random() * (indexed.length - 1) + 1)) % indexed.length;
+    const currentCorrectIdx = indexed.findIndex(item => item.isCorrect);
+    if (currentCorrectIdx !== -1 && currentCorrectIdx !== targetSlot) {
+      const temp = indexed[currentCorrectIdx];
+      indexed[currentCorrectIdx] = indexed[targetSlot];
+      indexed[targetSlot] = temp;
+    }
+
     sanitized.options = indexed.map(item => item.text);
     sanitized.correctIndex = indexed.findIndex(item => item.isCorrect);
-    if (sanitized.correctIndex < 0) sanitized.correctIndex = 0;
+    if (sanitized.correctIndex < 0) sanitized.correctIndex = targetSlot;
   }
 
   return sanitized;
@@ -909,9 +922,287 @@ const SUBJECT_DOMAINS = {
     ]
   },
 
-  // Computer Science & IT
-  computer_science: {
-    matchKeywords: ['computer science and engineering', 'computer science', 'cse', 'cs', 'information technology', 'it', 'software engineering', 'data structures', 'algorithms', 'database', 'dbms', 'operating systems', 'os', 'networking', 'python', 'java', 'sql', 'compiler', 'cloud', 'dsa'],
+  // Operating Systems
+  operating_systems: {
+    matchKeywords: ['operating system', 'operating systems', 'os', 'deadlock', 'virtual memory', 'paging', 'process scheduling', 'semaphore', 'mutex', 'banker algorithm', 'concurrency', 'multithreading', 'cpu scheduling', 'kernel'],
+    questions: [
+      {
+        questionText: 'Explain the four Coffman conditions necessary for a Deadlock to occur in an operating system. How does Deadlock Avoidance differ from Deadlock Prevention?',
+        type: 'text',
+        bloomLevel: 'Analysis',
+        hints: [
+          'The four conditions are: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait.',
+          'Deadlock Prevention invalidates at least one of the four Coffman conditions statically.',
+          'Deadlock Avoidance dynamically analyzes resource allocation state (e.g. Dijkstra’s Banker’s Algorithm) to guarantee safety.',
+          'Synthesize how safe states ensure at least one execution sequence completes without circular blocking.'
+        ],
+        expectedKeywords: ['deadlock', 'coffman', 'mutual exclusion', 'hold and wait', 'circular wait', 'banker algorithm']
+      },
+      {
+        questionText: 'Explain the difference between Paging and Segmentation in Virtual Memory management, and how the Translation Lookaside Buffer (TLB) accelerates address translation.',
+        type: 'text',
+        bloomLevel: 'Application',
+        hints: [
+          'Paging divides memory into fixed-size physical frames and virtual pages, preventing external fragmentation.',
+          'Segmentation divides memory into variable-sized logical modules (code, stack, heap).',
+          'TLB is a fast associative hardware cache storing recently used Virtual-to-Physical page table entries.',
+          'A high TLB hit rate (~99%) avoids extra memory lookups, reducing effective memory access time dramatically.'
+        ],
+        expectedKeywords: ['paging', 'segmentation', 'virtual memory', 'tlb', 'page table', 'fragmentation']
+      },
+      {
+        questionText: 'In CPU scheduling, which algorithm minimizes average waiting time for a given set of stationary processes, and what is its primary operational limitation?',
+        type: 'mcq',
+        options: [
+          'Shortest Job First (SJF) minimizes average waiting time, but future CPU burst lengths cannot be known in advance',
+          'First-Come First-Served (FCFS), but it causes thread race conditions in L1 cache',
+          'Round Robin with infinite time quantum, but it starves high-priority kernel threads',
+          'Priority Scheduling without aging, which eliminates all context switching overhead'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Evaluation',
+        hints: [
+          'Consider which scheduling policy is mathematically provable to minimize waiting time.',
+          'Shortest processes are prioritized first to empty the ready queue rapidly.',
+          'The fundamental issue in practice is estimating upcoming CPU burst duration.',
+          'SJF is optimal, but requires heuristics or exponential smoothing to predict burst times.'
+        ],
+        expectedKeywords: ['sjf', 'shortest job first', 'cpu scheduling', 'burst time', 'waiting time']
+      },
+      {
+        questionText: 'What is the critical functional difference between a Counting Semaphore and a Binary Semaphore (Mutex)?',
+        type: 'mcq',
+        options: [
+          'A Mutex provides strict ownership semantics (only the locking thread can unlock it), whereas a Counting Semaphore manages access to a finite pool of shared resources across arbitrary threads',
+          'A Counting Semaphore can only have values 0 or 1, while a Mutex has infinite range',
+          'A Mutex causes busy-waiting spinlocks on single-core CPUs while semaphores do not',
+          'Semaphores operate strictly in user-space without kernel system call invocation'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Think about ownership: who acquires the lock and who is allowed to release it.',
+          'A Mutex acts like a key to a room; only the person holding the key can unlock it.',
+          'A Counting Semaphore maintains an integer counter tracking available resource permits.',
+          'Mutex guarantees mutual exclusion with ownership; Counting Semaphores signal resource availability.'
+        ],
+        expectedKeywords: ['semaphore', 'mutex', 'binary semaphore', 'counting semaphore', 'critical section', 'synchronization']
+      }
+    ]
+  },
+
+  // Python Programming
+  python_programming: {
+    matchKeywords: ['python', 'python programming', 'python3', 'cpython', 'gil', 'global interpreter lock', 'list comprehension', 'generator', 'decorator', 'lambda in python'],
+    questions: [
+      {
+        questionText: 'In CPython, what is the Global Interpreter Lock (GIL), and why does it prevent CPU-bound Python threads from achieving true multi-core parallelism?',
+        type: 'mcq',
+        options: [
+          'The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes simultaneously on different CPU cores',
+          'The GIL is a hardware interrupt that restricts Python script execution to 32-bit registers',
+          'The GIL is a compiler optimization that automatically converts all iterative loops into vector SIMD instructions',
+          'The GIL is a security sandbox that blocks Python threads from reading virtual memory'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'Consider CPython’s memory management mechanism and reference counting.',
+          'Multiple threads concurrently mutating reference counts would lead to race conditions without global synchronization.',
+          'The GIL enforces that only one thread executes Python bytecode at any instant.',
+          'For CPU-bound concurrency across multiple CPU cores, developers use multiprocessing instead of threading.'
+        ],
+        expectedKeywords: ['gil', 'global interpreter lock', 'cpython', 'multithreading', 'reference counting', 'cpu-bound']
+      },
+      {
+        questionText: 'Explain the difference between a Python Generator (using yield) and a List Comprehension in terms of memory consumption and execution evaluation.',
+        type: 'mcq',
+        options: [
+          'Generators use lazy evaluation (producing items on-demand with O(1) auxiliary memory), whereas List Comprehensions build and store the entire list in memory eagerly (O(N) space)',
+          'List Comprehensions compile to C machine code while Generators run inside an interpreted subprocess',
+          'Generators can only yield string values, whereas List Comprehensions support arbitrary data types',
+          'List Comprehensions are thread-safe singletons while Generators violate immutability rules'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Recall how the "yield" keyword pauses function state between iterations.',
+          'A list comprehension immediately computes all elements and allocates RAM for the full collection.',
+          'Generators implement the iterator protocol without creating an in-memory collection.',
+          'Generators enable processing massive streams without memory exhaustion.'
+        ],
+        expectedKeywords: ['generator', 'yield', 'lazy evaluation', 'list comprehension', 'memory footprint', 'iterator']
+      },
+      {
+        questionText: 'How do Python Decorators operate under the hood, and how are first-class functions utilized in the syntax @my_decorator?',
+        type: 'text',
+        bloomLevel: 'Application',
+        hints: [
+          'In Python, functions are first-class citizens: they can be passed as arguments, assigned to variables, and returned from other functions.',
+          'The syntax @decorator above def foo(): is syntactic sugar for foo = decorator(foo).',
+          'A decorator accepts the original target function and returns a wrapper function.',
+          'Using functools.wraps preserves original function metadata (__name__, __doc__).'
+        ],
+        expectedKeywords: ['decorator', 'first-class functions', 'wrapper', 'closure', 'syntactic sugar', 'higher-order function']
+      },
+      {
+        questionText: 'In Python, what is the fundamental difference between Mutable types (e.g. list, dict, set) and Immutable types (e.g. tuple, int, str), particularly when passed as arguments to functions?',
+        type: 'mcq',
+        options: [
+          'Arguments are passed by object reference (call-by-sharing); in-place mutations of mutable objects inside a function affect the caller’s original object, whereas reassigning immutable objects does not mutate the original',
+          'Immutable types are stored on disk caches while mutable types reside in GPU memory',
+          'Passing mutable types to functions creates a deep copy automatically, while immutable types share memory',
+          'Immutable types cannot be passed into functions or returned from methods'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'Python uses call-by-object-reference.',
+          'If you modify a list passed into a function using list.append(), the caller sees that change.',
+          'Tuples and strings cannot be modified in-place; any operation produces a new object.',
+          'Understanding mutability prevents accidental side-effects like mutable default arguments (def f(x=[]):).'
+        ],
+        expectedKeywords: ['mutable', 'immutable', 'pass-by-assignment', 'object reference', 'side effect', 'tuple', 'list']
+      }
+    ]
+  },
+
+  // Computer Networks
+  computer_networks: {
+    matchKeywords: ['computer networks', 'networking', 'computer network', 'tcp', 'udp', 'osi model', 'dns', 'ip address', 'subnetting', 'http', 'https', 'routing algorithm', 'lan', 'wan'],
+    questions: [
+      {
+        questionText: 'How does the TCP Three-Way Handshake establish a reliable connection, and what happens if a SYN packet is dropped?',
+        type: 'mcq',
+        options: [
+          'Client sends SYN, Server replies SYN-ACK, Client sends ACK; if dropped, client retransmits SYN after timeout (RTO)',
+          'Client sends PING, Server sends PONG, connection instantly terminates',
+          'Server broadcasts ARP request to all LAN devices simultaneously',
+          'Client sends UDP datagram with zero acknowledgment sequence number'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Remember the packet sequence: SYN, SYN-ACK, ACK.',
+          'Both host endpoints synchronize initial sequence numbers (ISN).',
+          'Reliability is guaranteed via timer-based retransmission on packet loss.',
+          'The correct sequence is SYN -> SYN-ACK -> ACK.'
+        ],
+        expectedKeywords: ['tcp', 'handshake', 'syn', 'ack', 'retransmission', 'sequence number']
+      },
+      {
+        questionText: 'Compare the transport-layer operational trade-offs between TCP (Transmission Control Protocol) and UDP (User Datagram Protocol). In what scenarios is UDP preferred over TCP?',
+        type: 'mcq',
+        options: [
+          'TCP provides guaranteed in-order delivery, flow control, and congestion control with higher latency overhead; UDP is connectionless and low-overhead, preferred for real-time video streaming, VoIP, and gaming',
+          'TCP is unencrypted while UDP enforces built-in TLS cryptographic handshakes',
+          'UDP operates exclusively over fiber-optic links while TCP is restricted to wireless networks',
+          'TCP does not support IP addresses, whereas UDP requires 128-bit MAC routing headers'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'Contrast connection-oriented reliable byte streams vs connectionless packet datagrams.',
+          'Consider what happens when a packet is lost during a live video call or multiplayer game.',
+          'TCP retransmissions introduce jitter and Head-of-Line blocking, making it unsuitable for real-time latency-critical streams.',
+          'UDP avoids handshake latency and retransmission overhead.'
+        ],
+        expectedKeywords: ['tcp', 'udp', 'connectionless', 'reliable', 'flow control', 'latency', 'head of line blocking']
+      },
+      {
+        questionText: 'Explain the sequential DNS resolution process when a user requests "www.example.com", starting from the local resolver cache to the authoritative nameserver.',
+        type: 'text',
+        bloomLevel: 'Application',
+        hints: [
+          'Step 1: Browser and OS check local DNS cache and hosts file.',
+          'Step 2: Recursive resolver queries Root DNS server (.) to identify the TLD server (.com).',
+          'Step 3: Root server delegates to TLD server (.com), which points to authoritative nameserver for example.com.',
+          'Step 4: Authoritative nameserver returns the A/AAAA record with IP address, which is cached according to TTL.'
+        ],
+        expectedKeywords: ['dns', 'resolver', 'root server', 'tld', 'authoritative nameserver', 'a record', 'ttl']
+      },
+      {
+        questionText: 'In IPv4 networking, what is the usable host address range and broadcast address for a subnet configured as 192.168.10.0/26?',
+        type: 'mcq',
+        options: [
+          'Usable host range: 192.168.10.1 to 192.168.10.62; Broadcast address: 192.168.10.63 (Total 64 IPs, 62 usable)',
+          'Usable host range: 192.168.10.0 to 192.168.10.254; Broadcast address: 192.168.10.255',
+          'Usable host range: 192.168.10.10 to 192.168.10.36; Broadcast address: 192.168.10.64',
+          'Usable host range: 192.168.10.1 to 192.168.10.128; Broadcast address: 192.168.10.129'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'A /26 mask has 26 network bits and 32 - 26 = 6 host bits.',
+          'Number of total addresses in subnet = 2^6 = 64.',
+          'Subnet spans 192.168.10.0 to 192.168.10.63.',
+          'Network address is .0, Broadcast is .63, leaving .1 to .62 for usable hosts.'
+        ],
+        expectedKeywords: ['subnetting', 'cidr', 'usable hosts', 'broadcast address', 'network address', 'slash 26']
+      }
+    ]
+  },
+
+  // Database Systems & SQL
+  database_systems: {
+    matchKeywords: ['database', 'database management', 'dbms', 'rdbms', 'sql', 'normalization', 'bcnf', '3nf', 'acid properties', 'indexing', 'b-tree', 'relational database', 'transaction', 'nosql'],
+    questions: [
+      {
+        questionText: 'In relational database design, what differentiates Third Normal Form (3NF) from Boyce-Codd Normal Form (BCNF)?',
+        type: 'mcq',
+        options: [
+          'BCNF requires that for every non-trivial functional dependency X -> Y, X must strictly be a superkey, eliminating non-trivial dependencies on non-superkeys',
+          '3NF prohibits atomic values while BCNF enforces non-atomic repeating arrays',
+          'BCNF allows transitive dependencies on non-prime attributes whereas 3NF bans them',
+          '3NF applies only to NoSQL document collections whereas BCNF applies to relational tables'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          '3NF allows X -> A if X is a superkey OR A is a prime attribute (part of candidate key).',
+          'BCNF tightens this by removing the prime attribute exception.',
+          'In BCNF, every determinant must be a superkey.',
+          'The correct answer is that for every X -> Y, X must strictly be a superkey.'
+        ],
+        expectedKeywords: ['3nf', 'bcnf', 'functional dependency', 'superkey', 'prime attribute']
+      },
+      {
+        questionText: 'Explain the four ACID properties that guarantee transaction reliability in a Database Management System.',
+        type: 'text',
+        bloomLevel: 'Understanding',
+        hints: [
+          'Atomicity: All operations in a transaction succeed completely or all are rolled back (all-or-nothing).',
+          'Consistency: Transactions transition the database from one valid state to another, preserving integrity constraints.',
+          'Isolation: Concurrent execution of transactions leaves the system in the same state as serial execution.',
+          'Durability: Once a transaction commits, its modifications persist permanently even across power failures.'
+        ],
+        expectedKeywords: ['acid', 'atomicity', 'consistency', 'isolation', 'durability', 'transaction', 'commit', 'rollback']
+      },
+      {
+        questionText: 'Why do relational database engines predominantly use B+ Trees rather than Binary Search Trees or Hash Indexes for primary and secondary indexing?',
+        type: 'mcq',
+        options: [
+          'B+ Trees have high fan-out (reducing disk I/O depth to 3-4 levels) and store all keys in sorted leaf nodes linked as a list, enabling fast range scans',
+          'Binary Search Trees consume zero RAM and execute in O(1) constant time across disk blocks',
+          'Hash indexes do not support integer primary keys',
+          'B+ Trees compress database tables to zero disk footprint'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Evaluation',
+        hints: [
+          'Consider the cost of disk block reads versus RAM memory access.',
+          'A balanced binary tree has high height (O(log2 N)), requiring dozens of random disk seek operations.',
+          'B+ Tree fan-out is typically 100-500, keeping tree height very low.',
+          'Linked leaf nodes make range queries (WHERE age BETWEEN 20 AND 30) extremely efficient.'
+        ],
+        expectedKeywords: ['b+ tree', 'indexing', 'fan-out', 'disk i/o', 'range scan', 'binary search tree']
+      }
+    ]
+  },
+
+  // Data Structures & Algorithms
+  data_structures_algorithms: {
+    matchKeywords: ['data structures', 'algorithms', 'dsa', 'data structure', 'algorithm', 'quicksort', 'mergesort', 'binary search', 'dynamic programming', 'graph traversal', 'big o', 'complexity'],
     questions: [
       {
         questionText: 'What is the worst-case and average-case time complexity of QuickSort, and in what scenario does the worst-case arise?',
@@ -933,66 +1224,73 @@ const SUBJECT_DOMAINS = {
         expectedKeywords: ['quicksort', 'time complexity', 'pivot', 'worst case', 'partition']
       },
       {
-        questionText: 'Explain the four Coffman conditions necessary for a Deadlock to occur in an operating system. How does Deadlock Avoidance differ from Deadlock Prevention?',
-        type: 'text',
-        bloomLevel: 'Analysis',
-        hints: [
-          'The four conditions are: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait.',
-          'Deadlock Prevention invalidates at least one of the four Coffman conditions statically.',
-          'Deadlock Avoidance dynamically analyzes resource allocation state (e.g. Dijkstra’s Banker’s Algorithm) to guarantee safety.',
-          'Synthesize how safe states ensure at least one execution sequence completes without circular blocking.'
-        ],
-        expectedKeywords: ['deadlock', 'coffman', 'mutual exclusion', 'hold and wait', 'circular wait', 'banker algorithm']
-      },
-      {
-        questionText: 'In relational database design, what differentiates Third Normal Form (3NF) from Boyce-Codd Normal Form (BCNF)?',
+        questionText: 'In Hash Table design, contrast the collision resolution techniques: Separate Chaining versus Open Addressing (Linear Probing / Double Hashing). How does the load factor (α) affect their performance?',
         type: 'mcq',
         options: [
-          'BCNF requires that for every functional dependency X -> Y, X must strictly be a superkey, eliminating non-trivial dependencies on non-superkeys',
-          '3NF prohibits atomic values while BCNF enforces non-atomic repeating arrays',
-          'BCNF allows transitive dependencies on non-prime attributes whereas 3NF bans them',
-          '3NF applies only to NoSQL document collections whereas BCNF applies to relational tables'
+          'Separate Chaining stores colliding elements in external linked lists/trees (can handle load factor α > 1.0), whereas Open Addressing stores all elements within the table array (requires α < 1.0 to avoid clustering)',
+          'Open Addressing uses dynamic memory allocation for each key while Separate Chaining stores all keys in CPU registers',
+          'Separate Chaining has O(1) worst-case search complexity in all pathological distributions',
+          'Open Addressing guarantees zero cache misses under high clustering'
         ],
         correctIndex: 0,
         bloomLevel: 'Analysis',
         hints: [
-          '3NF allows X -> A if X is a superkey OR A is a prime attribute (part of candidate key).',
-          'BCNF tightens this by removing the prime attribute exception.',
-          'In BCNF, every determinant must be a superkey.',
-          'The correct answer is that for every X -> Y, X must strictly be a superkey.'
+          'Separate chaining links colliding entries in auxiliary buckets.',
+          'Open addressing searches for an open table slot using probing sequences.',
+          'When table fills up (load factor α -> 1), open addressing degrades rapidly due to primary/secondary clustering.',
+          'Separate chaining can continue functioning even when entries exceed table size.'
         ],
-        expectedKeywords: ['3nf', 'bcnf', 'functional dependency', 'superkey', 'prime attribute']
+        expectedKeywords: ['hash table', 'collision resolution', 'separate chaining', 'open addressing', 'load factor', 'clustering']
       },
       {
-        questionText: 'How does the TCP Three-Way Handshake establish a reliable connection, and what happens if a SYN packet is dropped?',
+        questionText: 'Explain Dijkstra’s Algorithm for finding the single-source shortest path in a weighted graph. Why does it fail when negative edge weights are present?',
+        type: 'text',
+        bloomLevel: 'Analysis',
+        hints: [
+          'Dijkstra’s algorithm uses a greedy approach, maintaining a priority queue (min-heap) of tentative distances.',
+          'Once a vertex with the minimum tentative distance is visited/settled, Dijkstra assumes its shortest path is final.',
+          'If a negative edge exists later in the graph, it could decrease the cost of an already-settled vertex, violating the greedy invariant.',
+          'For graphs with negative weights, the Bellman-Ford algorithm must be used instead.'
+        ],
+        expectedKeywords: ['dijkstra', 'shortest path', 'greedy', 'min-heap', 'negative edge', 'bellman-ford']
+      }
+    ]
+  },
+
+  // General Computer Science & Engineering
+  computer_science: {
+    matchKeywords: ['computer science and engineering', 'computer science', 'cse', 'cs', 'software engineering', 'compiler design', 'automata theory', 'theory of computation'],
+    questions: [
+      {
+        questionText: 'What is the Chomsky Hierarchy of formal languages, and what is the difference in expressive power between a Deterministic Finite Automaton (DFA) and a Pushdown Automaton (PDA)?',
         type: 'mcq',
         options: [
-          'Client sends SYN, Server replies SYN-ACK, Client sends ACK; if dropped, client retransmits SYN after timeout (RTO)',
-          'Client sends PING, Server sends PONG, connection instantly terminates',
-          'Server broadcasts ARP request to all LAN devices simultaneously',
-          'Client sends UDP datagram with zero acknowledgment sequence number'
+          'DFAs recognize Regular languages (no memory beyond states), while PDAs have a stack and recognize Context-Free languages (enabling nested balanced parentheses matching)',
+          'DFAs can solve the Halting Problem while PDAs cannot recognize finite strings',
+          'PDAs only accept single-symbol alphabets whereas DFAs accept infinite graphs',
+          'DFAs require non-deterministic quantum superpositions to recognize strings'
         ],
         correctIndex: 0,
-        bloomLevel: 'Understanding',
+        bloomLevel: 'Analysis',
         hints: [
-          'Remember the packet sequence: SYN, SYN-ACK, ACK.',
-          'Both host endpoints synchronize initial sequence numbers (ISN).',
-          'Reliability is guaranteed via timer-based retransmission on packet loss.',
-          'The correct sequence is SYN -> SYN-ACK -> ACK.'
+          'Consider memory models in formal automata.',
+          'A DFA has only a finite state register (no external memory or stack).',
+          'A PDA adds a Last-In First-Out (LIFO) stack to the finite control.',
+          'The stack allows PDAs to count and match matching pairs, like a^n b^n.'
         ],
-        expectedKeywords: ['tcp', 'handshake', 'syn', 'ack', 'retransmission', 'sequence number']
+        expectedKeywords: ['chomsky hierarchy', 'dfa', 'pda', 'regular language', 'context-free', 'stack']
       },
       {
-        questionText: 'Explain the difference between Paging and Segmentation in Virtual Memory management, and how the Translation Lookaside Buffer (TLB) accelerates address translation.',
+        questionText: 'Explain the difference between Monolithic and Microservices software architectures in terms of deployment scalability, fault isolation, and inter-service communication overhead.',
         type: 'text',
-        bloomLevel: 'Application',
+        bloomLevel: 'Evaluation',
         hints: [
-          'Paging divides memory into fixed-size physical frames and virtual pages, preventing external fragmentation.',
-          'Segmentation divides memory into variable-sized logical modules (code, stack, heap).',
-          'TLB is a fast associative hardware cache storing recently used Virtual-to-Physical page table entries.',
-          'A high TLB hit rate (~99%) avoids extra memory lookups, reducing effective memory access time dramatically.'
+          'Monolithic systems bundle all components into a single deployable artifact with in-process memory calls.',
+          'Microservices decouple domains into autonomous services communicating over network protocols (gRPC, HTTP/REST).',
+          'Microservices enable independent team deployment and fault isolation, but introduce network latency and distributed data consistency challenges.',
+          'Synthesize how organizations choose between rapid monolith velocity and microservice scaling.'
         ],
-        expectedKeywords: ['paging', 'segmentation', 'virtual memory', 'tlb', 'page table', 'fragmentation']
+        expectedKeywords: ['monolith', 'microservices', 'scalability', 'fault isolation', 'network overhead', 'grpc', 'rest']
       }
     ]
   },
@@ -1640,7 +1938,7 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
     }
   }
 
-  // 2. Check subject domain matching (Intelligent Specificity-Weighted Scorer)
+  // 2. Check subject domain matching (Intelligent Specificity-Weighted Scorer with Word-Boundary Enforcement)
   let bestDomain = null;
   let bestScore = 0;
 
@@ -1648,11 +1946,20 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
     let score = 0;
     for (const kw of domain.matchKeywords) {
       if (lower === kw) {
-        score += 50;
+        score += 80; // Exact match is highest priority
       } else if (kw.length <= 3) {
-        if (lower.split(/[\s,()/-]+/).includes(kw)) score += 12;
-      } else if (lower.includes(kw)) {
-        score += kw.length; // Longer, more specific technical keyword matches get higher weight
+        // Short tokens (e.g. 'os', 'cse', 'dsa', 'tcp', 'udp', 'sql', 'it') MUST match as whole words
+        const words = lower.split(/[\s,()/-]+/).filter(Boolean);
+        if (words.includes(kw)) {
+          score += 35;
+        }
+      } else {
+        // Multi-word phrase or technical term: require whole-word boundary
+        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (regex.test(lower)) {
+          score += kw.length * 2.5;
+        }
       }
     }
     if (score > bestScore) {
@@ -1661,7 +1968,7 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
     }
   }
 
-  if (bestDomain && bestScore >= 4) {
+  if (bestDomain && bestScore >= 6) {
     // 1. Randomly shuffle available domain questions so no two test sessions start with the same sequence
     const domainQuestions = [...bestDomain.questions].sort(() => Math.random() - 0.5);
     const qList = [];
@@ -1672,33 +1979,45 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
     });
 
     // 2. If more questions needed than in the base pool, synthesize domain-accurate parametric variants
-    const scenarios = [
-      'In a safety-critical automotive ECU deployment',
-      'Under high-frequency industrial manufacturing conditions',
-      'In a low-power, thermal-constrained mobile architecture',
-      'During extreme transient stress and boundary saturation',
-      'In a distributed enterprise deployment requiring strict 99.999% uptime',
-      'Under high-altitude electromagnetic interference conditions'
+    const isSoftware = /software|python|code|program|network|database|os|system|data|algo|cloud|web/i.test(cleanTopic);
+    const isBio = /bio|chem|pharma|medical|genetic|cell/i.test(cleanTopic);
+    const isBusiness = /econ|finance|market|business|commerce|trade/i.test(cleanTopic);
+
+    const scenarios = isSoftware ? [
+      'Under high-concurrency production load with distributed network partitions',
+      'In a low-latency, zero-downtime microservices architecture',
+      'During memory-constrained embedded runtime execution',
+      'In an asynchronous event-driven system under extreme throughput',
+      'When certifying zero data loss across distributed replicas'
+    ] : isBio ? [
+      'Under in-vitro physiological temperature and ionic buffer variation',
+      'During enzymatic substrate saturation and competitive inhibition assay',
+      'In a high-throughput automated bioprocessing bioreactor',
+      'Under extreme pH stress and protein denaturation boundaries'
+    ] : isBusiness ? [
+      'During unexpected macroeconomic inflationary pressure and currency shifts',
+      'In an oligopolistic competitive market with asymmetric information',
+      'Under liquidity-constrained capital allocation and rising interest rates',
+      'During supply chain disruption and demand shock modeling'
+    ] : [
+      'Under high-frequency cyclic vibration and dynamic boundary loading',
+      'In a safety-critical aerospace and automotive deployment',
+      'During extreme transient thermal saturation and non-linear stress',
+      'Under electromagnetic interference and boundary tolerance limits'
     ];
-    const frequencies = ['100 MHz', '250 MHz', '500 MHz', '1.2 GHz'];
-    const voltages = ['1.2V core', '1.8V I/O', '3.3V legacy'];
-    const tolerances = ['±1% precision tolerance', '±5% engineering tolerance'];
 
     let variantCounter = 0;
     while (qList.length < count) {
       const base = domainQuestions[variantCounter % domainQuestions.length];
-      const sc = scenarios[Math.floor(Math.random() * scenarios.length)];
-      const f = frequencies[Math.floor(Math.random() * frequencies.length)];
-      const v = voltages[Math.floor(Math.random() * voltages.length)];
-      const tol = tolerances[Math.floor(Math.random() * tolerances.length)];
+      const sc = scenarios[variantCounter % scenarios.length];
 
       const variantQ = {
         ...base,
         id: `q_ai_var_${variantCounter + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         level: ((variantCounter % 3) + 2),
         bloomLevel: variantCounter % 3 === 0 ? 'Application' : variantCounter % 3 === 1 ? 'Analysis' : 'Evaluation',
-        questionText: `${sc} for ${cleanTopic} (operating at ${f}, ${v}, with ${tol}): ${base.questionText}`,
-        hints: base.hints ? base.hints.map(h => `${h} (Evaluate the operational conditions: ${f}, ${v}).`) : null
+        questionText: `${sc} for ${cleanTopic}: ${base.questionText}`,
+        hints: base.hints ? base.hints.map(h => `${h} (Evaluate the operational conditions: ${sc}).`) : null
       };
 
       qList.push(normalizeQuestion(variantQ, qList.length, cleanTopic));
@@ -1710,178 +2029,308 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
   }
 
   // 3. UNIVERSAL DYNAMIC SUBJECT SYNTHESIZER (Generates authentic, rigorous, infinitely varied questions for ANY topic in the world)
-  const words = cleanTopic.split(/\s+/).filter(Boolean);
   const subjectName = cleanTopic;
-  const primaryTerm = words[0] || 'System';
-  const secondaryTerm = words[1] || 'Parameters';
+  const isCodingOrCS = /software|code|program|web|cloud|cyber|app|data|algo|system|network|database|api|interface|service|server|docker|linux|git|stack|queue|tree|graph|python|java|c\+\+|javascript|rust|golang/i.test(cleanTopic);
+  const isBioOrMed = /bio|med|health|cell|gene|disease|clinical|anatomy|pharma|immune|organ|blood|surgery|therapy|patho|dna|rna|virus|bacteria/i.test(cleanTopic);
+  const isBusinessOrEcon = /business|finance|econ|market|trade|cost|stock|manage|commerce|account|invest|audit|tax|firm|price|gdp|inflation|bank/i.test(cleanTopic);
+  const isLawOrEthics = /law|legal|court|right|statute|justice|constitution|crime|contract|policy|ethics|juris|civic|rule/i.test(cleanTopic);
 
-  const dynamicQuestionPool = [
-    {
-      level: 1,
-      bloomLevel: 'Remembering',
-      type: 'text',
-      questionText: `State the fundamental theoretical axioms, scientific governing laws, and dimensional SI units that characterize ${subjectName}.`,
-      hints: [
-        `Identify the primary technical definition and operational boundary of ${subjectName}.`,
-        `Formulate the governing equations or state transitions characterizing ${subjectName}.`,
-        `Recall the dimensional units and operational constants involved.`,
-        `Synthesize the physical or mathematical boundary under which these laws hold.`
-      ],
-      expectedKeywords: [primaryTerm.toLowerCase(), 'definition', 'formula', 'boundary', 'unit']
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'mcq',
-      questionText: `Under nominal operating conditions, what primary mechanism governs state transfer, dynamic equilibrium, and response stability in ${subjectName}?`,
-      options: [
-        `Dynamic equilibrium between excitation inputs, transfer characteristics, and intrinsic response parameters in ${subjectName}`,
-        `Arbitrary stochastic fluctuations with zero causal correlation to system parameters`,
-        `Permanent spontaneous violation of conservation and equilibrium constraints`,
-        `Complete absence of reactive, dissipative, or inertial resistance in the system`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider causality and transfer characteristics governing ${subjectName}.`,
-        `System response depends on internal properties under applied inputs.`,
-        `Stability requires equilibrium between excitation and resistance.`,
-        `The correct answer relates to dynamic equilibrium between inputs and intrinsic response parameters.`
-      ],
-      expectedKeywords: ['equilibrium', 'transfer', 'response', 'stability', 'mechanism']
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      questionText: `In an applied engineering deployment of ${subjectName}, what rigorous analytical procedure is executed to compute critical variables and optimize performance metrics?`,
-      hints: [
-        `Identify known input variables and target state parameters for ${subjectName}.`,
-        `Formulate the governing algebraic or differential equations.`,
-        `Apply appropriate initial or boundary conditions.`,
-        `Demonstrate how the analytical solution is validated against tolerance thresholds.`
-      ],
-      expectedKeywords: ['methodology', 'analytical', 'governing equation', 'boundary condition', 'solution']
-    },
-    {
-      level: 3,
-      bloomLevel: 'Analysis',
-      type: 'mcq',
-      questionText: `When ${subjectName} is subjected to critical boundary conditions or operational saturation, what constitutes the primary performance bottleneck or failure mode?`,
-      options: [
-        `Non-linear distortion, parasitic interference, or capacity saturation exceeding safe operational thresholds in ${subjectName}`,
-        `Instantaneous drop in entropy without thermodynamic or computational degradation`,
-        `Strict linear response without any parameter variance across infinite range`,
-        `Spontaneous infinite amplification with zero external power or input excitation`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider what happens when materials, circuits, or algorithms exceed design limits.`,
-        `Look for saturation, non-linear distortion, or breakdown beyond thresholds.`,
-        `Safety and design margins exist to avoid non-linear degradation.`,
-        `The correct answer is non-linear distortion or saturation exceeding operational thresholds.`
-      ],
-      expectedKeywords: ['failure mode', 'threshold', 'bottleneck', 'saturation', 'non-linear']
-    },
-    {
-      level: 4,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      questionText: `Critically evaluate the architectural trade-offs, standards compliance, and safety factor validation required when certifying an enterprise implementation of ${subjectName}.`,
-      hints: [
-        `Define the factor of safety or margin of reliability required for ${subjectName}.`,
-        `Discuss testing protocols, simulation workflows, or empirical validations.`,
-        `Identify environmental degradation factors (temperature, noise, load fluctuations).`,
-        `Deliver a technical justification balancing operational performance against safety margins.`
-      ],
-      expectedKeywords: ['factor of safety', 'reliability', 'certification', 'validation', 'trade-off']
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'mcq',
-      questionText: `Which architectural or algorithmic technique is standard engineering practice to mitigate noise and maximize throughput in ${subjectName}?`,
-      options: [
-        `Pipelining, feedback stabilization, and domain-appropriate filtering of state variables in ${subjectName}`,
-        `Completely removing synchronization and relying on open-loop unconstrained propagation`,
-        `Deliberately increasing parasitic propagation delay to slow down data processing`,
-        `Inverting control polarity without verifying ground reference stability`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider standard engineering strategies for throughput and noise immunity.`,
-        `Feedback stabilization and pipelining are foundational optimization methods.`,
-        `Filtering eliminates out-of-band noise while maintaining state integrity.`,
-        `The correct answer involves pipelining, feedback stabilization, and filtering.`
-      ],
-      expectedKeywords: ['pipelining', 'feedback', 'stabilization', 'filtering', 'throughput']
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'mcq',
-      questionText: `In lifecycle and scalability analysis for ${subjectName}, how does scaling system complexity impact reliability and cost overhead?`,
-      options: [
-        `Increases throughput and capability while requiring tighter tolerance controls and thermal/timing margin verification in ${subjectName}`,
-        `Eliminates all operational costs while reducing physical dimensions to zero`,
-        `Has zero impact on design complexity, verification cycles, or system footprint`,
-        `Guarantees permanent immunity from all edge degradation and hardware faults`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider engineering trade-offs when scaling system capacity.`,
-        `Higher capability increases verification demands and sensitivity to margins.`,
-        `Thermal, physical, and timing margins must be strictly verified.`,
-        `The correct answer is that higher capability requires tighter tolerance controls and margin verification.`
-      ],
-      expectedKeywords: ['scalability', 'complexity', 'tolerance', 'margin', 'reliability']
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'text',
-      questionText: `Explain how transient disturbances and damping factors alter the steady-state equilibrium trajectory in ${subjectName}.`,
-      hints: [
-        `Contrast the initial transient response with steady-state response.`,
-        `What role do dissipative mechanisms or energy storage elements play?`,
-        `Identify whether the system exhibits under-damped, critically damped, or over-damped behavior.`,
-        `Synthesize the time constant governing convergence to equilibrium.`
-      ],
-      expectedKeywords: ['transient', 'damping', 'steady-state', 'equilibrium', 'time constant']
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'mcq',
-      questionText: `When designing a closed-loop monitoring apparatus for ${subjectName}, which feedback sensor topology minimizes measurement latency and signal degradation?`,
-      options: [
-        `Direct differential sensing with high common-mode rejection and impedance matching at the transducer interface for ${subjectName}`,
-        `Unshielded single-ended capacitive pickup without ground reference`,
-        `High-impedance open circuit with floating reference nodes`,
-        `Unfiltered thermal resistive probe placed outside the primary field`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Differential sensing cancels common-mode environmental noise.`,
-        `Impedance matching prevents signal reflection and minimizes insertion loss.`,
-        `Shielding prevents electromagnetic coupling into the signal path.`,
-        `The correct answer is differential sensing with common-mode rejection.`
-      ],
-      expectedKeywords: ['differential', 'common-mode', 'transducer', 'impedance', 'sensor']
-    },
-    {
-      level: 4,
-      bloomLevel: 'Creation',
-      type: 'text',
-      questionText: `Formulate a novel optimization framework or algorithmic adaptation to resolve the fundamental trade-off between power/resource consumption and operational accuracy in ${subjectName}.`,
-      hints: [
-        `Identify the primary resource bottleneck (power, memory, structural mass, or computational cycles).`,
-        `Define an objective function balancing accuracy against resource cost.`,
-        `Propose an adaptive scaling or pruning mechanism.`,
-        `Justify why this formulation avoids catastrophic performance degradation.`
-      ],
-      expectedKeywords: ['optimization', 'resource', 'accuracy', 'trade-off', 'objective function']
-    }
-  ];
+  let dynamicQuestionPool = [];
+
+  if (isCodingOrCS) {
+    dynamicQuestionPool = [
+      {
+        level: 1,
+        bloomLevel: 'Remembering',
+        type: 'mcq',
+        questionText: `In the architecture and runtime execution of ${subjectName}, which core computational mechanism guarantees determinism, state isolation, and prevents race conditions?`,
+        options: [
+          `Thread-safe synchronization primitives, memory barriers, and atomic CAS (Compare-And-Swap) operations for shared state in ${subjectName}`,
+          `Arbitrary asynchronous background mutations without lock acquisition or transaction boundaries`,
+          `Complete elimination of call stacks and recursive memory frames during execution`,
+          `Relying on hardware register leaks to synchronize independent OS subprocesses`
+        ],
+        correctIndex: 0,
+        hints: [
+          `Consider concurrency safety and memory consistency in multi-threaded environments.`,
+          `Shared mutable state requires mutual exclusion or lock-free atomic primitives.`,
+          `Compare-And-Swap (CAS) instructions form the foundation of non-blocking data structures.`,
+          `The correct answer relates to thread-safe synchronization and atomic CAS operations.`
+        ],
+        expectedKeywords: ['synchronization', 'atomic', 'thread-safe', 'concurrency', 'state management']
+      },
+      {
+        level: 2,
+        bloomLevel: 'Understanding',
+        type: 'text',
+        questionText: `Explain how memory allocation, garbage collection (or manual deallocation), and cache locality impact performance and latency in ${subjectName}.`,
+        hints: [
+          `Contrast stack allocation (O(1), contiguous) with heap allocation (dynamic overhead, fragmentation).`,
+          `Consider cache lines: sequential memory access maximizes CPU L1/L2 cache hits (spatial locality).`,
+          `Discuss garbage collection pauses (Stop-The-World) vs explicit free() pointer lifecycle.`,
+          `Synthesize how memory layout decisions directly dictate throughput under scale.`
+        ],
+        expectedKeywords: ['memory allocation', 'cache locality', 'heap', 'stack', 'garbage collection', 'latency']
+      },
+      {
+        level: 3,
+        bloomLevel: 'Application',
+        type: 'mcq',
+        questionText: `When designing an enterprise distributed pipeline using ${subjectName}, what architectural pattern prevents cascading failures when downstream services experience severe latency spikes?`,
+        options: [
+          `Circuit Breaker with exponential backoff retries and bounded dead-letter queues in ${subjectName}`,
+          `Unbounded infinite retry loops without timeout or backoff intervals`,
+          `Synchronously blocking all caller threads until downstream nodes reboot`,
+          `Dropping all incoming authorization tokens to bypass queue processing`
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Application',
+        hints: [
+          'Think about microservices resilience and fault tolerance patterns.',
+          'When a remote service fails, repeatedly pounding it with requests exacerbates the outage.',
+          'A Circuit Breaker trips to "Open" state after consecutive errors, failing fast and protecting callers.',
+          'The correct choice is the Circuit Breaker pattern with backoff and dead-letter queues.'
+        ],
+        expectedKeywords: ['circuit breaker', 'fault tolerance', 'exponential backoff', 'resilience', 'dead-letter queue']
+      },
+      {
+        level: 4,
+        bloomLevel: 'Analysis',
+        type: 'mcq',
+        questionText: `In asymptotic complexity analysis for ${subjectName}, what distinguishes amortized O(1) time complexity from worst-case O(1) time complexity?`,
+        options: [
+          `Amortized O(1) guarantees that the average time per operation over a long sequence of N operations is constant (e.g. dynamic array doubling), even if individual reallocations take O(N) time`,
+          `Amortized O(1) means the operation takes constant time only when CPU frequency is doubled`,
+          `Worst-case O(1) requires garbage collection to be disabled in the runtime environment`,
+          `Amortized O(1) is identical to O(N log N) when executed across multi-core processors`
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'Recall how dynamic arrays (like Python list or C++ std::vector) resize when capacity is exhausted.',
+          'Appending N items causes occasional expensive reallocations (copying N elements).',
+          'Summing total work across all N inserts gives O(N), yielding O(1) amortized cost per insert.',
+          'The correct answer is that the average time over a sequence of operations is constant.'
+        ],
+        expectedKeywords: ['amortized', 'worst-case', 'time complexity', 'big o', 'reallocation']
+      },
+      {
+        level: 5,
+        bloomLevel: 'Evaluation',
+        type: 'text',
+        questionText: `Critically analyze the security vulnerabilities and defensive countermeasures (such as injection mitigation, input sanitization, and cryptographic integrity) essential when hardening ${subjectName}.`,
+        hints: [
+          `Identify primary attack vectors: injection, unauthorized privilege escalation, buffer overflows, or data leakage.`,
+          `Explain defense-in-depth: parameterized interfaces, zero-trust validation, and least privilege access.`,
+          `Discuss cryptographic signatures (HMAC, TLS 1.3) and secret rotation.`,
+          `Synthesize how defensive validation guarantees runtime security without degrading SLA benchmarks.`
+        ],
+        expectedKeywords: ['security', 'vulnerability', 'sanitization', 'least privilege', 'encryption', 'hardening']
+      }
+    ];
+  } else if (isBioOrMed) {
+    dynamicQuestionPool = [
+      {
+        level: 1,
+        bloomLevel: 'Remembering',
+        type: 'mcq',
+        questionText: `In physiological and biochemical regulation governing ${subjectName}, what primary feedback mechanism maintains homeostatic equilibrium?`,
+        options: [
+          `Negative feedback loops where the accumulation of product inhibits initial pathway enzymatic catalysts in ${subjectName}`,
+          `Uncontrolled positive feedback cascades that trigger permanent thermodynamic destabilization`,
+          `Complete absence of receptor-ligand specificity across cellular membranes`,
+          `Spontaneous denaturation of cellular enzymes without allosteric regulation`
+        ],
+        correctIndex: 0,
+        hints: [
+          'Homeostasis requires physiological stability around a set-point.',
+          'When output levels rise, the system dampens upstream synthesis.',
+          'Negative feedback restores equilibrium and avoids toxic accumulation.',
+          'The correct answer is negative feedback loops with allosteric inhibition.'
+        ],
+        expectedKeywords: ['homeostasis', 'negative feedback', 'regulation', 'pathway', 'equilibrium']
+      },
+      {
+        level: 2,
+        bloomLevel: 'Understanding',
+        type: 'text',
+        questionText: `Explain the molecular, cellular, or clinical mechanism of ${subjectName}. How do specific receptors, substrates, or cellular components mediate the physiological response?`,
+        hints: [
+          'Identify the key functional molecules, receptors, or cellular pathways involved.',
+          'Describe the chain of signal transduction or metabolic transformation.',
+          'Discuss how concentration gradients or membrane potentials drive the process.',
+          'Synthesize how cellular response alters physiological function.'
+        ],
+        expectedKeywords: ['cellular mechanism', 'receptor', 'signaling', 'pathway', 'physiological response']
+      },
+      {
+        level: 3,
+        bloomLevel: 'Analysis',
+        type: 'mcq',
+        questionText: `When ${subjectName} experiences pathological degradation or chemical inhibition, what represents the primary physiological failure mode?`,
+        options: [
+          `Disruption of receptor binding affinity, metabolic accumulation of intermediates, and loss of selective membrane permeability in ${subjectName}`,
+          `Instantaneous conversion of all cellular mass into kinetic energy`,
+          `Permanent zero-entropy state with complete cessation of brownian motion`,
+          `Infinite acceleration of enzymatic turnover without substrate binding`
+        ],
+        correctIndex: 0,
+        hints: [
+          'Consider what happens when regulatory or metabolic pathways break down.',
+          'Pathology typically involves receptor desensitization, enzyme inhibition, or metabolic blockages.',
+          'Loss of membrane integrity leads to cell death or systemic failure.',
+          'The correct answer is disruption of binding affinity and loss of selective permeability.'
+        ],
+        expectedKeywords: ['pathology', 'inhibition', 'failure mode', 'metabolic', 'membrane permeability']
+      }
+    ];
+  } else if (isBusinessOrEcon) {
+    dynamicQuestionPool = [
+      {
+        level: 1,
+        bloomLevel: 'Remembering',
+        type: 'mcq',
+        questionText: `In economic analysis and enterprise decision-making for ${subjectName}, how is Opportunity Cost formulated and applied to strategic resource allocation?`,
+        options: [
+          `The quantified economic value of the next best foregone alternative when a choice is made regarding ${subjectName}`,
+          `The historical sunk cost that cannot be recovered regardless of future decisions`,
+          `The accounting book value of fixed physical assets after standard depreciation`,
+          `The legal penalty incurred when terminating an employment agreement prematurely`
+        ],
+        correctIndex: 0,
+        hints: [
+          'Resources are scarce, meaning choosing option A means giving up option B.',
+          'Opportunity cost represents the benefit that could have been gained from the best alternative.',
+          'Sunk costs are irrecoverable and should not influence future decisions.',
+          'The correct definition is the value of the next best foregone alternative.'
+        ],
+        expectedKeywords: ['opportunity cost', 'resource allocation', 'foregone alternative', 'trade-off', 'economic value']
+      },
+      {
+        level: 2,
+        bloomLevel: 'Understanding',
+        type: 'text',
+        questionText: `Explain how supply and demand dynamics, price elasticity, and market equilibrium interact in the context of ${subjectName}.`,
+        hints: [
+          'Recall how price changes affect quantity demanded (elastic vs inelastic goods).',
+          'Explain how competitive market forces push prices toward market clearing equilibrium.',
+          'Discuss shift factors (income, input costs, regulations) versus movements along the curve.',
+          'Synthesize how market equilibrium optimizes consumer and producer surplus.'
+        ],
+        expectedKeywords: ['supply and demand', 'elasticity', 'market equilibrium', 'price mechanism', 'surplus']
+      },
+      {
+        level: 3,
+        bloomLevel: 'Analysis',
+        type: 'mcq',
+        questionText: `Under macroeconomic volatility and high interest rates, what financial risk metric evaluates the sensitivity of investment cash flows in ${subjectName}?`,
+        options: [
+          `Net Present Value (NPV) adjusted by the Weighted Average Cost of Capital (WACC) and scenario-based Value at Risk (VaR) in ${subjectName}`,
+          `Simple nominal revenue addition without discount rate or time-value-of-money adjustments`,
+          `The arithmetic mean of past five years’ gross sales ignoring debt obligations`,
+          `Fixed asset physical inventory count divided by total employees`
+        ],
+        correctIndex: 0,
+        hints: [
+          'Time value of money dictates that future cash flows must be discounted.',
+          'WACC reflects the required rate of return for debt and equity holders.',
+          'Positive NPV investments generate shareholder value above capital costs.',
+          'The correct financial metrics are NPV with WACC and Value at Risk (VaR).'
+        ],
+        expectedKeywords: ['npv', 'wacc', 'cash flow', 'discount rate', 'risk assessment']
+      }
+    ];
+  } else {
+    // Physical Sciences & Core Engineering
+    dynamicQuestionPool = [
+      {
+        level: 1,
+        bloomLevel: 'Remembering',
+        type: 'mcq',
+        questionText: `In the rigorous scientific analysis of ${subjectName}, which fundamental conservation law and governing relationship establishes dynamic equilibrium?`,
+        options: [
+          `Conservation of energy and mass flux balance between inputs, internal state storage, and dissipated work in ${subjectName}`,
+          `Spontaneous creation of energy without thermodynamic or mechanical input`,
+          `Arbitrary stochastic fluctuations with zero causal correlation to system parameters`,
+          `Complete absence of reactive, dissipative, or inertial resistance in the system`
+        ],
+        correctIndex: 0,
+        hints: [
+          `Consider causality and physical conservation laws governing ${subjectName}.`,
+          `System response depends on internal properties under applied inputs.`,
+          `Stability requires equilibrium between excitation and resistance.`,
+          `The correct answer relates to conservation of energy and mass flux balance.`
+        ],
+        expectedKeywords: ['conservation', 'equilibrium', 'energy', 'flux balance', 'governing law']
+      },
+      {
+        level: 2,
+        bloomLevel: 'Understanding',
+        type: 'text',
+        questionText: `Explain the fundamental operational mechanism and mathematical/empirical equations that characterize ${subjectName}. How do boundary conditions influence steady-state stability?`,
+        hints: [
+          `Identify the primary technical definition and operational boundary of ${subjectName}.`,
+          `Formulate the governing equations or state transitions characterizing ${subjectName}.`,
+          `Recall the dimensional units and operational constants involved.`,
+          `Synthesize the physical or mathematical boundary under which these laws hold.`
+        ],
+        expectedKeywords: ['governing equations', 'boundary conditions', 'stability', 'mechanism', 'steady-state']
+      },
+      {
+        level: 3,
+        bloomLevel: 'Application',
+        type: 'mcq',
+        questionText: `When ${subjectName} is subjected to critical boundary conditions or operational saturation, what constitutes the primary performance bottleneck or failure mode?`,
+        options: [
+          `Non-linear distortion, parasitic interference, or capacity saturation exceeding safe operational thresholds in ${subjectName}`,
+          `Instantaneous drop in entropy without thermodynamic or computational degradation`,
+          `Strict linear response without any parameter variance across infinite range`,
+          `Spontaneous infinite amplification with zero external power or input excitation`
+        ],
+        correctIndex: 0,
+        hints: [
+          `Consider what happens when materials, circuits, or algorithms exceed design limits.`,
+          `Look for saturation, non-linear distortion, or breakdown beyond thresholds.`,
+          `Safety and design margins exist to avoid non-linear degradation.`,
+          `The correct answer is non-linear distortion or saturation exceeding operational thresholds.`
+        ],
+        expectedKeywords: ['failure mode', 'threshold', 'bottleneck', 'saturation', 'non-linear']
+      },
+      {
+        level: 4,
+        bloomLevel: 'Analysis',
+        type: 'mcq',
+        questionText: `Which architectural or algorithmic technique is standard engineering practice to mitigate noise and maximize throughput in ${subjectName}?`,
+        options: [
+          `Feedback stabilization, domain-appropriate filtering, and impedance/protocol matching in ${subjectName}`,
+          `Completely removing synchronization and relying on open-loop unconstrained propagation`,
+          `Deliberately increasing parasitic propagation delay to slow down data processing`,
+          `Inverting control polarity without verifying ground reference stability`
+        ],
+        correctIndex: 0,
+        hints: [
+          `Consider standard engineering strategies for throughput and noise immunity.`,
+          `Feedback stabilization and filtering are foundational optimization methods.`,
+          `Filtering eliminates out-of-band noise while maintaining state integrity.`,
+          `The correct answer involves feedback stabilization and filtering.`
+        ],
+        expectedKeywords: ['feedback', 'stabilization', 'filtering', 'throughput', 'protocol matching']
+      },
+      {
+        level: 5,
+        bloomLevel: 'Evaluation',
+        type: 'text',
+        questionText: `Critically evaluate the architectural trade-offs, standards compliance, and safety factor validation required when certifying an enterprise implementation of ${subjectName}.`,
+        hints: [
+          `Define the factor of safety or margin of reliability required for ${subjectName}.`,
+          `Discuss testing protocols, simulation workflows, or empirical validations.`,
+          `Identify environmental degradation factors (temperature, noise, load fluctuations).`,
+          `Deliver a technical justification balancing operational performance against safety margins.`
+        ],
+        expectedKeywords: ['factor of safety', 'reliability', 'certification', 'validation', 'trade-off']
+      }
+    ];
+  }
 
   // Randomly shuffle the pool so question order and selection change dynamically on every run
   const shuffledPool = [...dynamicQuestionPool].sort(() => Math.random() - 0.5);
@@ -1890,7 +2339,7 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
   let i = 0;
   while (results.length < count) {
     const q = shuffledPool[i % shuffledPool.length];
-    // Pass through normalizeQuestion to ensure options are always shuffled
+    // Pass through normalizeQuestion to ensure options are always rotated and swiped
     results.push(normalizeQuestion(q, i, cleanTopic));
     i++;
   }

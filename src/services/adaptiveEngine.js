@@ -220,14 +220,19 @@ export class AdaptiveEngine {
     });
 
     const matchRatio = matched.length / Math.max(1, expected.length);
-    // Base score from keyword presence + depth bonus
-    let score = Math.round(matchRatio * 75);
-    if (cleanAnswer.length > 120) score += 15;
-    if (cleanAnswer.length > 250) score += 10;
+    // Grounded score strictly derived from concept coverage and causal reasoning (NO raw length bonus)
+    let score = Math.round(matchRatio * 85);
+
+    // Reward causal/mathematical relationships when at least some concepts match
+    const causalConnectives = ['because', 'therefore', 'implies', 'yields', 'proportional', 'inversely', 'governed by', 'ratio', 'equilibrium', 'boundary', 'differential'];
+    const hasCausalLogic = causalConnectives.some(c => cleanAnswer.includes(c));
+    if (hasCausalLogic && matchRatio >= 0.35) {
+      score += 10;
+    }
 
     // Deduct for excessive hint reliance
-    const hintPenalty = this.hintsUsedInCurrentQuestion * 6;
-    score = Math.max(10, Math.min(100, score - hintPenalty));
+    const hintPenalty = (this.hintsUsedInCurrentQuestion || 0) * 6;
+    score = Math.max(5, Math.min(100, score - hintPenalty));
 
     // Dynamic Learning DNA update
     if (matchRatio >= 0.7) {
@@ -241,6 +246,7 @@ export class AdaptiveEngine {
     }
 
     let feedback = '';
+    const isCorrect = score >= 65;
     if (score >= 85) {
       feedback = 'Outstanding reasoning! Strong conceptual articulation of core operational dynamics.';
     } else if (score >= 65) {
@@ -251,11 +257,17 @@ export class AdaptiveEngine {
 
     return {
       score,
+      isCorrect,
       feedback,
       conceptMatched: matched,
       missingConcepts: missing,
       masteryIncrement: score >= 70 ? 1 : 0
     };
+  }
+
+  // Alias for backward compatibility with App.jsx
+  evaluateConceptualAnswer(userAnswer, question) {
+    return this.evaluateTextAnswer(userAnswer, question);
   }
 
   // Evaluate MCQ Answer

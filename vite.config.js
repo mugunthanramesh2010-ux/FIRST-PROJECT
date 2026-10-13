@@ -13,6 +13,37 @@ function offlineFileStoragePlugin() {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ? req.url.split('?')[0] : ''
 
+        if (url.startsWith('/api/')) {
+          try {
+            if (!global.__apiDispatcher) {
+              const mod = await import('./server/src/apiDispatcher.js');
+              global.__apiDispatcher = mod.handleApiRequest;
+            }
+            if (global.__apiDispatcher) {
+              let body = {};
+              if (req.method === 'POST') {
+                body = await new Promise((resolve) => {
+                  let b = '';
+                  req.on('data', chunk => { b += chunk; });
+                  req.on('end', () => {
+                    try { resolve(JSON.parse(b || '{}')); } catch (e) { resolve({}); }
+                  });
+                });
+              }
+              const apiRes = await global.__apiDispatcher(url, req.method, body, req.headers);
+              if (apiRes) {
+                const status = apiRes.status || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = status;
+                res.end(JSON.stringify(apiRes.body !== undefined ? apiRes.body : apiRes));
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Vite Middleware API error:', err);
+          }
+        }
+
         if (url === '/api/save-record' && req.method === 'POST') {
           let body = ''
           req.on('data', chunk => { body += chunk })

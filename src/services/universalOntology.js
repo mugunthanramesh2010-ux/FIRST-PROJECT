@@ -1,5 +1,5 @@
 // Universal Domain & Subject Ontology Engine
-import { generateOfflineDeepQuestions, generateQuestionsWithAI, validateQuestionPackage } from './aiQuestionService.js';
+import { generateOfflineDeepQuestions, generateQuestionsWithAI, validateQuestionPackage, normalizeQuestion } from './aiQuestionService.js';
 
 
 export const DOMAIN_CATEGORIES = [
@@ -666,8 +666,9 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
 
   let model = null;
   // Check if topic matches curated library with strict key matching
+  // Check if topic matches curated library with strict whole-word key matching
   for (const [key, bModel] of Object.entries(BENCHMARK_TOPICS)) {
-    if (lower === key || (key.length >= 4 && lower.includes(key))) {
+    if (lower === key || new RegExp(`\\b${key}\\b`, 'i').test(lower)) {
       model = JSON.parse(JSON.stringify(bModel));
       break;
     }
@@ -730,9 +731,10 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
     model = synthesized;
   }
 
-  // Expand questions to requested count (e.g. 5, 10, 20, up to 100)
+  // Expand questions to requested count (e.g. 5, 10, 20, up to 100) and guarantee option swiping
   const qCount = targetCount ? Math.min(100, Math.max(1, targetCount)) : Math.max(5, model.questions?.length || 5);
   model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount, documentText);
+  model.questions = (model.questions || []).map((q, idx) => normalizeQuestion(q, idx, model.title || cleanTopic));
 
   return model;
 }
@@ -748,10 +750,7 @@ export async function generateUniversalTopicModelAsync(rawTopic, domainCategory 
     });
     if (aiQuestions && Array.isArray(aiQuestions) && aiQuestions.length > 0) {
       const validatedList = aiQuestions
-        .map(q => {
-          const res = validateQuestionPackage(q, rawTopic);
-          return res.sanitized;
-        })
+        .map((q, idx) => normalizeQuestion(q, idx, rawTopic))
         .filter(Boolean);
       if (validatedList.length > 0) {
         model.questions = validatedList;
@@ -771,381 +770,8 @@ export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic',
   // Subject-accurate AI domain generator (100% subject-pure questions, options, hints)
   const deepQuestions = generateOfflineDeepQuestions(t, count, documentText);
   if (deepQuestions && deepQuestions.length > 0) {
-    return deepQuestions.slice(0, count);
+    return deepQuestions.slice(0, count).map((q, idx) => normalizeQuestion(q, idx, t));
   }
 
-  return baseQuestions.slice(0, count);
-
-  const templates = [
-    {
-      level: 1,
-      bloomLevel: 'Remembering',
-      type: 'text',
-      text: (t) => `Define the foundational laws, operational axioms, and boundary conditions governing ${t}. What are the primary mathematical parameters involved?`,
-      hints: [
-        `State the standard canonical definition of ${t}.`,
-        `Identify the physical constants or mathematical symbols used in the equation.`,
-        `Recall how the input state relates to the activation threshold.`,
-        `Synthesize the exact boundary condition under which the equation holds true.`
-      ]
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'text',
-      text: (t) => `Explain the internal physical or computational mechanism of ${t}. How do transient dynamics transition into steady-state equilibrium?`,
-      hints: [
-        `Focus on internal energy or data flow dynamics in ${t}.`,
-        `Contrast the non-equilibrium start state with steady-state behavior.`,
-        `Identify the feedback mechanisms that stabilize the response.`,
-        `Detail the relationship between applied excitation and resulting output gradient.`
-      ]
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'mcq',
-      text: (t) => `Under nominal operating conditions, which parameter primary dictates the operational stability of ${t}?`,
-      options: [
-        `Thermal dissipation gradient and internal feedback damping`,
-        `Uncorrelated random thermal noise without baseline bounds`,
-        `Complete absence of electrical or algorithmic resistance`,
-        `Arbitrary external voltage fluctuations without clamping`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Think about stabilization and regulatory damping in ${t}.`,
-        `Look for the option addressing thermodynamic or feedback damping.`,
-        `Physical and computational systems require controlled feedback damping for stability.`,
-        `The correct answer is thermal dissipation gradient and internal feedback damping.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Apply ${t} to an industrial high-throughput scenario. What mitigation techniques prevent bottlenecking when input demand surges by 300%?`,
-      hints: [
-        `Consider buffer capacity, parallel pipelines, and load distribution in ${t}.`,
-        `Identify where saturation or clipping occurs under heavy load.`,
-        `Explain how dynamic scaling or negative feedback limits degradation.`,
-        `Synthesize a complete industrial surge mitigation protocol.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Calculate or mathematically evaluate how environmental temperature variation (-40°C to +85°C) impacts the operational precision of ${t}.`,
-      hints: [
-        `Consider thermal coefficient effects on carrier mobility, clock drift, or material properties.`,
-        `Does higher temperature accelerate or impede transport dynamics in ${t}?`,
-        `Identify standard temperature-compensation topologies used in engineering.`,
-        `Formulate the analytical temperature drift coefficient.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Perform a comparative trade-off analysis between ${t} and its closest competitor paradigm. Under what specific constraints would you strictly reject ${t}?`,
-      hints: [
-        `Identify 2 competing technologies or alternative methods to ${t}.`,
-        `Compare power consumption, latency, silicon area, or mathematical complexity.`,
-        `Identify extreme edge conditions where the alternative paradigm outperforms ${t}.`,
-        `Provide an architectural decision matrix with quantitative justification.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Analyze the harmonic distortion, noise figure, or algorithmic error propagation when ${t} operates near its critical cutoff frequency/threshold.`,
-      hints: [
-        `What non-linear phenomena emerge as signal magnitude approaches cutoff in ${t}?`,
-        `Discuss intermodulation, phase noise, quantization noise, or numerical instability.`,
-        `Explain how higher-order terms in the Taylor series expansion become dominant.`,
-        `Propose filtering or linearization feedback to suppress parasitic harmonics.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'mcq',
-      text: (t) => `What is the dominant failure mode when ${t} is subjected to continuous over-voltage or excessive algorithmic recursion?`,
-      options: [
-        `Avalanche breakdown / stack overflow due to critical threshold violation`,
-        `Spontaneous self-healing without any energy dissipation`,
-        `Reversal of entropy without localized heating`,
-        `Zero degradation regardless of applied electrical or compute stress`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider the physical or computational limits of sustained over-stress.`,
-        `Look for the option describing breakdown or resource exhaustion.`,
-        `Extreme stress causes dielectric rupture, avalanche breakdown, or memory exhaustion.`,
-        `The correct answer is avalanche breakdown / stack overflow.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Evaluate the safety, reliability, and Mean Time Between Failures (MTBF) of deploying ${t} in mission-critical aerospace or biomedical hardware.`,
-      hints: [
-        `Consider single-event upsets (SEU), radiation hardening, or fail-safe modes.`,
-        `Evaluate redundancy schemes (e.g. Triple Modular Redundancy - TMR).`,
-        `How do you perform accelerated lifecycle testing for ${t}?`,
-        `Deliver a formal reliability engineering certification audit.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Critique the theoretical upper bound (e.g. Shannon limit, Carnot efficiency, or Big-O complexity) of ${t}. Why does scaling beyond this limit fail?`,
-      hints: [
-        `State the asymptotic bound governing ${t}.`,
-        `Explain the physical law enforcing this bound.`,
-        `Why do conventional hardware/software optimizations hit diminishing returns?`,
-        `Formulate the mathematical proof of the asymptotic limit.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Architect a novel architectural variant of ${t} utilizing sub-3nm nanosheets, quantum tunneling, or neuromorphic spiking dynamics to achieve 10x energy efficiency.`,
-      hints: [
-        `Select an emerging technological paradigm to integrate with ${t}.`,
-        `Explain how this hybrid architecture mathematically bypasses the legacy bottleneck.`,
-        `Detail the interface between conventional controllers and the novel structure.`,
-        `Provide a full schematic and block diagram explanation.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Develop a practical laboratory calibration procedure for ${t}. What instrumentation and test vectors are strictly mandatory?`,
-      hints: [
-        `Specify measurement tools (e.g., oscilloscope, logic analyzer, profiling harness).`,
-        `Describe zero-point calibration and baseline offset nullification.`,
-        `How do you measure signal-to-noise ratio (SNR) or throughput under calibrated load?`,
-        `Write the step-by-step standard operating procedure (SOP).`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Investigate the transient step response of ${t}. Formulate the damping ratio, rise time, and settling time equations.`,
-      hints: [
-        `Model ${t} as a second-order linear dynamic system.`,
-        `Explain the difference between underdamped, critically damped, and overdamped conditions.`,
-        `How do parasitic capacitances, inductances, or latency lags influence overshoot?`,
-        `Derive the transfer function H(s) in the Laplace s-domain.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Analyze parasitic coupling and cross-talk when multiple instances of ${t} are placed in ultra-dense spatial proximity.`,
-      hints: [
-        `Consider electromagnetic interference (EMI), capacitive coupling, or shared cache thrashing.`,
-        `What shielding or guard-ring topologies isolate adjacent channels in ${t}?`,
-        `Formulate the cross-talk attenuation formula in decibels (dB).`,
-        `Explain layout techniques for high-frequency differential isolation.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Formulate an autonomous self-healing or adaptive calibration loop for ${t} using real-time Bayesian optimization.`,
-      hints: [
-        `Describe the telemetry sensor network measuring drift in ${t}.`,
-        `Explain how the microcontroller or algorithm calculates error variance.`,
-        `What actuator or parameter adjustment corrects the drift in real-time?`,
-        `Prove that the adaptive closed-loop system is asymptotically stable (Lyapunov stability).`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Explain the packaging, thermal interface material (TIM), and heat-sink sizing calculations required for continuous 100W operation of ${t}.`,
-      hints: [
-        `Define thermal resistance θJA, θJC, and θCS in °C/Watt.`,
-        `Calculate junction temperature Tj given ambient temperature Ta = 50°C.`,
-        `Contrast forced-air convection with vapor chamber or liquid cooling for ${t}.`,
-        `Synthesize the complete thermal budget verification.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Diagnose an intermittent signal glitch observed only under high electromagnetic interference in an embedded system deploying ${t}.`,
-      hints: [
-        `How do ground bounce and power-rail droop induce false triggering in ${t}?`,
-        `Explain decoupling capacitor placement and ferrite bead filtering.`,
-        `How do you capture non-repetitive runt pulses on a high-bandwidth digital oscilloscope?`,
-        `Synthesize the root-cause diagnosis and hardware redesign protocol.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Conduct a cradle-to-grave lifecycle assessment (LCA) and environmental sustainability analysis of manufacturing and disposing ${t}.`,
-      hints: [
-        `Evaluate rare earth elements, toxic precursors, or energy-intensive fabrication steps.`,
-        `Compare embodied carbon against operational carbon savings over a 10-year lifespan.`,
-        `What recycling or material reclamation pathways exist for decommissioned units?`,
-        `Deliver the ISO 14040 environmental impact scorecard.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Synthesize an ultra-low-power zero-standby sleep state for ${t}, enabling sub-microampere leakage with instantaneous microsecond wake-up.`,
-      hints: [
-        `Consider power gating with high-threshold sleep transistors or non-volatile state retention.`,
-        `How do you prevent floating nodes and intermediate voltage states during wake-up?`,
-        `Describe the energy-harvesting capacitor reserve powering the wake-up detector.`,
-        `Provide the circuit state transition diagram and timing analysis.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Examine the cryptographic side-channel vulnerability of ${t}. Can differential power analysis (DPA) or electromagnetic leakage extract secret states?`,
-      hints: [
-        `How does instantaneous current draw correlate with processing operands in ${t}?`,
-        `Explain masking, dual-rail precharge logic, and noise injection countermeasures.`,
-        `Describe how physical isolation and Faraday cages defeat electromagnetic sniffing.`,
-        `Deliver a formal side-channel security verification report.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Construct a complete automated Hardware-in-the-Loop (HIL) test regression suite for validating firmware releases interfacing with ${t}.`,
-      hints: [
-        `Describe the real-time simulator emulating edge sensors and load dynamics.`,
-        `How do you automate boundary condition injection and fault injection testing?`,
-        `Define the continuous integration / continuous deployment (CI/CD) test metrics.`,
-        `Provide the test matrix covering 100% of functional requirements.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Analyze the unit economics and bill-of-materials (BOM) cost scaling when ramping production of ${t} from 1,000 units to 10,000,000 units.`,
-      hints: [
-        `Calculate non-recurring engineering (NRE) tooling amortization vs marginal silicon/material cost.`,
-        `How does yield percentage impact wafer cost?`,
-        `Identify tier-1 supplier negotiation strategies for volume semiconductor procurement.`,
-        `Provide the complete economies-of-scale cost curve.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Design a fault-tolerant distributed consensus protocol integrating ${t} across a decentralized cluster of 1,000 edge nodes.`,
-      hints: [
-        `How do you handle asynchronous network partitions and Byzantine node failures?`,
-        `Formulate the state replication mechanism with bounded latency.`,
-        `Explain how cryptographic proof-of-state verifies integrity without central authority.`,
-        `Synthesize the mathematical convergence proof under 33% malicious node presence.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Investigate the quantum tunneling, ballistic transport, or nanoscale quantum confinement phenomena emerging in ultra-scaled versions of ${t}.`,
-      hints: [
-        `What happens when physical dimensions approach the de Broglie wavelength of electrons?`,
-        `Explain direct source-to-drain tunneling and subthreshold swing degradation.`,
-        `Discuss discrete dopant fluctuations and threshold voltage variability across dies.`,
-        `Synthesize novel materials (e.g. 2D MoS2, carbon nanotubes) bypassing silicon limits.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Grand Architecture Challenge: Synthesize the next-generation specification for ${t} to be deployed in deep-space autonomous probes with a 50-year zero-maintenance lifespan.`,
-      hints: [
-        `Integrate radiation hardening, self-reconfiguring redundant circuitry, and autonomous diagnostic agents.`,
-        `How does the system compensate for cosmic ray bit-flips and material degradation over 50 years?`,
-        `Describe the autonomous self-test and graceful degradation protocol.`,
-        `Deliver the complete architectural blueprint for the space probe system.`
-      ]
-    }
-  ];
-
-  let tIdx = 0;
-  while (questions.length < count) {
-    const tmpl = templates[tIdx % templates.length];
-    const qNum = questions.length + 1;
-    const cycle = Math.floor(tIdx / templates.length);
-    let baseText = typeof tmpl.text === 'function' ? tmpl.text(topicName) : (tmpl.text || `Explain core concepts of ${topicName}`);
-    if (cycle > 0) {
-      const prefixes = [
-        `[Advanced Deep Dive #${cycle}]: `,
-        `[System Diagnostic Case #${cycle}]: `,
-        `[Comparative Architecture Analysis #${cycle}]: `,
-        `[Industry Deployment Problem #${cycle}]: `
-      ];
-      baseText = `${prefixes[cycle % prefixes.length]}${baseText}`;
-    }
-    
-    let qOptions = tmpl.options || null;
-    let qCorrectIndex = tmpl.correctIndex ?? null;
-
-    if (qOptions && Array.isArray(qOptions) && qOptions.length >= 2) {
-      const origCorrect = typeof qCorrectIndex === 'number' ? qCorrectIndex : 0;
-      const indexed = qOptions.map((opt, idx) => ({ text: opt, isCorrect: idx === origCorrect }));
-      for (let i = indexed.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
-      }
-      qOptions = indexed.map(item => item.text);
-      qCorrectIndex = indexed.findIndex(item => item.isCorrect);
-    }
-
-    questions.push({
-      id: `q_dyn_${qNum}_${Date.now()}_${tIdx}`,
-      level: tmpl.level,
-      questionText: baseText,
-      text: baseText,
-      bloomLevel: tmpl.bloomLevel,
-      type: tmpl.type,
-      options: qOptions,
-      correctIndex: qCorrectIndex,
-      hints: tmpl.hints,
-      expectedKeywords: [topicName.toLowerCase(), 'analysis', 'mechanism', 'design', 'optimization', 'stability', 'protocol']
-    });
-    tIdx++;
-  }
-
-  return questions.slice(0, count).map(q => ({
-    ...q,
-    questionText: q.questionText || q.text || `Explain conceptual principles of ${topicName}`,
-    text: q.text || q.questionText,
-    hints: Array.isArray(q.hints) 
-      ? q.hints 
-      : (typeof q.hints === 'object' && q.hints !== null
-          ? [q.hints.level1, q.hints.level2, q.hints.level3, q.hints.level4].filter(Boolean)
-          : [`Examine core principles of ${topicName}`, `Consider fundamental governing equations`, `Analyze boundary conditions`, `Synthesize causal pathway`])
-  }));
+  return baseQuestions.slice(0, count).map((q, idx) => normalizeQuestion(q, idx, t));
 }
