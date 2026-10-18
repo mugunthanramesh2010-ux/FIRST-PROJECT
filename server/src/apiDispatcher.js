@@ -297,13 +297,19 @@ Format your response STRICTLY as valid JSON:
       answerTimeSec = 0
     } = body;
     const effectiveAnswer = studentAnswer !== undefined ? studentAnswer : rawAnswerText;
+    const qObj = (question && typeof question === 'object') ? question : {};
+    const effType = (type || qObj.type || (Array.isArray(options || qObj.options) ? 'mcq' : 'text')).toLowerCase();
+    const effCorrectIdx = correctIndex !== undefined ? correctIndex : qObj.correctIndex;
+    const effOptions = options || qObj.options;
+    const effKeywords = (expectedKeywords && expectedKeywords.length > 0) ? expectedKeywords : (qObj.expectedKeywords || []);
 
-    if (type === 'mcq' && typeof correctIndex === 'number') {
+    if (effType === 'mcq' && effCorrectIdx !== undefined && effCorrectIdx !== null) {
+      const targetIdx = typeof effCorrectIdx === 'number' ? effCorrectIdx : parseInt(effCorrectIdx, 10);
       const studentIdx = typeof effectiveAnswer === 'number' ? effectiveAnswer : parseInt(effectiveAnswer, 10);
-      const isCorrect = studentIdx === correctIndex;
+      const isCorrect = studentIdx === targetIdx;
       const penalty = Math.min(30, (hintsUsed || 0) * 8);
       const score = isCorrect ? Math.max(50, 100 - penalty) : 0;
-      const selectedText = (options && options[studentIdx]) ? options[studentIdx] : `Option ${studentIdx + 1}`;
+      const selectedText = (effOptions && effOptions[studentIdx]) ? effOptions[studentIdx] : `Option ${studentIdx + 1}`;
       return {
         status: 200,
         body: {
@@ -312,7 +318,14 @@ Format your response STRICTLY as valid JSON:
           score,
           feedback: isCorrect
             ? `Correct technical option selected: "${selectedText}".`
-            : `Selected option does not articulate the required governing principle.`
+            : `Selected option does not articulate the required governing principle.`,
+          evaluation: {
+            score,
+            isCorrect,
+            status: isCorrect ? 'Correct' : 'Needs Work',
+            demonstratedConcepts: isCorrect ? [`Understands ${qObj.topic || 'the concept'}`] : [],
+            missingConcepts: isCorrect ? [] : [`Review ${qObj.topic || 'the concept'}`]
+          }
         }
       };
     }

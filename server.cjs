@@ -261,6 +261,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const data = await readBody(req);
       const {
+        question,
         questionId,
         studentAnswer,
         answerText: rawAnswerText,
@@ -271,17 +272,22 @@ const server = http.createServer(async (req, res) => {
         hintsUsed = 0
       } = data;
       const effectiveStudentAnswer = studentAnswer !== undefined ? studentAnswer : rawAnswerText;
+      const qObj = (question && typeof question === 'object') ? question : {};
+      const effType = (type || qObj.type || (Array.isArray(options || qObj.options) ? 'mcq' : 'text')).toLowerCase();
+      const effCorrectIdx = correctIndex !== undefined ? correctIndex : qObj.correctIndex;
+      const effOptions = options || qObj.options;
 
       let isCorrect = false;
       let score = 0;
       let feedback = '';
 
-      if (type === 'mcq' && typeof correctIndex === 'number') {
+      if (effType === 'mcq' && effCorrectIdx !== undefined && effCorrectIdx !== null) {
+        const targetIdx = typeof effCorrectIdx === 'number' ? effCorrectIdx : parseInt(effCorrectIdx, 10);
         const studentIdx = typeof effectiveStudentAnswer === 'number' ? effectiveStudentAnswer : parseInt(effectiveStudentAnswer, 10);
-        isCorrect = studentIdx === correctIndex;
+        isCorrect = studentIdx === targetIdx;
         const penalty = Math.min(30, (hintsUsed || 0) * 8);
         score = isCorrect ? Math.max(50, 100 - penalty) : 0;
-        const selectedText = (options && options[studentIdx]) ? options[studentIdx] : `Option ${studentIdx + 1}`;
+        const selectedText = (effOptions && effOptions[studentIdx]) ? effOptions[studentIdx] : `Option ${studentIdx + 1}`;
         feedback = isCorrect
           ? `Correct technical option selected: "${selectedText}".`
           : `Selected option does not articulate the required governing principle.`;
