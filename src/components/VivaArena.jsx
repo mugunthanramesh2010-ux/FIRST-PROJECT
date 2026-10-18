@@ -562,15 +562,39 @@ export default function VivaArena({
 
   const handleFinalizeSession = () => {
     soundEffects.playSuccess();
-    const mastery = adaptiveEngine?.calculateMasteryStatus(
-      weightedQuestions.length,
-      weightedQuestions.length,
-      behaviorMetrics.authenticityScore
-    );
+    const history = sessionQuestionHistory || [];
+    const totalQuestions = weightedQuestions.length || history.length || 10;
+    const correctCount = history.filter(item => (item.earnedMarks > 0 || (item.baseScorePercent && item.baseScorePercent >= 50) || item.isCorrect)).length;
+    
+    // Sum total marks awarded strictly across attended questions (no double counting)
+    const totalEarnedMarks = history.reduce((sum, item) => sum + (item.earnedMarks || 0), 0);
+    const facultyTotal = quizConfig.totalMarks || 100;
+    const overallScore = Math.min(100, Math.round((totalEarnedMarks / facultyTotal) * 100));
 
-    // Sum total marks awarded across all questions
-    const totalEarnedMarks = sessionQuestionHistory.reduce((sum, item) => sum + item.earnedMarks, 0) +
-      (currentMarksBreakdown?.finalMarks || 0);
+    // Dynamic Scores calculated STRICTLY from student's attended answers:
+    const knowledgeScore = correctCount === 0 ? 0 : Math.round((correctCount / totalQuestions) * 100);
+    const avgScorePercent = history.length > 0
+      ? Math.round(history.reduce((sum, item) => sum + (item.baseScorePercent || 0), 0) / history.length)
+      : 0;
+    const reasoningScore = correctCount === 0 ? 0 : Math.round(avgScorePercent * 0.95);
+    const retentionScore = correctCount === 0 ? 0 : Math.round(knowledgeScore * 0.9);
+    const curiosityIndex = curiosityExchange ? Math.min(100, 50 + (curiosityInput ? 25 : 0)) : (correctCount === 0 ? 0 : 35);
+
+    // Compute genuine cognitive mastery based strictly on attended results:
+    let masteryLevel = 'Needs Revision';
+    if (correctCount === 0 || knowledgeScore === 0) {
+      masteryLevel = 'Needs Revision (0% Correct)';
+    } else if (knowledgeScore >= 90) {
+      masteryLevel = 'Mastered';
+    } else if (knowledgeScore >= 80) {
+      masteryLevel = 'Expert';
+    } else if (knowledgeScore >= 70) {
+      masteryLevel = 'Advanced';
+    } else if (knowledgeScore >= 50) {
+      masteryLevel = 'Learner';
+    } else {
+      masteryLevel = 'Novice';
+    }
 
     const sessionRecord = {
       id: 'session_' + Date.now(),
@@ -579,15 +603,15 @@ export default function VivaArena({
       studentRegNo: currentUser?.regNo || 'GUEST_STUDENT',
       studentName: currentUser?.fullName || 'Guest Student',
       timestamp: new Date().toISOString(),
-      masteryLevel: mastery?.masteryLevel || 'Mastered',
-      facultyTotalMarks: quizConfig.totalMarks,
+      masteryLevel,
+      facultyTotalMarks: facultyTotal,
       totalEarnedMarks: parseFloat(totalEarnedMarks.toFixed(1)),
-      overallScore: Math.min(100, Math.round((totalEarnedMarks / quizConfig.totalMarks) * 100)),
-      knowledgeScore: adaptiveEngine.knowledgeScore,
-      reasoningScore: adaptiveEngine.reasoningScore,
-      retentionScore: adaptiveEngine.retentionScore,
-      curiosityIndex: adaptiveEngine.twin.curiosityIndex,
-      innovationIndex: adaptiveEngine.twin.innovationIndex,
+      overallScore,
+      knowledgeScore,
+      reasoningScore,
+      retentionScore,
+      curiosityIndex,
+      innovationIndex: innovationResult?.score || 0,
       authenticityScore: behaviorMetrics.authenticityScore,
       humanConfidenceScore: behaviorMetrics.humanConfidenceScore,
       wpm: behaviorMetrics.wpm,
@@ -599,7 +623,9 @@ export default function VivaArena({
     };
 
     saveAssessmentSession(sessionRecord);
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    if (correctCount > 0) {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    }
     if (onOpenReport) onOpenReport(sessionRecord);
   };
 

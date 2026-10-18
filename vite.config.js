@@ -13,6 +13,10 @@ function offlineFileStoragePlugin() {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ? req.url.split('?')[0] : ''
 
+        if (!url.startsWith('/api/')) {
+          return next();
+        }
+
         if (url.startsWith('/api/')) {
           try {
             if (!global.__apiDispatcher) {
@@ -128,7 +132,7 @@ function offlineFileStoragePlugin() {
               res.end(JSON.stringify({ available: true, models, activeModel }))
               return
             }
-          } catch (e) {}
+          } catch (e) { }
           res.setHeader('Content-Type', 'application/json')
           res.statusCode = 200
           res.end(JSON.stringify({ available: false, models: [], activeModel: null }))
@@ -237,7 +241,7 @@ function offlineFileStoragePlugin() {
                     res.end(JSON.stringify({ success: true, provider: 'openai', data: parsed }))
                     return
                   }
-                } catch (oe) {}
+                } catch (oe) { }
               }
 
               // Ollama
@@ -270,7 +274,7 @@ Generate exactly ${count} viva questions. Return ONLY valid JSON:
                   res.end(JSON.stringify({ success: true, provider: 'ollama', model: ollamaModel, data: parsed }))
                   return
                 }
-              } catch (oErr) {}
+              } catch (oErr) { }
 
               res.setHeader('Content-Type', 'application/json')
               res.statusCode = 200
@@ -283,6 +287,8 @@ Generate exactly ${count} viva questions. Return ONLY valid JSON:
           })
           return
         }
+
+        next();
       })
     }
   }

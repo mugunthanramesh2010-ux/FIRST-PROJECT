@@ -256,7 +256,7 @@ export async function handleApiRequest(pathname, method, body, headers = {}) {
       const studentIdx = typeof effectiveAnswer === 'number' ? effectiveAnswer : parseInt(effectiveAnswer, 10);
       const isCorrect = studentIdx === correctIndex;
       const penalty = Math.min(30, (hintsUsed || 0) * 8);
-      const score = isCorrect ? Math.max(50, 100 - penalty) : 15;
+      const score = isCorrect ? Math.max(50, 100 - penalty) : 0;
       const selectedText = (options && options[studentIdx]) ? options[studentIdx] : `Option ${studentIdx + 1}`;
       return {
         status: 200,

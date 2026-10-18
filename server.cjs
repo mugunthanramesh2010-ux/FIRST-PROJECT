@@ -280,7 +280,7 @@ const server = http.createServer(async (req, res) => {
         const studentIdx = typeof effectiveStudentAnswer === 'number' ? effectiveStudentAnswer : parseInt(effectiveStudentAnswer, 10);
         isCorrect = studentIdx === correctIndex;
         const penalty = Math.min(30, (hintsUsed || 0) * 8);
-        score = isCorrect ? Math.max(50, 100 - penalty) : 20;
+        score = isCorrect ? Math.max(50, 100 - penalty) : 0;
         const selectedText = (options && options[studentIdx]) ? options[studentIdx] : `Option ${studentIdx + 1}`;
         feedback = isCorrect
           ? `Correct technical option selected: "${selectedText}".`
@@ -290,7 +290,7 @@ const server = http.createServer(async (req, res) => {
         const answerText = String(effectiveStudentAnswer || '').trim();
 
         if (isGibberish(answerText)) {
-          score = 5;
+          score = 0;
           isCorrect = false;
           feedback = 'Unparseable or nonsensical input detected. No valid physical or mathematical principles identified.';
         } else {
@@ -322,7 +322,7 @@ const server = http.createServer(async (req, res) => {
             isCorrect = false;
             feedback = `Partially correct. Identified ${matched.join(', ')}, but missed core elements: ${missing.slice(0, 2).join(', ')}.`;
           } else {
-            score = Math.max(10, Math.min(35, Math.round(15 + Math.min(15, answerText.length / 10)) - penalty));
+            score = 0;
             isCorrect = false;
             feedback = `Fundamental conceptual gaps detected. Missing critical domain parameters: ${missing.slice(0, 3).join(', ')}.`;
           }

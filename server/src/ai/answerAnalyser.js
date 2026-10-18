@@ -30,7 +30,7 @@ export class AnswerAnalyser {
     // Layer 1: Gibberish & Low-Substance Check
     if (this.isGibberish(rawText)) {
       return {
-        score: 5,
+        score: 0,
         isCorrect: false,
         status: 'Needs Improvement',
         demonstratedConcepts: [],
@@ -45,7 +45,7 @@ export class AnswerAnalyser {
     // Layer 2: Off-topic Detection
     if (this.isOffTopic(rawText, question)) {
       return {
-        score: 15,
+        score: 0,
         isCorrect: false,
         status: 'Off-Topic',
         demonstratedConcepts: [],
@@ -62,7 +62,7 @@ export class AnswerAnalyser {
       const studentIdx = typeof studentAnswer === 'number' ? studentAnswer : parseInt(studentAnswer, 10);
       const isCorrect = studentIdx === question.correctIndex;
       const penalty = Math.min(30, hintsUsed * 8);
-      const score = isCorrect ? Math.max(50, 100 - penalty) : 20;
+      const score = isCorrect ? Math.max(50, 100 - penalty) : 0;
       const status = score >= 80 ? 'Correct' : score >= 50 ? 'Partially Correct' : 'Needs Improvement';
 
       return {
@@ -263,12 +263,12 @@ Return STRICT JSON:
       isCorrect = false;
       feedback = `Partially correct reasoning. Identified key parameter (${demonstrated.join(', ')}), but missing critical causal steps: ${missing.slice(0, 2).join(', ')}.`;
     } else {
-      rawScore = 20 + mathCredit;
+      rawScore = 0;
       isCorrect = false;
       feedback = `Foundational conceptual gap detected. The explanation did not articulate the required governing relationships (${missing.slice(0, 3).join(', ')}).`;
     }
 
-    const finalScore = Math.max(10, Math.min(100, rawScore - penalty));
+    const finalScore = rawScore === 0 ? 0 : Math.max(10, Math.min(100, rawScore - penalty));
     const status = finalScore >= 80 ? 'Correct' : finalScore >= 50 ? 'Partially Correct' : 'Needs Improvement';
 
     return {

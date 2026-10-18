@@ -197,7 +197,7 @@ export class AdaptiveEngine {
 
     if (this.isGibberish(cleanAnswer)) {
       return {
-        score: 5,
+        score: 0,
         status: 'Needs Improvement',
         isCorrect: false,
         feedback: 'Unparseable or nonsensical input detected. No valid physical or mathematical principles identified.',
@@ -219,6 +219,19 @@ export class AdaptiveEngine {
       }
     });
 
+    // If zero concepts are matched, answer is completely wrong (0 score)
+    if (matched.length === 0) {
+      return {
+        score: 0,
+        isCorrect: false,
+        status: 'Needs Improvement',
+        feedback: `Fundamental gaps detected. Missing critical elements: ${missing.slice(0, 3).join(', ')}. Activating prerequisite reinforcement.`,
+        conceptMatched: [],
+        missingConcepts: missing,
+        masteryIncrement: 0
+      };
+    }
+
     const matchRatio = matched.length / Math.max(1, expected.length);
     // Grounded score strictly derived from concept coverage and causal reasoning (NO raw length bonus)
     let score = Math.round(matchRatio * 85);
@@ -232,7 +245,7 @@ export class AdaptiveEngine {
 
     // Deduct for excessive hint reliance
     const hintPenalty = (this.hintsUsedInCurrentQuestion || 0) * 6;
-    score = Math.max(5, Math.min(100, score - hintPenalty));
+    score = Math.max(0, Math.min(100, score - hintPenalty));
 
     // Dynamic Learning DNA update
     if (matchRatio >= 0.7) {
@@ -329,6 +342,18 @@ export class AdaptiveEngine {
 
   // Calculate Overall Topic Mastery Status
   calculateMasteryStatus(totalQuestions, correctCount, avgAuthenticity) {
+    if (correctCount === 0) {
+      return {
+        masteryLevel: 'Needs Revision (0% Correct)',
+        thresholdsMet: {
+          knowledge: false,
+          reasoning: false,
+          retention: false,
+          authenticity: avgAuthenticity >= 60
+        }
+      };
+    }
+
     const knowledgeThreshold = this.knowledgeScore >= 75;
     const reasoningThreshold = this.reasoningScore >= 70;
     const retentionThreshold = this.retentionScore >= 70;
@@ -408,6 +433,16 @@ export class AdaptiveEngine {
 
   // Evaluate Marks Awarded considering Timing Analysis & Malpractice
   evaluateQuestionMarks(baseScorePercent, assignedMarks, timingAnalysis) {
+    if (!baseScorePercent || baseScorePercent <= 0) {
+      return {
+        assignedMarks,
+        baseEarnedMarks: 0,
+        finalMarks: 0,
+        timingMultiplier: 1.0,
+        penaltyReason: null
+      };
+    }
+
     let earned = (baseScorePercent / 100) * assignedMarks;
     let timingMultiplier = 1.0;
     let penaltyReason = null;

@@ -23,36 +23,51 @@ export default function FinalResultPage({
   const activeSession = sessionResult || latestDbSession;
 
   const isDisqualified = !!activeSession?.disqualified;
-  const marksEarned = isDisqualified ? 0 : (activeSession?.totalEarnedMarks ?? 85);
+  const marksEarned = isDisqualified ? 0 : (activeSession?.totalEarnedMarks ?? 0);
   const marksTotal = activeSession?.facultyTotalMarks ?? 100;
-  const knowledgeScore = isDisqualified ? 0 : (activeSession?.knowledgeScore ?? (activeSession?.accuracyRate ?? 85));
-  const reasoningScore = isDisqualified ? 0 : (activeSession?.reasoningScore ?? Math.round(knowledgeScore * 0.96));
-  const retentionScore = isDisqualified ? 0 : (activeSession?.retentionScore ?? Math.round(knowledgeScore * 0.93));
-  const curiosityScore = isDisqualified ? 0 : (activeSession?.curiosityIndex ?? 88);
-  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (activeSession?.masteryLevel ?? (knowledgeScore >= 85 ? 'Mastered' : 'Proficient'));
+  const knowledgeScore = isDisqualified ? 0 : (activeSession?.knowledgeScore ?? 0);
+  const reasoningScore = isDisqualified ? 0 : (activeSession?.reasoningScore ?? 0);
+  const retentionScore = isDisqualified ? 0 : (activeSession?.retentionScore ?? 0);
+  const curiosityScore = isDisqualified ? 0 : (activeSession?.curiosityIndex ?? 0);
+  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (activeSession?.masteryLevel ?? (knowledgeScore === 0 ? 'Needs Revision (0% Correct)' : 'Learner'));
   const authenticityScore = isDisqualified ? 0 : (activeSession?.authenticityScore ?? 100);
   const topicName = activeSession?.topic || 'Viva Examination';
 
   const resultCards = [
-    { title: 'Marks Awarded', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: isDisqualified ? '#C53030' : '#B7791F', bg: isDisqualified ? '#FFF0F0' : '#FFF3D6' },
-    { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: '#8B5E34', bg: '#FFF8E8' },
-    { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: '#D69E2E', bg: '#FFF3D6' },
-    { title: 'Cognitive Mastery', value: masteryLevel, icon: Award, color: isDisqualified ? '#C53030' : '#2F855A', bg: isDisqualified ? '#FFF0F0' : '#E6F4EA' },
-    { title: 'Concept Retention', value: `${retentionScore}%`, icon: RotateCcw, color: '#2F855A', bg: '#E6F4EA' },
+    { title: 'Marks Awarded', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: isDisqualified ? '#C53030' : (marksEarned === 0 ? '#C53030' : '#B7791F'), bg: isDisqualified || marksEarned === 0 ? '#FFF0F0' : '#FFF3D6' },
+    { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: knowledgeScore === 0 ? '#C53030' : '#8B5E34', bg: knowledgeScore === 0 ? '#FFF0F0' : '#FFF8E8' },
+    { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: reasoningScore === 0 ? '#C53030' : '#D69E2E', bg: reasoningScore === 0 ? '#FFF0F0' : '#FFF3D6' },
+    { title: 'Cognitive Mastery', value: masteryLevel, icon: Award, color: isDisqualified || knowledgeScore === 0 ? '#C53030' : '#2F855A', bg: isDisqualified || knowledgeScore === 0 ? '#FFF0F0' : '#E6F4EA' },
+    { title: 'Concept Retention', value: `${retentionScore}%`, icon: RotateCcw, color: retentionScore === 0 ? '#C53030' : '#2F855A', bg: retentionScore === 0 ? '#FFF0F0' : '#E6F4EA' },
     { title: 'Curiosity Index', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
     { title: 'Authenticity Rating', value: `${authenticityScore}%`, icon: ShieldCheck, color: isDisqualified ? '#C53030' : '#2F855A', bg: isDisqualified ? '#FFF0F0' : '#E6F4EA' }
   ];
 
-  const strongConcepts = [
-    `Core Principles & Governing Laws of ${topicName}`,
-    `Analytical Boundary Conditions & Parameter Formulation`,
-    `Equilibrium Dynamics & Empirical Validation`
-  ];
+  // Derive concepts dynamically from the attended session history
+  const attendedHistory = activeSession?.questionTimingHistory || [];
+  const strongConcepts = [];
+  const weakConcepts = [];
 
-  const weakConcepts = [
-    `Extreme Non-Linear Stress Bounds for ${topicName}`,
-    `Multi-Variable Optimization & Sensitivity Limits`
-  ];
+  attendedHistory.forEach((q, idx) => {
+    const isPass = (q.earnedMarks > 0 || (q.baseScorePercent && q.baseScorePercent >= 50) || q.isCorrect);
+    const label = q.questionText
+      ? (q.questionText.length > 75 ? q.questionText.slice(0, 72) + '...' : q.questionText)
+      : `Question ${q.questionNumber || (idx + 1)}`;
+    if (isPass) {
+      strongConcepts.push(label);
+    } else {
+      weakConcepts.push(label);
+    }
+  });
+
+  if (strongConcepts.length === 0) {
+    strongConcepts.push(`No concepts mastered for ${topicName} — foundational revision required`);
+  }
+  if (weakConcepts.length === 0 && attendedHistory.length > 0) {
+    weakConcepts.push(`Zero conceptual errors detected across all ${attendedHistory.length} attended questions`);
+  } else if (weakConcepts.length === 0) {
+    weakConcepts.push(`Core analytical formulations and non-linear limits of ${topicName}`);
+  }
 
   return (
     <div className="space-y-[32px] animate-fade-in w-full py-4 text-left">
