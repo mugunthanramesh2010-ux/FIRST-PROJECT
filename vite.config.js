@@ -19,11 +19,9 @@ function offlineFileStoragePlugin() {
 
         if (url.startsWith('/api/')) {
           try {
-            if (!global.__apiDispatcher) {
-              const mod = await import('./server/src/apiDispatcher.js');
-              global.__apiDispatcher = mod.handleApiRequest;
-            }
-            if (global.__apiDispatcher) {
+            const mod = await import('./server/src/apiDispatcher.js');
+            const dispatcher = mod.handleApiRequest;
+            if (dispatcher) {
               let body = {};
               if (req.method === 'POST') {
                 body = await new Promise((resolve) => {
@@ -34,7 +32,7 @@ function offlineFileStoragePlugin() {
                   });
                 });
               }
-              const apiRes = await global.__apiDispatcher(url, req.method, body, req.headers);
+              const apiRes = await dispatcher(url, req.method, body, req.headers);
               if (apiRes) {
                 const status = apiRes.status || 200;
                 res.setHeader('Content-Type', 'application/json');

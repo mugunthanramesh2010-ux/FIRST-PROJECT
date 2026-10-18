@@ -111,45 +111,191 @@ Return STRICT JSON:
     const { subject, topic, conceptId, targetDifficulty, questionType, referenceEvidence } = context;
 
     const cleanTopic = topic || subject || 'Core Principles';
+    const cleanSubj = subject || topic || 'General Engineering';
     const isDerivation = questionType === 'derivation';
     const isNumerical = questionType === 'numerical';
     const isCircuit = questionType === 'circuit_analysis';
+    const isCaseStudy = questionType === 'case_study';
+
+    const textToMatch = `${cleanSubj} ${cleanTopic}`.toLowerCase();
+    const isCS = /algorithm|sort|quick|tree|graph|operating system|paging|memory|deadlock|process|cpu|network|tcp|database|sql|code|software|compiler|data structure/i.test(textToMatch);
+    const isControl = /damping|second-order|transfer function|bode|nyquist|root locus|feedback|stability|overshoot|state-space|pid/i.test(textToMatch);
+    const isElectronics = /circuit|op-amp|opamp|semiconductor|transistor|diode|amplif|impedance|frequency|fpga|vlsi|verilog|timing/i.test(textToMatch);
+    const isMaterials = /stress|strain|mohr|shear|bending|torsion|young|elastic|hooke|beam|buckling|yield/i.test(textToMatch);
+    const isFluid = /fluid|bernoulli|reynolds|viscosity|pipe|navier|boundary layer|laminar|turbulent|flow/i.test(textToMatch);
+    const isMed = /cardiac|heart|physiology|starling|blood|vessel|respiratory|cell|enzyme/i.test(textToMatch);
+    const isLaw = /law|contract|estoppel|promissory|tort|jurisdiction|statute|court|justice/i.test(textToMatch);
+    const isMath = /eigenvalue|eigenvector|matrix|linear algebra|determinant|vector space|diagonal/i.test(textToMatch);
 
     let qText = '';
     let mathBlock = null;
-    let expectedKeywords = [cleanTopic.toLowerCase(), 'analysis', 'principle', 'derivation', 'stability', 'equilibrium'];
-    let rubric = {
-      criterion1: `Accurately define foundational parameters of ${cleanTopic}`,
-      criterion2: `Demonstrate physical/mathematical mechanism and causal laws`,
-      criterion3: `Justify boundary conditions and practical application`
-    };
+    let expectedKeywords = [cleanTopic.toLowerCase()];
+    let rubric = {};
+    let hints = [];
 
-    if (isDerivation) {
-      qText = `Derive the analytical governing expression for ${cleanTopic}. Detail the initial assumptions, state equations, and boundary conditions step-by-step.`;
-      mathBlock = `\\frac{d^2 y}{dt^2} + 2\\zeta \\omega_n \\frac{dy}{dt} + \\omega_n^2 y = f(t)`;
-      expectedKeywords.push('equation', 'boundary', 'solution', 'assumptions');
+    if (isCS) {
+      if (isDerivation) {
+        qText = `Derive the analytical recurrence relation and time-complexity solution for ${cleanTopic} across best-case, average-case, and worst-case partitions. Detail recursive branch depths and master theorem conditions.`;
+        mathBlock = `T(N) = 2T(N/2) + \\Theta(N) \\implies T(N) = \\Theta(N \\log N)`;
+        expectedKeywords.push('recurrence', 'partition', 'complexity', 'depth', 'log n', 'worst case');
+      } else if (isNumerical) {
+        qText = `Consider an execution sequence of ${cleanTopic} with an input dataset of size N = 64. Calculate the maximum number of recursive stack frames allocated and total element comparisons under balanced vs degenerate partitioning.`;
+        mathBlock = `\\text{Stack Depth}_{avg} = \\lfloor\\log_2 64\\rfloor = 6, \\quad \\text{Stack Depth}_{worst} = 64`;
+        expectedKeywords.push('stack depth', 'comparisons', 'partitions', 'recursion', 'frames');
+      } else {
+        qText = `Explain the operational mechanics and invariant conditions of ${cleanTopic}. How does boundary pivot/pointer selection prevent pathological performance degradation?`;
+        expectedKeywords.push('partition', 'pivot', 'invariant', 'pointer', 'efficiency', 'overhead');
+      }
       rubric = {
-        step1: 'Identify state variables and governing differential formulation',
-        step2: 'Execute mathematical transformations and root classification',
-        step3: 'Synthesize closed-form solution with damping/transient terms'
+        criterion1: `Formulate the recursive structure or state transitions of ${cleanTopic}`,
+        criterion2: `Analyze operational time/space complexity and boundary conditions`,
+        criterion3: `Evaluate mitigation strategies against pathological performance degradation`
       };
-    } else if (isNumerical) {
-      qText = `Consider a real-world system governed by ${cleanTopic}. Given nominal operating conditions with input excitation of 10.0 units and characteristic damping ratio of 0.6, calculate the resultant transient response and maximum peak overshoot.`;
-      mathBlock = `M_p = e^{-\\frac{\\pi \\zeta}{\\sqrt{1 - \\zeta^2}}} \\times 100\\%`;
-      expectedKeywords.push('calculation', 'units', 'damping', 'overshoot', 'percentage');
-    } else if (isCircuit) {
-      qText = `Analyze the small-signal equivalent topology for the circuit implementation of ${cleanTopic}. What is the impact of parasitic capacitances on high-frequency cutoff?`;
-      expectedKeywords.push('impedance', 'frequency', 'parasitic', 'gain', 'bandwidth');
+      hints = [
+        `Hint 1: Trace the computational steps and divide-and-conquer splitting of ${cleanTopic}.`,
+        `Hint 2: Formulate the recurrence equation representing per-level work and recursion depth.`,
+        `Hint 3: Consider how memory hierarchy and cache locality affect actual execution latency.`,
+        `Hint 4: Synthesize the worst-case degradation trigger and the algorithmic safeguard.`
+      ];
+    } else if (isControl) {
+      if (isDerivation) {
+        qText = `Derive the percentage overshoot expression for ${cleanTopic} as a function of the characteristic damping ratio (ζ). Detail the transient peak time derivation.`;
+        mathBlock = `M_p = e^{-\\frac{\\pi \\zeta}{\\sqrt{1 - \\zeta^2}}} \\times 100\\%`;
+        expectedKeywords.push('damping', 'zeta', 'overshoot', 'transient', 'peak time', 'decay');
+      } else if (isNumerical) {
+        qText = `For a control system governed by ${cleanTopic} with damping ratio ζ = 0.5 and natural frequency ω_n = 4 rad/s, calculate the maximum peak overshoot Mp and 2% settling time ts.`;
+        mathBlock = `t_s = \\frac{4}{\\zeta \\omega_n} = \\frac{4}{0.5 \\times 4} = 2.0\\text{ s}`;
+        expectedKeywords.push('settling time', 'overshoot', 'damping', 'natural frequency', 'seconds');
+      } else {
+        qText = `Critically analyze how pole locations on the s-plane dictate stability and transient response for ${cleanTopic}. How does increasing damping alter the closed-loop poles?`;
+        expectedKeywords.push('poles', 's-plane', 'stability', 'damping', 'transient', 'damping ratio');
+      }
+      rubric = {
+        criterion1: 'State governing differential equation or closed-loop transfer function',
+        criterion2: 'Derive transient parameters (overshoot, peak time, settling time)',
+        criterion3: 'Demonstrate physical stability criteria and pole placement'
+      };
+      hints = [
+        `Hint 1: Recall the standard second-order characteristic equation: s² + 2ζω_n s + ω_n² = 0.`,
+        `Hint 2: Evaluate the transient decay envelope governed by exp(-ζ ω_n t).`,
+        `Hint 3: Determine the peak time by differentiating the step response and setting slope to zero.`,
+        `Hint 4: Relate damping ratio ζ to maximum percentage overshoot Mp.`
+      ];
+    } else if (isElectronics || isCircuit) {
+      qText = `Analyze the small-signal equivalent model and frequency response for ${cleanTopic}. How do parasitic capacitances dictate high-frequency cutoff and phase margin?`;
+      mathBlock = `f_H = \\frac{1}{2\\pi R_{eq} C_{in}}, \\quad A_v = -g_m (r_o \\parallel R_L)`;
+      expectedKeywords.push('small-signal', 'gain', 'bandwidth', 'cutoff', 'parasitic capacitance', 'impedance');
+      rubric = {
+        criterion1: 'Construct small-signal hybrid-pi equivalent circuit model',
+        criterion2: 'Derive midband voltage/current gain and input/output impedances',
+        criterion3: 'Formulate high-frequency pole locations and phase margin criteria'
+      };
+      hints = [
+        `Hint 1: Identify active device linear parameters (transconductance g_m, output resistance r_o).`,
+        `Hint 2: Apply KCL at the output node in the small-signal domain.`,
+        `Hint 3: Consider Miller effect multiplying input-to-output feedback capacitance.`,
+        `Hint 4: Synthesize the Gain-Bandwidth Product (GBW) trade-off.`
+      ];
+    } else if (isMaterials) {
+      if (isDerivation) {
+        qText = `Derive the analytical governing expression for ${cleanTopic}. Detail the initial assumptions, state equilibrium equations, and boundary conditions step-by-step.`;
+        mathBlock = `\\sigma = \\frac{M y}{I}, \\quad \\tau_{max} = \\sqrt{\\left(\\frac{\\sigma_x - \\sigma_y}{2}\\right)^2 + \\tau_{xy}^2}`;
+        expectedKeywords.push('stress', 'strain', 'equilibrium', 'principal', 'shear', 'boundary');
+      } else {
+        qText = `Critically analyze the distribution of stresses and strain compatibility in ${cleanTopic}. What failure criteria (Tresca vs von Mises) best predict material yielding?`;
+        expectedKeywords.push('stress', 'yielding', 'tresca', 'von mises', 'failure', 'shear');
+      }
+      rubric = {
+        criterion1: 'Define state of stress and equilibrium equations',
+        criterion2: 'Apply constitutive relations (Hooke’s Law / yield criteria)',
+        criterion3: 'Justify boundary conditions and safety factor calculations'
+      };
+      hints = [
+        `Hint 1: State the fundamental equilibrium equations and strain compatibility relations.`,
+        `Hint 2: Identify principal stress axes where shear stress vanishes.`,
+        `Hint 3: Apply the appropriate failure criterion (Tresca or von Mises) for ductile behavior.`,
+        `Hint 4: Synthesize the relationship between normal stress and maximum in-plane shear stress.`
+      ];
+    } else if (isFluid) {
+      qText = `Under what physical assumptions does the governing formulation of ${cleanTopic} apply? Formulate the momentum and energy balance along an arbitrary streamline.`;
+      mathBlock = `\\frac{P}{\\rho g} + \\frac{v^2}{2g} + z = \\text{constant}`;
+      expectedKeywords.push('bernoulli', 'streamline', 'inviscid', 'incompressible', 'pressure', 'kinetic energy');
+      rubric = {
+        criterion1: 'State Euler momentum equation along streamline',
+        criterion2: 'Integrate under steady, incompressible, frictionless assumptions',
+        criterion3: 'Demonstrate pressure head, velocity head, and datum head conservation'
+      };
+      hints = [
+        `Hint 1: Recall the conservation of mechanical energy in ideal fluid flow.`,
+        `Hint 2: Identify the three energy heads: static pressure head, dynamic velocity head, and elevation head.`,
+        `Hint 3: Note the essential assumptions: steady, incompressible, frictionless, along a streamline.`,
+        `Hint 4: Evaluate how restricting cross-sectional area alters pressure and velocity.`
+      ];
+    } else if (isMed) {
+      qText = `Analyze the physiological mechanism governing ${cleanTopic}. How does ventricular end-diastolic volume modulate myocardial contraction force and stroke volume?`;
+      mathBlock = `\\text{Cardiac Output} (CO) = \\text{Heart Rate} (HR) \\times \\text{Stroke Volume} (SV)`;
+      expectedKeywords.push('cardiac output', 'stroke volume', 'sarcomere', 'preload', 'end-diastolic volume', 'contractility');
+      rubric = {
+        criterion1: 'Define Frank-Starling law and myocardial sarcomere length-tension relationship',
+        criterion2: 'Demonstrate relationship between venous return, end-diastolic volume, and stroke volume',
+        criterion3: 'Examine physiological adaptations during sympathetic stimulation vs heart failure'
+      };
+      hints = [
+        `Hint 1: Consider how stretching myocardial muscle fibers prior to contraction alters actin-myosin overlap.`,
+        `Hint 2: Increased venous return increases end-diastolic volume (EDV) or ventricular preload.`,
+        `Hint 3: Greater preload produces optimal cross-bridge formation, yielding higher stroke volume.`,
+        `Hint 4: Relate this intrinsic autoregulatory mechanism to preservation of equal left and right cardiac output.`
+      ];
+    } else if (isLaw || isCaseStudy) {
+      qText = `Analyze the foundational elements required to establish ${cleanTopic}. How does detrimental reliance substitute for consideration, and when will equity intervene?`;
+      expectedKeywords.push('promissory estoppel', 'detrimental reliance', 'promise', 'equity', 'consideration', 'unconscionability');
+      rubric = {
+        criterion1: 'Identify the four essential elements: unambiguous promise, reasonable reliance, substantial detriment, unconscionability',
+        criterion2: 'Analyze how promissory estoppel functions as an equitable shield vs sword',
+        criterion3: 'Apply doctrine to factual commercial scenarios and remedy boundaries'
+      };
+      hints = [
+        `Hint 1: Recall that the doctrine prevents a promisor from going back on a clear promise when revoked unconscionably.`,
+        `Hint 2: Identify whether traditional consideration was present or absent.`,
+        `Hint 3: Evaluate whether the promisee altered their position to their economic or legal detriment.`,
+        `Hint 4: Determine whether injustice can only be avoided through enforcement of the promise.`
+      ];
+    } else if (isMath) {
+      qText = `Formulate the characteristic polynomial equation to determine the eigenvalues of a linear transformation represented by ${cleanTopic}. What conditions ensure diagonalizability?`;
+      mathBlock = `\\det(A - \\lambda I) = 0, \\quad A = P D P^{-1}`;
+      expectedKeywords.push('eigenvalue', 'eigenvector', 'characteristic polynomial', 'determinant', 'diagonalization', 'multiplicity');
+      rubric = {
+        criterion1: 'Set up characteristic determinant det(A - λI) = 0 and solve for roots',
+        criterion2: 'Calculate eigenspaces and compare geometric vs algebraic multiplicity',
+        criterion3: 'State necessary and sufficient conditions for similarity transformation to diagonal form'
+      };
+      hints = [
+        `Hint 1: Recall that an eigenvector satisfies A v = λ v for non-zero vector v.`,
+        `Hint 2: Formulate the homogeneous system (A - λI)v = 0 which has non-trivial solutions iff det(A - λI) = 0.`,
+        `Hint 3: Determine the algebraic multiplicity (root multiplicity) of each eigenvalue.`,
+        `Hint 4: Verify whether the dimension of the null space (geometric multiplicity) equals algebraic multiplicity.`
+      ];
     } else {
-      qText = `In the context of ${subject}, critically analyze the core theoretical foundation and operational mechanism of ${cleanTopic}. How do non-ideal boundary conditions alter the expected steady-state response?`;
-      expectedKeywords.push('steady-state', 'transient', 'mechanism', 'boundary');
+      qText = `Critically analyze the theoretical principles and operational mechanisms governing ${cleanTopic}. What fundamental governing equations and boundary conditions constrain this system?`;
+      expectedKeywords.push(cleanTopic.toLowerCase(), 'principle', 'mechanism', 'boundary', 'efficiency');
+      rubric = {
+        criterion1: `Formulate core principles and definitions of ${cleanTopic}`,
+        criterion2: `Demonstrate governing relations and cause-effect interactions`,
+        criterion3: `Evaluate operational limits, practical tradeoffs, and boundary constraints`
+      };
+      hints = [
+        `Hint 1: State the foundational academic definition and primary variables of ${cleanTopic}.`,
+        `Hint 2: Identify the governing physical, mathematical, or computational relationship.`,
+        `Hint 3: Examine how varying external constraints or inputs alters system equilibrium.`,
+        `Hint 4: Synthesize critical trade-offs, units of measure, and failure limits.`
+      ];
     }
 
     const question = {
       id: `q_proc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      subject,
+      subject: cleanSubj,
       topic: cleanTopic,
-      conceptId: conceptId || `${subject}_${cleanTopic}`.toUpperCase(),
+      conceptId: conceptId || `${cleanSubj}_${cleanTopic}`.toUpperCase().replace(/[^A-Z0-9]/g, '_'),
       questionText: qText,
       text: qText,
       type: 'text',
@@ -159,18 +305,9 @@ Return STRICT JSON:
       mathBlock,
       referenceEvidence: referenceEvidence || [],
       sourceType: referenceEvidence?.length > 0 ? 'reference_grounded' : 'offline_procedural_ontology',
-      requiredAnswerConcepts: [
-        `Fundamental definition and operational domain of ${cleanTopic}`,
-        `Mathematical or physical governing relationship`,
-        `Behavior under transient vs steady-state conditions`
-      ],
+      requiredAnswerConcepts: Object.values(rubric),
       rubric,
-      hints: [
-        `Hint 1: Recall the fundamental governing law that defines ${cleanTopic}.`,
-        `Hint 2: Consider how external excitation or input variables propagate through the system equations.`,
-        `Hint 3: Examine the relationship between transient response damping and steady-state equilibrium.`,
-        `Hint 4: Synthesize the mathematical boundary conditions that constrain the physical system.`
-      ],
+      hints,
       expectedKeywords,
       telemetry: {
         provider: 'offline_procedural_engine',

@@ -12,6 +12,8 @@
 const OLLAMA_ENDPOINT = 'http://localhost:11434';
 const DEFAULT_LOCAL_MODEL = 'llama3.2:1b';
 
+import { DOMAIN_QUESTION_BANKS } from './domainQuestionBanks.js';
+
 // Check if local Ollama service is reachable (via server proxy or direct localhost)
 export async function checkOllamaAvailability() {
   // 1. Try server proxy endpoint first (avoids browser CORS)
@@ -76,7 +78,7 @@ export async function generateQuestionsWithAI(topic, options = {}) {
   // 1. Call Backend Unified AI Proxy (/api/ai/generate handles both Ollama and OpenAI cleanly)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s responsive budget (no infinite loading)
 
     const proxyRes = await fetch('/api/ai/generate', {
       method: 'POST',
@@ -1939,14 +1941,17 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
   }
 
   // 2. Check subject domain matching (Intelligent Specificity-Weighted Scorer with Word-Boundary Enforcement)
+  const ACTIVE_DOMAINS = { ...DOMAIN_QUESTION_BANKS, ...SUBJECT_DOMAINS };
   let bestDomain = null;
   let bestScore = 0;
 
-  for (const [key, domain] of Object.entries(SUBJECT_DOMAINS)) {
+  for (const [key, domain] of Object.entries(ACTIVE_DOMAINS)) {
     let score = 0;
     for (const kw of domain.matchKeywords) {
       if (lower === kw) {
-        score += 80; // Exact match is highest priority
+        score += 100; // Exact match is highest priority
+      } else if (lower.includes(kw) && kw.length > 5) {
+        score += 60;
       } else if (kw.length <= 3) {
         // Short tokens (e.g. 'os', 'cse', 'dsa', 'tcp', 'udp', 'sql', 'it') MUST match as whole words
         const words = lower.split(/[\s,()/-]+/).filter(Boolean);
@@ -1958,7 +1963,7 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
         const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escaped}\\b`, 'i');
         if (regex.test(lower)) {
-          score += kw.length * 2.5;
+          score += kw.length * 3;
         }
       }
     }
@@ -1973,55 +1978,38 @@ export function generateOfflineDeepQuestions(rawTopic, targetCount = 10, documen
     const domainQuestions = [...bestDomain.questions].sort(() => Math.random() - 0.5);
     const qList = [];
     
-    // Add shuffled domain questions
+    // Add domain questions
     domainQuestions.forEach((base, idx) => {
       qList.push(normalizeQuestion(base, qList.length, cleanTopic));
     });
 
-    // 2. If more questions needed than in the base pool, synthesize domain-accurate parametric variants
-    const isSoftware = /software|python|code|program|network|database|os|system|data|algo|cloud|web/i.test(cleanTopic);
-    const isBio = /bio|chem|pharma|medical|genetic|cell/i.test(cleanTopic);
-    const isBusiness = /econ|finance|market|business|commerce|trade/i.test(cleanTopic);
+    // 2. If more questions needed than in the base pool, synthesize domain-accurate analytical variations
+    if (qList.length < count) {
+      const analyticalPerspectives = [
+        'Analyze the performance trade-off and boundary conditions for',
+        'In terms of mathematical derivation and limiting behavior, evaluate',
+        'Under non-ideal physical implementation or edge failure modes, analyze',
+        'Compare the computational or experimental efficiency of alternative approaches to',
+        'Synthesize the governing axioms, assumptions, and critical design rules for'
+      ];
 
-    const scenarios = isSoftware ? [
-      'Under high-concurrency production load with distributed network partitions',
-      'In a low-latency, zero-downtime microservices architecture',
-      'During memory-constrained embedded runtime execution',
-      'In an asynchronous event-driven system under extreme throughput',
-      'When certifying zero data loss across distributed replicas'
-    ] : isBio ? [
-      'Under in-vitro physiological temperature and ionic buffer variation',
-      'During enzymatic substrate saturation and competitive inhibition assay',
-      'In a high-throughput automated bioprocessing bioreactor',
-      'Under extreme pH stress and protein denaturation boundaries'
-    ] : isBusiness ? [
-      'During unexpected macroeconomic inflationary pressure and currency shifts',
-      'In an oligopolistic competitive market with asymmetric information',
-      'Under liquidity-constrained capital allocation and rising interest rates',
-      'During supply chain disruption and demand shock modeling'
-    ] : [
-      'Under high-frequency cyclic vibration and dynamic boundary loading',
-      'In a safety-critical aerospace and automotive deployment',
-      'During extreme transient thermal saturation and non-linear stress',
-      'Under electromagnetic interference and boundary tolerance limits'
-    ];
+      let variantCounter = 0;
+      while (qList.length < count) {
+        const base = domainQuestions[variantCounter % domainQuestions.length];
+        const prefix = analyticalPerspectives[variantCounter % analyticalPerspectives.length];
 
-    let variantCounter = 0;
-    while (qList.length < count) {
-      const base = domainQuestions[variantCounter % domainQuestions.length];
-      const sc = scenarios[variantCounter % scenarios.length];
+        const variantQ = {
+          ...base,
+          id: `q_ai_var_${variantCounter + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          level: ((variantCounter % 3) + 2),
+          bloomLevel: variantCounter % 3 === 0 ? 'Application' : variantCounter % 3 === 1 ? 'Analysis' : 'Evaluation',
+          questionText: `${prefix} ${cleanTopic}: ${base.questionText.replace(/^(In\s+[^,]+,\s*|What\s+is\s+|Explain\s+)/i, '')}`,
+          hints: base.hints ? base.hints.map(h => `${h}`) : null
+        };
 
-      const variantQ = {
-        ...base,
-        id: `q_ai_var_${variantCounter + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        level: ((variantCounter % 3) + 2),
-        bloomLevel: variantCounter % 3 === 0 ? 'Application' : variantCounter % 3 === 1 ? 'Analysis' : 'Evaluation',
-        questionText: `${sc} for ${cleanTopic}: ${base.questionText}`,
-        hints: base.hints ? base.hints.map(h => `${h} (Evaluate the operational conditions: ${sc}).`) : null
-      };
-
-      qList.push(normalizeQuestion(variantQ, qList.length, cleanTopic));
-      variantCounter++;
+        qList.push(normalizeQuestion(variantQ, qList.length, cleanTopic));
+        variantCounter++;
+      }
     }
 
     // Return randomized selection of targetCount
