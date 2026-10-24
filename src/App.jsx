@@ -574,9 +574,9 @@ export default function App() {
 
           {/* 2. MAIN APPLICATION WORKSPACE (Guaranteed Zero Overlap from Sidebar) */}
           <div
-            className={`flex-1 flex flex-col min-w-0 transition-all duration-300 pb-16 pl-0 ${
-              isSidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
-            }`}
+            className={`enterprise-workspace ${
+              isSidebarCollapsed ? 'enterprise-workspace-collapsed' : 'enterprise-workspace-expanded'
+            } pb-16`}
           >
             {/* Top Enterprise Header (Height 72px) */}
             <EnterpriseNavbar

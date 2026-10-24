@@ -51,11 +51,9 @@ export default function EnterpriseSidebar({
 
   return (
     <aside
-      className={`fixed top-0 left-0 bottom-0 z-50 bg-[#FFF2CC] border-r border-[#E2D3A7] transition-all duration-300 flex flex-col justify-between select-none shadow-[2px_0_12px_rgba(183,121,31,0.04)] ${
-        isCollapsed
-          ? '-translate-x-full lg:translate-x-0 w-[260px] lg:w-[72px]'
-          : 'translate-x-0 w-[260px]'
-      }`}
+      className={`enterprise-sidebar ${
+        isCollapsed ? 'enterprise-sidebar-collapsed' : 'enterprise-sidebar-expanded'
+      } shadow-[2px_0_12px_rgba(183,121,31,0.04)]`}
     >
       <div className="flex-1 flex flex-col min-h-0">
         

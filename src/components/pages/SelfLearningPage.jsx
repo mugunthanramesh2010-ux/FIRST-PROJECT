@@ -29,6 +29,17 @@ export default function SelfLearningPage({ onTopicSelected }) {
     'Biomedical Engineering'
   ];
 
+  const engineeringDomains = [
+    { name: 'Communication Eng.', topic: 'Communication Engineering', icon: '📡' },
+    { name: 'FPGA & VLSI Design', topic: 'FPGA-Based VLSI', icon: '⚡' },
+    { name: 'Semiconductor Physics', topic: 'Semiconductor Devices', icon: '🔬' },
+    { name: 'Control Systems', topic: 'Control Systems', icon: '🎛️' },
+    { name: 'Computer Networks', topic: 'Computer Networks', icon: '🌐' },
+    { name: 'Operating Systems', topic: 'Operating Systems', icon: '💻' },
+    { name: 'Digital Signal Proc.', topic: 'Digital Signal Processing', icon: '📊' },
+    { name: 'AI & Neural Nets', topic: 'Deep Learning', icon: '🧠' }
+  ];
+
   const questionPresets = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
   const handleStart = async (topicName) => {

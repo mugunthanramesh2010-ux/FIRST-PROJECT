@@ -472,25 +472,68 @@ h3, .card-heading {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* GUARANTEED SIDEBAR OFFSETS - ZERO CONTENT OVERLAP ON ANY RESOLUTION */
-.enterprise-workspace-collapsed {
-  margin-left: 92px !important;
-  width: calc(100% - 92px) !important;
-  transition: all 0.25s ease-in-out;
+/* GUARANTEED SIDEBAR & WORKSPACE SYSTEM - ZERO OVERLAP ON ANY RESOLUTION */
+.enterprise-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.enterprise-sidebar-expanded {
+  width: 260px !important;
+  transform: translateX(0) !important;
+}
+
+.enterprise-sidebar-collapsed {
+  width: 72px !important;
+  transform: translateX(0) !important;
+}
+
+.enterprise-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .enterprise-workspace-expanded {
-  margin-left: 288px !important;
-  width: calc(100% - 288px) !important;
-  transition: all 0.25s ease-in-out;
+  margin-left: 260px !important;
+  width: calc(100% - 260px) !important;
 }
 
-@media (max-width: 768px) {
-  .enterprise-workspace-collapsed,
-  .enterprise-workspace-expanded {
+.enterprise-workspace-collapsed {
+  margin-left: 72px !important;
+  width: calc(100% - 72px) !important;
+}
+
+/* Mobile & Tablet Drawer Breakpoint (< 1024px) */
+@media (max-width: 1023px) {
+  .enterprise-sidebar-collapsed {
+    transform: translateX(-100%) !important;
+    width: 260px !important;
+    box-shadow: none !important;
+  }
+  .enterprise-sidebar-expanded {
+    transform: translateX(0) !important;
+    width: 260px !important;
+    box-shadow: 4px 0 24px rgba(45, 55, 72, 0.2) !important;
+  }
+  .enterprise-workspace-expanded,
+  .enterprise-workspace-collapsed {
     margin-left: 0 !important;
     width: 100% !important;
-    padding-left: 88px !important;
+    padding-left: 0 !important;
   }
 }
 
