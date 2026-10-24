@@ -289,7 +289,7 @@ export default function HomeDashboard({
               <div className="p-3 rounded-[12px] bg-[#0D1117] border border-[#30363D] space-y-2">
                 <div className="flex justify-between items-center text-[12px]">
                   <span className="text-[#8B949E]">Authenticity Rating</span>
-                  <span className="font-bold text-[#39FF14]">98.9% Clean</span>
+                  <span className="font-bold text-[#39FF14]">{currentUser?.authenticityScore || 100}% Clean</span>
                 </div>
                 <div className="flex justify-between items-center text-[12px]">
                   <span className="text-[#8B949E]">Human Variance Check</span>

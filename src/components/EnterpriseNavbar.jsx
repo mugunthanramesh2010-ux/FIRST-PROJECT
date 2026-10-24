@@ -11,7 +11,7 @@ export default function EnterpriseNavbar({
 }) {
   return (
     <header className="h-[72px] bg-[#FFF7E2] border-b border-[#E2D3A7] sticky top-0 z-30 px-6 sm:px-8">
-      <div className="max-w-[1280px] h-full mx-auto flex items-center justify-between">
+      <div className="w-full h-full flex items-center justify-between">
         
         {/* Left: Mobile Toggle + Logo + VIVA ANALYSER + OFFLINE AI Badge */}
         <div className="flex items-center gap-3">

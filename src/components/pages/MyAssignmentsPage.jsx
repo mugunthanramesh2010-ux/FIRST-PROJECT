@@ -45,32 +45,47 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
   }, [currentUser]);
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto text-left py-4">
+    <div className="space-y-[28px] animate-fade-in w-full text-left py-2">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2D3A7] pb-4">
         <div>
-          <span className="text-xs font-mono text-[#718096]">Page 9 • Student Portal</span>
+          <span className="text-xs font-mono text-[#718096]">Page 9 • Student Portal • Coursework Viva</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2D3748] mt-1">
-            My Assignments
+            My Coursework Assignments
           </h1>
           <p className="text-xs text-[#718096]">
-            Inbuilt academic coursework assigned by faculty with adaptive question counts (1 to 100)
+            Faculty-assigned formal examinations • Strictly single-attempt policy enforced
           </p>
         </div>
       </div>
 
-      {/* Card Layout for Assignments */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px]">
+      {/* Security Policy Alert Banner */}
+      <div className="p-4 rounded-2xl bg-[#FFF8E8] border border-[#E2D3A7] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#8B5E34]">
+        <div className="flex items-center gap-2.5">
+          <ShieldCheck className="w-5 h-5 text-[#B7791F] shrink-0" />
+          <span>
+            <strong>Single-Attempt Examination Protocol:</strong> Once you complete an assigned Viva, your final marks and biometric telemetry are permanently submitted to the staff portal. Re-taking is strictly locked. For unlimited attempts, practice via <strong>Self Learning</strong>.
+          </span>
+        </div>
+      </div>
+
+      {/* Card Layout for Assignments (Edge-to-Edge Full Width) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px] w-full">
         {assignments.map((item) => {
-          const isCompleted = item.status === 'COMPLETED';
-          const isInProgress = item.status === 'IN_PROGRESS';
-          const isActive = item.status === 'ACTIVE' || !item.status;
+          const isCompletedInDb = isAssignmentCompletedByStudent(item.id, currentUser?.regNo);
+          const isCompleted = isCompletedInDb || item.status === 'COMPLETED';
+          const isInProgress = !isCompleted && item.status === 'IN_PROGRESS';
+          const isActive = !isCompleted && (item.status === 'ACTIVE' || !item.status);
 
           return (
             <div
               key={item.id}
-              className="ent-card flex flex-col justify-between hover:border-[#B7791F] transition-all bg-[#FFFCF4] border-[#E2D3A7]"
+              className={`ent-card flex flex-col justify-between transition-all bg-[#FFFCF4] border-2 ${
+                isCompleted
+                  ? 'border-[#CBD5E1] bg-[#FAF8F5]'
+                  : 'border-[#E2D3A7] hover:border-[#B7791F]'
+              }`}
             >
               <div className="space-y-4">
                 
@@ -84,8 +99,9 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
                       {item.questionCount || 10} Questions
                     </span>
                     {isCompleted && (
-                      <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] border border-[#A8DAB5] text-[11px] font-bold text-[#2F855A]">
-                        Completed
+                      <span className="px-2.5 py-0.5 rounded-md bg-[#E6F4EA] border border-[#A8DAB5] text-[11px] font-bold text-[#2F855A] flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        <span>Submitted</span>
                       </span>
                     )}
                     {isInProgress && (
@@ -131,36 +147,47 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
 
               </div>
 
-              {/* Action Buttons: Start, Continue, View Result */}
-              <div className="pt-4 border-t border-[#E2D3A7]/60 mt-4 flex items-center gap-2">
-                {isActive && (
-                  <button
-                    onClick={() => onStartAssignment(item.topic || item.assignmentName || 'Engineering Viva', item.questionCount || 10, item)}
-                    className="btn-primary w-full text-xs h-[46px]"
-                  >
-                    <Play className="w-4 h-4 mr-1 text-[#FFF3D6]" />
-                    Start ({item.questionCount || 10} Qs)
-                  </button>
-                )}
+              {/* Action Buttons: Start, Continue, or Locked Result */}
+              <div className="pt-4 border-t border-[#E2D3A7]/60 mt-4 space-y-2">
+                {isCompleted ? (
+                  <div className="space-y-2">
+                    <button
+                      disabled
+                      className="w-full text-xs h-[44px] rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-[#64748B] font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                    >
+                      <Lock className="w-4 h-4 text-[#94A3B8]" />
+                      <span>Submitted to Faculty (Retake Locked)</span>
+                    </button>
+                    <button
+                      onClick={() => onViewResult(item)}
+                      className="btn-outline w-full text-xs h-[42px] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Eye className="w-4 h-4 text-[#8B5E34]" />
+                      <span>View Submitted Result</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {isActive && (
+                      <button
+                        onClick={() => onStartAssignment(item.topic || item.subject || item.assignmentName, item.questionCount || 10, item)}
+                        className="btn-primary w-full text-xs h-[46px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                      >
+                        <Play className="w-4 h-4 text-[#FFF3D6]" />
+                        <span>Start Exam ({item.questionCount || 10} Qs)</span>
+                      </button>
+                    )}
 
-                {isInProgress && (
-                  <button
-                    onClick={() => onStartAssignment(item.topic || item.assignmentName || 'Engineering Viva', item.questionCount || 10, item)}
-                    className="btn-warning w-full text-xs h-[46px]"
-                  >
-                    <RotateCw className="w-4 h-4 mr-1" />
-                    Continue ({item.questionCount || 10} Qs)
-                  </button>
-                )}
-
-                {isCompleted && (
-                  <button
-                    onClick={() => onViewResult(item)}
-                    className="btn-outline w-full text-xs h-[46px]"
-                  >
-                    <Eye className="w-4 h-4 mr-1 text-[#8B5E34]" />
-                    View Result
-                  </button>
+                    {isInProgress && (
+                      <button
+                        onClick={() => onStartAssignment(item.topic || item.subject || item.assignmentName, item.questionCount || 10, item)}
+                        className="btn-warning w-full text-xs h-[46px] flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <RotateCw className="w-4 h-4" />
+                        <span>Continue Exam ({item.questionCount || 10} Qs)</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 

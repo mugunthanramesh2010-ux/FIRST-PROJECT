@@ -97,7 +97,7 @@ export default function FacultyDashboardPage({ currentUser, onNavigate, onOpenRe
   ];
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto text-left">
+    <div className="space-y-[32px] animate-fade-in w-full text-left">
       
       {/* 1. Header Banner */}
       <div className="ent-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFCF4] border-[#E2D3A7]">
@@ -170,6 +170,60 @@ export default function FacultyDashboardPage({ currentUser, onNavigate, onOpenRe
             </div>
           );
         })}
+      </div>
+
+      {/* 3. MULTI-PC LAN HOSTING & EXAM ATTENDANCE CONTROLLER */}
+      <div className="ent-card p-6 sm:p-8 bg-[#FFF8E8] border-2 border-[#B7791F] rounded-3xl space-y-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E2D3A7] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#B7791F] text-white flex items-center justify-center font-black">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#2D3748]">
+                Multi-PC LAN Exam Hosting Controller
+              </h2>
+              <p className="text-xs sm:text-sm text-[#718096]">
+                Run faculty portal on this PC; allow 100+ student PCs on the same Wi-Fi / college LAN to attend simultaneously
+              </p>
+            </div>
+          </div>
+          <span className="px-3.5 py-1.5 rounded-full bg-[#E6F4EA] border border-[#A8DAB5] text-[#2F855A] font-extrabold text-xs">
+            ● LAN Server Active (0.0.0.0:5173)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="p-4 rounded-2xl bg-[#FFFCF4] border border-[#E2D3A7] space-y-2">
+            <span className="text-xs font-bold text-[#8B5E34] uppercase">1. Student PC Connection URL</span>
+            <div className="font-mono font-black text-sm text-[#B7791F] bg-[#FFF3D6] p-2.5 rounded-xl break-all">
+              http://localhost:5173/ <span className="text-xs font-sans text-[#718096] block sm:inline">(or http://&lt;Local_IP&gt;:5173/)</span>
+            </div>
+            <p className="text-[11px] text-[#718096]">
+              Share this address with students in the computer lab or lecture hall.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#FFFCF4] border border-[#E2D3A7] space-y-2">
+            <span className="text-xs font-bold text-[#8B5E34] uppercase">2. Class & Section Targeting</span>
+            <div className="text-sm font-extrabold text-[#2D3748]">
+              Restricted to Enrolled Cohort
+            </div>
+            <p className="text-[11px] text-[#718096]">
+              When you publish an assignment for <strong>Year 3, Section A</strong>, only students registered in that class can access and attend that viva.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#FFFCF4] border border-[#E2D3A7] space-y-2">
+            <span className="text-xs font-bold text-[#8B5E34] uppercase">3. Real-Time Anti-Cheat Defense</span>
+            <div className="text-sm font-extrabold text-[#C53030]">
+              Auto-Close on 3 Violations
+            </div>
+            <p className="text-[11px] text-[#718096]">
+              If any student switches tabs or attempts copy/paste 3 times, their viva is immediately terminated and scored as 0.
+            </p>
+          </div>
+        </div>
       </div>
 
     </div>

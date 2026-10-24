@@ -1,0 +1,56 @@
+{
+  "id": "/",
+  "name": "VIVA ANALYSER - Universal AI Assessment & Learning DNA Platform",
+  "short_name": "VivaAnalyser",
+  "description": "Universal domain-independent adaptive viva assessment, cognitive digital twin, and behavioral anti-cheat platform.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#0a0f1d",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "categories": ["education", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Launch Viva Arena",
+      "url": "/#arena",
+      "description": "Start an adaptive cognitive viva session"
+    },
+    {
+      "name": "Learning DNA & Twin",
+      "url": "/#dna",
+      "description": "View cognitive fingerprint and forgetting curve"
+    },
+    {
+      "name": "Knowledge Graph",
+      "url": "/#graph",
+      "description": "Inspect concept dependency topology"
+    },
+    {
+      "name": "Autonomous Mode",
+      "url": "/#autonomous",
+      "description": "Synthesize autonomous learning roadmap"
+    }
+  ]
+}

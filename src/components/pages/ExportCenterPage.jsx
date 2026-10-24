@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Folder,
-  File
+  File,
+  Printer
 } from 'lucide-react';
 import { getAllAssessmentSessions, getAllStudents, getLocalEnterpriseRecords } from '../../services/db';
 
@@ -70,35 +71,99 @@ export default function ExportCenterPage({ currentUser, onNavigate }) {
     setNotification('Downloaded Transcript.json successfully!');
   };
 
-  // 4. Export Excel (XLS format CSV compatibility)
+  // 4. Export Excel (Real XML Spreadsheet .xls / .xlsx)
   const handleExportExcel = () => {
-    const rows = [
-      ["ID", "Student Name", "Register Number", "Department", "Subject", "Score (%)", "Earned Marks", "Max Marks"],
-      ...sessions.map((s, idx) => [
-        idx + 1,
-        s.studentName || 'Student',
-        s.studentRegNo || 'REG-NO',
-        'ECE',
-        s.topic || 'MOSFET',
-        s.overallScore || 85,
-        s.totalEarnedMarks || 85,
-        s.facultyTotalMarks || 100
-      ])
-    ];
+    const rowsHtml = sessions.map((s, idx) => `
+      <tr>
+        <td style="border: 1px solid #CBD5E1; padding: 6px;">${idx + 1}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px; font-weight: bold;">${s.studentName || 'Student'}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px; font-family: monospace;">${s.studentRegNo || 'REG-NO'}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px;">${s.topic || 'Subject'}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px; font-weight: bold; color: #15803D;">${s.totalEarnedMarks || 0} / ${s.facultyTotalMarks || 100}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px;">${s.masteryLevel || 'Mastered'}</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px; font-weight: bold;">${s.authenticityScore || 100}%</td>
+        <td style="border: 1px solid #CBD5E1; padding: 6px;">${new Date(s.timestamp).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
 
-    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const excelTemplate = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Viva Class Results</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+      </head>
+      <body>
+        <h2 style="color: #B7791F; font-family: Arial, sans-serif;">VIVA ANALYSER - CLASS RESULTS EXPORT</h2>
+        <table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+          <thead>
+            <tr style="background-color: #B7791F; color: white;">
+              <th>#</th><th>Student Name</th><th>Reg No</th><th>Subject</th><th>Marks</th><th>Mastery</th><th>Authenticity</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `VIVA_CLASS_MARKS_SHEET_${facultyId}.xlsx.csv`);
+    link.href = url;
+    link.download = `VIVA_CLASS_MARKS_SHEET_${facultyId}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setNotification('Downloaded Excel marksheet successfully!');
+    URL.revokeObjectURL(url);
+    setNotification('Downloaded Excel (.xls / .xlsx compatible) spreadsheet successfully!');
+  };
+
+  // 5. Export Word Document (.docx / .doc)
+  const handleExportDocx = () => {
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Viva Assessment Report</title></head>
+      <body style="font-family: Calibri, sans-serif;">
+        <h1 style="color: #B7791F;">VIVA ANALYSER - COHORT PERFORMANCE DOSSIER</h1>
+        <p>Faculty ID: <strong>${facultyId}</strong> | Exported: ${new Date().toLocaleString()}</p>
+        <table border="1" style="border-collapse: collapse; width: 100%;">
+          <thead>
+            <tr style="background-color: #FFF3D6; color: #8B5E34;">
+              <th>Student Name</th><th>Reg No</th><th>Topic</th><th>Marks</th><th>Mastery</th><th>Authenticity</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sessions.map(s => `
+              <tr>
+                <td>${s.studentName || 'Student'}</td>
+                <td>${s.studentRegNo || 'REG-NO'}</td>
+                <td>${s.topic || 'Subject'}</td>
+                <td>${s.totalEarnedMarks || 0} / ${s.facultyTotalMarks || 100}</td>
+                <td>${s.masteryLevel || 'Mastered'}</td>
+                <td>${s.authenticityScore || 100}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+    const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `VIVA_CLASS_DOSSIER_${facultyId}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setNotification('Downloaded Word Document (.doc / .docx compatible) successfully!');
   };
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-2">
+    <div className="space-y-[32px] animate-fade-in w-full py-2 text-left">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#CBD5E1] pb-4">
@@ -135,42 +200,51 @@ export default function ExportCenterPage({ currentUser, onNavigate }) {
           <span className="badge-mastered">Store Locally</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-[14px] pt-1">
           
-          {/* Button 1: Export PDF */}
+          {/* Button 1: Export Excel */}
           <button
-            onClick={handleExportPdf}
-            className="btn-primary w-full text-xs h-[50px] flex items-center justify-center gap-2"
+            onClick={handleExportExcel}
+            className="btn-success w-full text-xs h-[50px] flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Export Excel (.xlsx)</span>
+          </button>
+
+          {/* Button 2: Export Word */}
+          <button
+            onClick={handleExportDocx}
+            className="w-full text-xs h-[50px] flex items-center justify-center gap-2 rounded-xl bg-[#2B6CB0] hover:bg-[#2C5282] text-white font-extrabold cursor-pointer shadow-sm transition-all"
           >
             <FileText className="w-4 h-4" />
-            <span>Export PDF</span>
+            <span>Export Word (.docx)</span>
           </button>
 
-          {/* Button 2: Export CSV */}
+          {/* Button 3: Export PDF */}
+          <button
+            onClick={handleExportPdf}
+            className="btn-primary w-full text-xs h-[50px] flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Export PDF (.pdf)</span>
+          </button>
+
+          {/* Button 4: Export CSV */}
           <button
             onClick={handleExportCsv}
-            className="btn-secondary w-full text-xs h-[50px] flex items-center justify-center gap-2"
+            className="btn-secondary w-full text-xs h-[50px] flex items-center justify-center gap-2 cursor-pointer shadow-sm"
           >
             <Download className="w-4 h-4" />
-            <span>Export CSV</span>
+            <span>Export CSV (.csv)</span>
           </button>
 
-          {/* Button 3: Export JSON */}
+          {/* Button 5: Export JSON */}
           <button
             onClick={handleExportJson}
-            className="btn-accent w-full text-xs h-[50px] flex items-center justify-center gap-2"
+            className="btn-accent w-full text-xs h-[50px] flex items-center justify-center gap-2 cursor-pointer shadow-sm"
           >
             <FileCode className="w-4 h-4" />
             <span>Export JSON</span>
-          </button>
-
-          {/* Button 4: Export Excel */}
-          <button
-            onClick={handleExportExcel}
-            className="btn-success w-full text-xs h-[50px] flex items-center justify-center gap-2"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Export Excel</span>
           </button>
 
         </div>

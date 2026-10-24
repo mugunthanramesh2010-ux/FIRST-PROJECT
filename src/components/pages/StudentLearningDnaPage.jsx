@@ -37,7 +37,7 @@ export default function StudentLearningDnaPage({ user, adaptiveEngine }) {
   const gridLevels = [0.25, 0.5, 0.75, 1.0];
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">
+    <div className="space-y-[32px] animate-fade-in w-full py-4 text-left">
       
       {/* Header */}
       <div className="border-b border-[#E2D3A7] pb-4">

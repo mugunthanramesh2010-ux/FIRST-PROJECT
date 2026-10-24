@@ -4,7 +4,7 @@ import { HelpCircle, ChevronRight, BrainCircuit, ShieldAlert } from 'lucide-reac
 export default function ProgressiveHintEngine({
   isOpen,
   onClose,
-  currentLevel, // 1 to 4
+  currentLevel = 1, // 1 to 4
   onRequestNextHint,
   question,
   adaptiveEngine
@@ -60,8 +60,9 @@ export default function ProgressiveHintEngine({
     }
   ];
 
-  const currentHint = hintTiers[currentLevel - 1] || hintTiers[0];
-  const isMaxLevel = currentLevel >= 4;
+  const effectiveLevel = Math.min(4, Math.max(1, currentLevel || 1));
+  const currentHint = hintTiers[effectiveLevel - 1] || hintTiers[0];
+  const isMaxLevel = effectiveLevel >= 4;
 
   return (
     <div className="fixed inset-0 z-[70] bg-[#2D3748]/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
@@ -109,7 +110,7 @@ export default function ProgressiveHintEngine({
         </div>
 
         {/* Active Hint Content Card (Previous Hint is Gone) */}
-        <div key={currentLevel} className="p-5 rounded-[16px] bg-[#FFF8E8] border border-[#E2D3A7] space-y-3 animate-fade-in">
+        <div key={`${qId}_${effectiveLevel}`} className="p-5 rounded-[16px] bg-[#FFF8E8] border border-[#E2D3A7] space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <span className="px-2.5 py-0.5 rounded-md bg-[#FFF3D6] border border-[#E2D3A7] text-[11px] font-bold text-[#8B5E34]">
               {currentHint.title}

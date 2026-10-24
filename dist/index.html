@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="theme-color" content="#FFF8E8" />
+    <meta name="description" content="Commercial Enterprise Cognitive Viva Evaluation Platform - 100% Offline AI" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <title>VIVA ANALYSER Enterprise | Cognitive Viva Engine</title>
+    <!-- Modern Typography: Inter & Poppins (Non-blocking for offline guarantee) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    </noscript>
+    <script type="module" crossorigin src="/assets/index-Czlf0Yth.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BUo_vRsx.css">
+  </head>
+  <body class="bg-[#FFF8E8] text-[#2D3748] antialiased">
+    <div id="root"></div>
+    <script>
+      // Register Offline PWA Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+              console.log('[VIVA PWA] Service Worker active, scope:', reg.scope);
+            })
+            .catch(err => {
+              console.log('[VIVA PWA] Service Worker registration failed:', err);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

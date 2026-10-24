@@ -44,7 +44,7 @@ export default function LandingPage({ onNavigate, onOpenInstallModal }) {
       
       {/* 1. HEADER (Height 72px, #FFF7E2, Border #E2D3A7) */}
       <header className="h-[72px] bg-[#FFF7E2] border-b border-[#E2D3A7] sticky top-0 z-40 px-6 sm:px-8">
-        <div className="max-w-[1280px] h-full mx-auto flex items-center justify-between">
+        <div className="w-full h-full flex items-center justify-between">
           
           {/* Left: Logo + VIVA ANALYSER + OFFLINE AI Badge */}
           <div className="flex items-center gap-3">
@@ -99,10 +99,10 @@ export default function LandingPage({ onNavigate, onOpenInstallModal }) {
       </header>
 
       {/* 2. HERO SECTION */}
-      <main className="max-w-[1280px] w-full mx-auto px-6 sm:px-8 py-12 flex-1 flex flex-col justify-center space-y-[40px]">
+      <main className="w-full px-6 sm:px-8 py-12 flex-1 flex flex-col justify-center space-y-[40px]">
         
         {/* Banner with Soft Honey Gradient */}
-        <div className="p-8 sm:p-12 rounded-[24px] bg-gradient-to-br from-[#FFF3D6] via-[#FFFCF4] to-[#FFF8E8] border border-[#E2D3A7] shadow-[0px_8px_24px_rgba(183,121,31,0.08)] text-center max-w-4xl mx-auto space-y-6">
+        <div className="p-8 sm:p-12 rounded-[24px] bg-gradient-to-br from-[#FFF3D6] via-[#FFFCF4] to-[#FFF8E8] border border-[#E2D3A7] shadow-[0px_8px_24px_rgba(183,121,31,0.08)] text-center w-full max-w-6xl mx-auto space-y-6">
           
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF3D6] border border-[#E2D3A7] text-[#8B5E34] text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5 text-[#B7791F]" />
@@ -203,7 +203,7 @@ export default function LandingPage({ onNavigate, onOpenInstallModal }) {
 
       {/* Footer */}
       <footer className="py-4 border-t border-[#E2D3A7] bg-[#FFF7E2] text-center text-xs text-[#718096]">
-        <div className="max-w-[1280px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>VIVA ANALYSER • Enterprise Edition (100% Offline AI)</span>
           <span>Coursera & SIH Enterprise Design Standard</span>
         </div>

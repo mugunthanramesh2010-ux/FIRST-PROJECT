@@ -36,7 +36,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { DOMAIN_CATEGORIES, generateUniversalTopicModel } from '../services/universalOntology';
+import { DOMAIN_CATEGORIES, generateUniversalTopicModel, generateUniversalTopicModelAsync } from '../services/universalOntology';
 import { BehavioralEngine } from '../services/behavioralEngine';
 import { AdaptiveEngine } from '../services/adaptiveEngine';
 import QuestionEvolutionModal from './QuestionEvolutionModal';
@@ -144,14 +144,23 @@ export default function VivaArena({
     behavioralEngineRef.current = new BehavioralEngine((reason, metrics) => {
       setBehaviorMetrics({ ...metrics });
       soundEffects.playWarning();
+      const total = (metrics.tabSwitches || 0) + (metrics.pasteAttempts || 0) + (metrics.copyAttempts || 0);
+      if (total >= 3) {
+        handleDisqualifyViva();
+      }
     });
     behavioralEngineRef.current.startSession();
 
     const handleBlur = () => {
       if (behavioralEngineRef.current) {
         behavioralEngineRef.current.handleTabSwitch();
-        setBehaviorMetrics(behavioralEngineRef.current.getMetrics());
+        const m = behavioralEngineRef.current.getMetrics();
+        setBehaviorMetrics(m);
         soundEffects.playWarning();
+        const total = (m.tabSwitches || 0) + (m.pasteAttempts || 0) + (m.copyAttempts || 0);
+        if (total >= 3) {
+          handleDisqualifyViva();
+        }
       }
     };
 
@@ -161,6 +170,38 @@ export default function VivaArena({
       stopSpeaking();
     };
   }, []);
+
+  const handleDisqualifyViva = () => {
+    soundEffects.playWarning();
+    const sessionRecord = {
+      id: 'session_' + Date.now(),
+      topic: topicModel?.title || 'Viva Assessment',
+      domain: topicModel?.domain || 'Engineering',
+      studentRegNo: currentUser?.regNo || 'GUEST_STUDENT',
+      studentName: currentUser?.fullName || 'Student',
+      timestamp: new Date().toISOString(),
+      masteryLevel: 'Disqualified (Malpractice)',
+      facultyTotalMarks: quizConfig.totalMarks,
+      totalEarnedMarks: 0,
+      overallScore: 0,
+      knowledgeScore: 0,
+      reasoningScore: 0,
+      retentionScore: 0,
+      curiosityIndex: 0,
+      innovationIndex: 0,
+      authenticityScore: 0,
+      humanConfidenceScore: 0,
+      tabSwitches: behaviorMetrics.tabSwitches + 1,
+      pasteAttempts: behaviorMetrics.pasteAttempts,
+      copyAttempts: behaviorMetrics.copyAttempts,
+      disqualified: true,
+      disqualificationReason: 'Automated Disqualification: 3 focus or clipboard security violations detected.',
+      questionTimingHistory: sessionQuestionHistory
+    };
+
+    saveAssessmentSession(sessionRecord);
+    if (onOpenReport) onOpenReport(sessionRecord);
+  };
 
   // Update Quiz Config & Questions when topic changes
   useEffect(() => {
@@ -382,7 +423,7 @@ export default function VivaArena({
   };
 
   // Submit Answer with Timing Analysis, Malpractice Cross-Check, and Faculty Marks Evaluation
-  const handleSubmitAnswer = (isForcedByDeadline = false) => {
+  const handleSubmitAnswer = async (isForcedByDeadline = false) => {
     if (!adaptiveEngine) return;
 
     // 1. Anti-Boredom Check
@@ -392,12 +433,41 @@ export default function VivaArena({
       setBoredomAlert('Engagement Drop Detected! Shifted to Real-World Industry Challenge mode to rekindle active curiosity.');
     }
 
-    // 2. Base Evaluation (Semantic or MCQ)
+    // 2. Base Evaluation (Semantic or MCQ via Authoritative Layered Engine with Offline Fallback)
     let result;
     if (isMcqView) {
       result = adaptiveEngine.evaluateMcqAnswer(selectedMcqOption, activeQuestion);
     } else {
-      result = adaptiveEngine.evaluateTextAnswer(userTextAnswer, activeQuestion);
+      try {
+        const evalRes = await fetch('/api/assessment/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: activeQuestion,
+            studentAnswer: userTextAnswer,
+            hintsUsed: activeHintLevel,
+            answerTimeSec: questionSecondsElapsed
+          })
+        });
+        if (evalRes.ok) {
+          const evalData = await evalRes.json();
+          if (evalData.success && evalData.score !== undefined) {
+            result = {
+              score: evalData.score,
+              isCorrect: evalData.isCorrect,
+              feedback: evalData.feedback,
+              conceptMatched: evalData.demonstratedConcepts || [],
+              missingConcepts: evalData.missingConcepts || [],
+              masteryIncrement: evalData.isCorrect ? 1 : 0
+            };
+          }
+        }
+      } catch (err) {
+        // Fallback to local adaptive engine
+      }
+      if (!result) {
+        result = adaptiveEngine.evaluateTextAnswer(userTextAnswer, activeQuestion);
+      }
     }
 
     // 3. Timing Analysis & Malpractice Cross-Checking
@@ -492,15 +562,39 @@ export default function VivaArena({
 
   const handleFinalizeSession = () => {
     soundEffects.playSuccess();
-    const mastery = adaptiveEngine?.calculateMasteryStatus(
-      weightedQuestions.length,
-      weightedQuestions.length,
-      behaviorMetrics.authenticityScore
-    );
+    const history = sessionQuestionHistory || [];
+    const totalQuestions = weightedQuestions.length || history.length || 10;
+    const correctCount = history.filter(item => (item.earnedMarks > 0 || (item.baseScorePercent && item.baseScorePercent >= 50) || item.isCorrect)).length;
+    
+    // Sum total marks awarded strictly across attended questions (no double counting)
+    const totalEarnedMarks = history.reduce((sum, item) => sum + (item.earnedMarks || 0), 0);
+    const facultyTotal = quizConfig.totalMarks || 100;
+    const overallScore = Math.min(100, Math.round((totalEarnedMarks / facultyTotal) * 100));
 
-    // Sum total marks awarded across all questions
-    const totalEarnedMarks = sessionQuestionHistory.reduce((sum, item) => sum + item.earnedMarks, 0) +
-      (currentMarksBreakdown?.finalMarks || 0);
+    // Dynamic Scores calculated STRICTLY from student's attended answers:
+    const knowledgeScore = correctCount === 0 ? 0 : Math.round((correctCount / totalQuestions) * 100);
+    const avgScorePercent = history.length > 0
+      ? Math.round(history.reduce((sum, item) => sum + (item.baseScorePercent || 0), 0) / history.length)
+      : 0;
+    const reasoningScore = correctCount === 0 ? 0 : Math.round(avgScorePercent * 0.95);
+    const retentionScore = correctCount === 0 ? 0 : Math.round(knowledgeScore * 0.9);
+    const curiosityIndex = curiosityExchange ? Math.min(100, 50 + (curiosityInput ? 25 : 0)) : (correctCount === 0 ? 0 : 35);
+
+    // Compute genuine cognitive mastery based strictly on attended results:
+    let masteryLevel = 'Needs Revision';
+    if (correctCount === 0 || knowledgeScore === 0) {
+      masteryLevel = 'Needs Revision (0% Correct)';
+    } else if (knowledgeScore >= 90) {
+      masteryLevel = 'Mastered';
+    } else if (knowledgeScore >= 80) {
+      masteryLevel = 'Expert';
+    } else if (knowledgeScore >= 70) {
+      masteryLevel = 'Advanced';
+    } else if (knowledgeScore >= 50) {
+      masteryLevel = 'Learner';
+    } else {
+      masteryLevel = 'Novice';
+    }
 
     const sessionRecord = {
       id: 'session_' + Date.now(),
@@ -509,15 +603,15 @@ export default function VivaArena({
       studentRegNo: currentUser?.regNo || 'GUEST_STUDENT',
       studentName: currentUser?.fullName || 'Guest Student',
       timestamp: new Date().toISOString(),
-      masteryLevel: mastery?.masteryLevel || 'Mastered',
-      facultyTotalMarks: quizConfig.totalMarks,
+      masteryLevel,
+      facultyTotalMarks: facultyTotal,
       totalEarnedMarks: parseFloat(totalEarnedMarks.toFixed(1)),
-      overallScore: Math.min(100, Math.round((totalEarnedMarks / quizConfig.totalMarks) * 100)),
-      knowledgeScore: adaptiveEngine.knowledgeScore,
-      reasoningScore: adaptiveEngine.reasoningScore,
-      retentionScore: adaptiveEngine.retentionScore,
-      curiosityIndex: adaptiveEngine.twin.curiosityIndex,
-      innovationIndex: adaptiveEngine.twin.innovationIndex,
+      overallScore,
+      knowledgeScore,
+      reasoningScore,
+      retentionScore,
+      curiosityIndex,
+      innovationIndex: innovationResult?.score || 0,
       authenticityScore: behaviorMetrics.authenticityScore,
       humanConfidenceScore: behaviorMetrics.humanConfidenceScore,
       wpm: behaviorMetrics.wpm,
@@ -529,7 +623,9 @@ export default function VivaArena({
     };
 
     saveAssessmentSession(sessionRecord);
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    if (correctCount > 0) {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    }
     if (onOpenReport) onOpenReport(sessionRecord);
   };
 
@@ -555,17 +651,21 @@ export default function VivaArena({
     setInnovationResult(res);
   };
 
-  // Search new topic
-  const handleSearchNewTopic = (e) => {
+  // Search new topic with local Ollama AI grounding and procedural fallback
+  const handleSearchNewTopic = async (e) => {
     e.preventDefault();
     if (!topicInput.trim()) return;
     soundEffects.playClick();
     setIsSearchingTopic(true);
-    setTimeout(() => {
-      const newModel = generateUniversalTopicModel(topicInput);
+    try {
+      const newModel = await generateUniversalTopicModelAsync(topicInput);
       onTopicChange(newModel);
+    } catch (err) {
+      const fallbackModel = generateUniversalTopicModel(topicInput);
+      onTopicChange(fallbackModel);
+    } finally {
       setIsSearchingTopic(false);
-    }, 400);
+    }
   };
 
   const xaiBadge = adaptiveEngine
@@ -668,10 +768,18 @@ export default function VivaArena({
           {['MOSFET', 'CNN', 'Transformers', 'Operating Systems', 'Data Structures', 'Indian Constitution'].map((item) => (
             <button
               key={item}
-              onClick={() => {
+              onClick={async () => {
                 setTopicInput(item);
-                const m = generateUniversalTopicModel(item);
-                onTopicChange(m);
+                setIsSearchingTopic(true);
+                try {
+                  const m = await generateUniversalTopicModelAsync(item);
+                  onTopicChange(m);
+                } catch {
+                  const m = generateUniversalTopicModel(item);
+                  onTopicChange(m);
+                } finally {
+                  setIsSearchingTopic(false);
+                }
               }}
               className="px-3 py-1.5 rounded-[8px] bg-[#0D1117] hover:bg-[#00F5D4] hover:text-[#0D1117] text-[#F0F6FC] text-[12px] border border-[#30363D] transition-all font-semibold"
             >
@@ -710,8 +818,8 @@ export default function VivaArena({
         </div>
       )}
 
-      {/* CENTERED QUESTION CARD (Width: 900px, Centered) */}
-      <div className="max-w-[900px] w-full mx-auto space-y-6">
+      {/* FULL WIDTH VIVA QUESTION CARD */}
+      <div className="w-full space-y-6">
         
         {/* PRIMARY VIVA WORKSPACE */}
         <div className="space-y-6">
@@ -842,8 +950,67 @@ export default function VivaArena({
               </div>
 
               <h3 className="text-[22px] font-semibold text-[#F0F6FC] leading-snug">
-                {activeQuestion.text}
+                {activeQuestion.text || activeQuestion.questionText}
               </h3>
+
+              {/* Multimodal: Mathematical / Derivation LaTeX Box */}
+              {(activeQuestion.mathBlock || (Array.isArray(activeQuestion.equations) && activeQuestion.equations.length > 0)) && (
+                <div className="mt-3.5 p-4 rounded-xl bg-[#0D1117] border border-[#30363D] shadow-inner">
+                  <div className="flex items-center justify-between text-xs text-[#8B949E] mb-1.5 font-sans">
+                    <span className="font-semibold text-[#00F5D4] flex items-center gap-1.5">
+                      <span className="text-base">∑</span> Governing Analytical Formulation:
+                    </span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider bg-[#161B22] text-[#58A6FF] px-2 py-0.5 rounded border border-[#30363D]">
+                      {activeQuestion.questionType || 'Derivation / Equation'}
+                    </span>
+                  </div>
+                  <div className="text-center py-2 px-3 bg-[#161B22]/60 rounded-lg text-base sm:text-lg text-[#F0F6FC] font-mono font-semibold tracking-wide overflow-x-auto border border-[#30363D]/40">
+                    {activeQuestion.mathBlock || (Array.isArray(activeQuestion.equations) ? activeQuestion.equations.map(e => e.latex || e).join(' ; ') : '')}
+                  </div>
+                </div>
+              )}
+
+              {/* Multimodal: Given Parameters Table for Numericals */}
+              {activeQuestion.givenParameters && Object.keys(activeQuestion.givenParameters).length > 0 && (
+                <div className="mt-3 p-3.5 rounded-xl bg-[#0D1117] border border-[#30363D]">
+                  <div className="text-xs font-semibold text-[#FFB800] mb-2 flex items-center gap-1.5">
+                    <span className="text-sm">⚡</span> Given Numerical Parameters & Boundary Conditions:
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(activeQuestion.givenParameters).map(([param, val]) => (
+                      <div key={param} className="p-2 rounded-lg bg-[#161B22] border border-[#30363D] text-xs">
+                        <span className="text-[#8B949E] block text-[10px] uppercase font-mono">{param}:</span>
+                        <span className="text-[#F0F6FC] font-semibold font-mono">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Multimodal: Circuit / Topology / Diagram Display */}
+              {(activeQuestion.circuitSvg || activeQuestion.diagramSvg) && (
+                <div className="mt-3 p-3 rounded-xl bg-[#0D1117] border border-[#30363D] flex flex-col items-center">
+                  <div className="w-full text-xs font-semibold text-[#00F5D4] mb-2 flex items-center gap-1.5">
+                    <span>📐</span> Schematic / Topology Diagram:
+                  </div>
+                  <div
+                    className="w-full max-w-md bg-[#161B22] p-3 rounded-lg border border-[#30363D] flex justify-center text-xs overflow-auto"
+                    dangerouslySetInnerHTML={{ __html: activeQuestion.circuitSvg || activeQuestion.diagramSvg }}
+                  />
+                </div>
+              )}
+
+              {/* Multimodal: Faculty Reference Grounding Badge */}
+              {activeQuestion.referenceEvidence && activeQuestion.referenceEvidence.length > 0 && (
+                <div className="mt-2.5 flex items-center gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#161B22] border border-[#30363D] text-[#00F5D4] text-[11px] font-semibold">
+                    <FileText className="w-3.5 h-3.5 text-[#00F5D4]" />
+                    <span className="text-[#8B949E]">Grounded in Faculty Material:</span>
+                    <strong className="text-[#F0F6FC]">{activeQuestion.referenceEvidence[0].sourceFile || 'Reference Notes'}</strong>
+                    {activeQuestion.referenceEvidence[0].page && <span className="text-[#8B949E]">(Page {activeQuestion.referenceEvidence[0].page})</span>}
+                  </span>
+                </div>
+              )}
 
               {/* CHALLENGE TRIGGER BUTTONS ROW */}
               <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">

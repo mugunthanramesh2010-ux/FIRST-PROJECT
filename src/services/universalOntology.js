@@ -1,8 +1,6 @@
 // Universal Domain & Subject Ontology Engine
-// Fully domain-independent. Covers ALL 14 Domain Categories, ALL Engineering Branches,
-// ALL Sciences, Medical, Commerce, Law, Humanities, Languages, Agriculture, Creative, Skills,
-// Competitive Exams, Research, and Future Tech Domains.
-// Plus dynamic progressive question evolution (Fundamental -> Why/Comparative -> Design -> Optimization).
+import { generateOfflineDeepQuestions, generateQuestionsWithAI, validateQuestionPackage, normalizeQuestion } from './aiQuestionService.js';
+
 
 export const DOMAIN_CATEGORIES = [
   {
@@ -998,140 +996,62 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
     const words = cleanTopic.split(/\s+/).filter(Boolean);
     const primaryTerm = words.slice(0, 3).join(' ');
 
-  const synthesized = {
-    title: cleanTopic,
-    fullName: cleanTopic,
-    domain: domainHint || 'Universal Cognitive Domain',
-    category: 'Universal Dynamic Synthesis',
-    complexity: Math.min(5, Math.max(3, Math.ceil(words.length / 2) + 2)),
-    prerequisites: [
-      {
-        id: 'prereq_1',
-        name: `Foundational Axioms of ${words[0] || 'Core Subject'}`,
-        level: 'Fundamental',
-        desc: `Underlying mathematical, empirical, or theoretical tenets required before analyzing ${cleanTopic}.`
-      },
-      {
-        id: 'prereq_2',
-        name: `Mechanisms & Boundary Equations of ${primaryTerm}`,
-        level: 'Intermediate',
-        desc: `Core operational parameters, protocol dynamics, and causal relationships in ${cleanTopic}.`
-      },
-      {
-        id: 'prereq_3',
-        name: `Applied Synthesis & Stress Testing of ${cleanTopic}`,
-        level: 'Advanced',
-        desc: `Empirical edge conditions, trade-offs, and industrial reliability parameters.`
+    const synthesized = {
+      title: cleanTopic,
+      fullName: cleanTopic,
+      domain: domainHint || 'Universal Cognitive Domain',
+      category: 'Universal Dynamic Synthesis',
+      complexity: Math.min(5, Math.max(3, Math.ceil(words.length / 2) + 2)),
+      prerequisites: [
+        {
+          id: 'prereq_1',
+          name: `Foundational Axioms of ${words[0] || 'Core Subject'}`,
+          level: 'Fundamental',
+          desc: `Underlying mathematical, empirical, or theoretical tenets required before analyzing ${cleanTopic}.`
+        },
+        {
+          id: 'prereq_2',
+          name: `Mechanisms & Boundary Equations of ${primaryTerm}`,
+          level: 'Intermediate',
+          desc: `Core operational parameters, protocol dynamics, and causal relationships in ${cleanTopic}.`
+        },
+        {
+          id: 'prereq_3',
+          name: `Applied Synthesis & Stress Testing of ${cleanTopic}`,
+          level: 'Advanced',
+          desc: `Empirical edge conditions, trade-offs, and industrial reliability parameters.`
+        }
+      ],
+      graphNodes: [
+        { id: 'node_base', label: `Fundamentals of ${words[0] || 'Domain'}`, status: 'mastered', x: 80, y: 160 },
+        { id: 'node_arch', label: `Core Architecture of ${primaryTerm}`, status: 'mastered', x: 260, y: 120 },
+        { id: 'node_curr', label: `${cleanTopic} Dynamics`, status: 'active', x: 440, y: 180 },
+        { id: 'node_inter', label: `Boundary Conditions & Limits`, status: 'unvisited', x: 620, y: 130 },
+        { id: 'node_adv', label: `Stress Scaling & Edge Failure`, status: 'unvisited', x: 800, y: 190 },
+        { id: 'node_future', label: `Frontier Innovation in ${cleanTopic}`, status: 'unvisited', x: 920, y: 140 }
+      ],
+      graphEdges: [
+        { from: 'node_base', to: 'node_arch' },
+        { from: 'node_arch', to: 'node_curr' },
+        { from: 'node_curr', to: 'node_inter' },
+        { from: 'node_inter', to: 'node_adv' },
+        { from: 'node_adv', to: 'node_future' }
+      ],
+      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText),
+      innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
+      industryReadiness: {
+        engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,
+        researcherPerspective: `Analyzes mathematical models, governing equations, and novel theoretical approaches for ${cleanTopic}.`,
+        startupFounderPerspective: `Identifies real-world industrial deployment, efficiency gains, and operational economics for ${cleanTopic}.`
       }
-    ],
-    graphNodes: [
-      { id: 'node_base', label: `Fundamentals of ${words[0] || 'Domain'}`, status: 'mastered', x: 80, y: 160 },
-      { id: 'node_arch', label: `Core Architecture of ${primaryTerm}`, status: 'mastered', x: 260, y: 120 },
-      { id: 'node_curr', label: `${cleanTopic} Dynamics`, status: 'active', x: 440, y: 180 },
-      { id: 'node_inter', label: `Boundary Conditions & Limits`, status: 'unvisited', x: 620, y: 130 },
-      { id: 'node_adv', label: `Stress Scaling & Edge Failure`, status: 'unvisited', x: 800, y: 190 },
-      { id: 'node_future', label: `Frontier Innovation in ${cleanTopic}`, status: 'unvisited', x: 920, y: 140 }
-    ],
-    graphEdges: [
-      { from: 'node_base', to: 'node_arch' },
-      { from: 'node_arch', to: 'node_curr' },
-      { from: 'node_curr', to: 'node_inter' },
-      { from: 'node_inter', to: 'node_adv' },
-      { from: 'node_adv', to: 'node_future' }
-    ],
-    questions: [
-      {
-        id: `q_dyn_1_${Date.now()}`,
-        level: 1,
-        evolutionStage: 'Stage 1: Fundamentals (What)',
-        type: 'text',
-        mode: 'Text',
-        text: `What is the core operational principle of ${cleanTopic}? Define its fundamental mechanism and state the governing boundary conditions under which it operates.`,
-        bloomLevel: 'Understanding',
-        expectedKeywords: [words[0]?.toLowerCase() || 'system', 'principle', 'mechanism', 'efficiency', 'constraint', 'optimization', 'output', 'boundary'],
-        hints: {
-          level1: `Identify the primary objective, input parameters, and target domain of ${cleanTopic}.`,
-          level2: `Break down the system into input state, transformation mechanism, and output state.`,
-          level3: `Discuss the specific laws or constraints (e.g. energy, latency, stability, accuracy, legality) that govern ${cleanTopic}.`,
-          level4: `Synthesize the exact causal pathway: how a change in the primary input directly alters the equilibrium state of ${cleanTopic}.`
-        },
-        reasonWhy: `Stage 1 Fundamental Check: Establishes conceptual baseline for "${cleanTopic}" before advancing to edge diagnostics.`,
-        industryApplication: `Core foundation for design validation, quality assurance, and architecture specification.`
-      },
-      {
-        id: `q_dyn_2_${Date.now()}`,
-        level: 2,
-        evolutionStage: 'Stage 2: Comparative & Causal (Why)',
-        type: 'mcq',
-        mode: 'MCQ',
-        text: `Why is ${cleanTopic} preferred over conventional or legacy approaches in high-demand environments?`,
-        options: [
-          `It delivers superior throughput and resilience by eliminating non-linear bottlenecks`,
-          `It requires zero initial capital expenditure and violates conservation of energy`,
-          `It functions without any prerequisite foundational knowledge or operational bounds`,
-          `It introduces permanent random noise that prevents systematic optimization`
-        ],
-        correctIndex: 0,
-        bloomLevel: 'Analysis',
-        hints: {
-          level1: `Consider the fundamental limitation of legacy paradigms that ${cleanTopic} was designed to overcome.`,
-          level2: `Look for the option that describes structural performance gain and systemic bottleneck mitigation.`,
-          level3: `Modern methodologies replace unscalable bottlenecks with modular, decoupled, or mathematically optimized architectures.`,
-          level4: `The correct answer identifies superior throughput and resilience achieved through systemic optimization.`
-        },
-        reasonWhy: `Stage 2 Comparative Reasoning: Evaluates whether the student understands why ${cleanTopic} emerged as a superior paradigm.`,
-        industryApplication: 'Critical for selecting technology stacks and defending architectural decisions in executive reviews.'
-      },
-      {
-        id: `q_dyn_3_${Date.now()}`,
-        level: 3,
-        evolutionStage: 'Stage 3: Engineering Design & Case Study',
-        type: 'mixed',
-        mode: 'Case Study',
-        text: `Case Study: An enterprise system deploying ${cleanTopic} suffers a catastrophic 40% performance degradation under peak load. Outline a systematic 3-phase diagnostic and remediation protocol to isolate root causes and restore SLA compliance.`,
-        bloomLevel: 'Application & Synthesis',
-        expectedKeywords: ['telemetry', 'monitoring', 'bottleneck', 'root cause', 'mitigation', 'redundancy', 'profiling', 'isolation'],
-        hints: {
-          level1: `Structure your response into: 1. Telemetry/Observation, 2. Root Cause Isolation, 3. Architectural Remediation.`,
-          level2: `What specific telemetry metrics would you inspect first in ${cleanTopic}?`,
-          level3: `How do you determine whether the failure originates at the ingestion, compute, or dissipation interface?`,
-          level4: `Provide concrete remediations such as buffer resizing, parameter tuning, horizontal scaling, or active failover.`
-        },
-        reasonWhy: `Stage 3 Engineering Design: Tests diagnostic reasoning under real-world operational stress.`,
-        industryApplication: `Directly tested in senior technical vivas, defense boards, and elite placement technical rounds.`
-      },
-      {
-        id: `q_dyn_4_${Date.now()}`,
-        level: 4,
-        evolutionStage: 'Stage 4: Optimization & Research Frontier',
-        type: 'mixed',
-        mode: 'Research Paper Mode',
-        text: `Research Paper Inquiry: Analyze the theoretical upper bound or scaling limits of ${cleanTopic}. What novel mathematical, algorithmic, or physical modification would be required to achieve an order-of-magnitude breakthrough?`,
-        bloomLevel: 'Creation & Evaluation',
-        expectedKeywords: ['theoretical limit', 'scaling law', 'optimization', 'novel', 'paradigm', 'frontier', 'breakthrough', 'efficiency'],
-        hints: {
-          level1: 'Identify the fundamental physical or computational bound (e.g., Shannon limit, Landauer limit, O(N^2) complexity, thermodynamic dissipation).',
-          level2: 'Why do incremental improvements fail to surpass this asymptotic bound?',
-          level3: 'Propose a paradigm shift (e.g. quantum acceleration, neuromorphic event-driven compute, decentralized consensus, novel materials).',
-          level4: 'Synthesize how this alternative paradigm mathematically bypasses the legacy constraint.'
-        },
-        reasonWhy: `Stage 4 Research Frontier: Identifies innovative research aptitude and patent-level intellectual depth.`,
-        industryApplication: 'Standard benchmark for doctoral dissertations, R&D labs, and deep-tech startup venture pitches.'
-      }
-    ],
-    innovationChallenge: `What disruptive paradigm or architectural modification could render conventional approaches to ${cleanTopic} obsolete within the next 5 years?`,
-    industryReadiness: {
-      engineerPerspective: `Focuses on reliability, MTBF (mean time between failures), and integration with legacy infrastructure.`,
-      researcherPerspective: `Analyzes mathematical bounds, theoretical limits, and publishable novel algorithmic variations.`,
-      startupFounderPerspective: `Identifies addressable market size, unit economics, and competitive defensive moats.`
-    }
-  };
+    };
     model = synthesized;
   }
 
-  // Expand questions to requested count (e.g. 5, 10, 20, up to 100)
+  // Expand questions to requested count (e.g. 5, 10, 20, up to 100) and guarantee option swiping
   const qCount = targetCount ? Math.min(100, Math.max(1, targetCount)) : Math.max(5, model.questions?.length || 5);
-  model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount);
+  model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount, documentText);
+  model.questions = (model.questions || []).map((q, idx) => normalizeQuestion(q, idx, model.title || cleanTopic));
 
   // Normalize hints on every single question so both array and object lookups work
   if (Array.isArray(model.questions)) {
@@ -1141,368 +1061,39 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
   return model;
 }
 
+// Asynchronously generates topic model using Ollama / OpenAI API with fallback
+export async function generateUniversalTopicModelAsync(rawTopic, domainCategory = 'Universal Domain', targetCount = 10, documentText = '', aiOptions = {}) {
+  const model = generateUniversalTopicModel(rawTopic, domainCategory, targetCount, documentText);
+  try {
+    const aiQuestions = await generateQuestionsWithAI(rawTopic, {
+      count: targetCount,
+      documentContext: documentText,
+      ...aiOptions
+    });
+    if (aiQuestions && Array.isArray(aiQuestions) && aiQuestions.length > 0) {
+      const validatedList = aiQuestions
+        .map((q, idx) => normalizeQuestion(q, idx, rawTopic))
+        .filter(Boolean);
+      if (validatedList.length > 0) {
+        model.questions = validatedList;
+      }
+    }
+  } catch (err) {
+    console.warn('Async AI question generation bypassed, using instant generative model:', err.message);
+  }
+  return model;
+}
+
 // Generates and expands questions up to 100 for any topic across Bloom's Taxonomy
-export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic', targetCount = 10) {
+export function expandQuestionsForTopic(baseQuestions = [], topicName = 'Topic', targetCount = 10, documentText = '') {
   const t = topicName || 'Topic';
   const count = Math.min(100, Math.max(1, targetCount || 5));
-  const questions = [...baseQuestions];
 
-  const templates = [
-    {
-      level: 1,
-      bloomLevel: 'Remembering',
-      type: 'text',
-      text: (t) => `Define the foundational laws, operational axioms, and boundary conditions governing ${t}. What are the primary mathematical parameters involved?`,
-      hints: [
-        `State the standard canonical definition of ${t}.`,
-        `Identify the physical constants or mathematical symbols used in the equation.`,
-        `Recall how the input state relates to the activation threshold.`,
-        `Synthesize the exact boundary condition under which the equation holds true.`
-      ]
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'text',
-      text: (t) => `Explain the internal physical or computational mechanism of ${t}. How do transient dynamics transition into steady-state equilibrium?`,
-      hints: [
-        `Focus on internal energy or data flow dynamics in ${t}.`,
-        `Contrast the non-equilibrium start state with steady-state behavior.`,
-        `Identify the feedback mechanisms that stabilize the response.`,
-        `Detail the relationship between applied excitation and resulting output gradient.`
-      ]
-    },
-    {
-      level: 2,
-      bloomLevel: 'Understanding',
-      type: 'mcq',
-      text: (t) => `Under nominal operating conditions, which parameter primary dictates the operational stability of ${t}?`,
-      options: [
-        `Thermal dissipation gradient and internal feedback damping`,
-        `Uncorrelated random thermal noise without baseline bounds`,
-        `Complete absence of electrical or algorithmic resistance`,
-        `Arbitrary external voltage fluctuations without clamping`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Think about stabilization and regulatory damping in ${t}.`,
-        `Look for the option addressing thermodynamic or feedback damping.`,
-        `Physical and computational systems require controlled feedback damping for stability.`,
-        `The correct answer is thermal dissipation gradient and internal feedback damping.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Apply ${t} to an industrial high-throughput scenario. What mitigation techniques prevent bottlenecking when input demand surges by 300%?`,
-      hints: [
-        `Consider buffer capacity, parallel pipelines, and load distribution in ${t}.`,
-        `Identify where saturation or clipping occurs under heavy load.`,
-        `Explain how dynamic scaling or negative feedback limits degradation.`,
-        `Synthesize a complete industrial surge mitigation protocol.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Calculate or mathematically evaluate how environmental temperature variation (-40°C to +85°C) impacts the operational precision of ${t}.`,
-      hints: [
-        `Consider thermal coefficient effects on carrier mobility, clock drift, or material properties.`,
-        `Does higher temperature accelerate or impede transport dynamics in ${t}?`,
-        `Identify standard temperature-compensation topologies used in engineering.`,
-        `Formulate the analytical temperature drift coefficient.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Perform a comparative trade-off analysis between ${t} and its closest competitor paradigm. Under what specific constraints would you strictly reject ${t}?`,
-      hints: [
-        `Identify 2 competing technologies or alternative methods to ${t}.`,
-        `Compare power consumption, latency, silicon area, or mathematical complexity.`,
-        `Identify extreme edge conditions where the alternative paradigm outperforms ${t}.`,
-        `Provide an architectural decision matrix with quantitative justification.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Analyze the harmonic distortion, noise figure, or algorithmic error propagation when ${t} operates near its critical cutoff frequency/threshold.`,
-      hints: [
-        `What non-linear phenomena emerge as signal magnitude approaches cutoff in ${t}?`,
-        `Discuss intermodulation, phase noise, quantization noise, or numerical instability.`,
-        `Explain how higher-order terms in the Taylor series expansion become dominant.`,
-        `Propose filtering or linearization feedback to suppress parasitic harmonics.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'mcq',
-      text: (t) => `What is the dominant failure mode when ${t} is subjected to continuous over-voltage or excessive algorithmic recursion?`,
-      options: [
-        `Avalanche breakdown / stack overflow due to critical threshold violation`,
-        `Spontaneous self-healing without any energy dissipation`,
-        `Reversal of entropy without localized heating`,
-        `Zero degradation regardless of applied electrical or compute stress`
-      ],
-      correctIndex: 0,
-      hints: [
-        `Consider the physical or computational limits of sustained over-stress.`,
-        `Look for the option describing breakdown or resource exhaustion.`,
-        `Extreme stress causes dielectric rupture, avalanche breakdown, or memory exhaustion.`,
-        `The correct answer is avalanche breakdown / stack overflow.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Evaluate the safety, reliability, and Mean Time Between Failures (MTBF) of deploying ${t} in mission-critical aerospace or biomedical hardware.`,
-      hints: [
-        `Consider single-event upsets (SEU), radiation hardening, or fail-safe modes.`,
-        `Evaluate redundancy schemes (e.g. Triple Modular Redundancy - TMR).`,
-        `How do you perform accelerated lifecycle testing for ${t}?`,
-        `Deliver a formal reliability engineering certification audit.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Critique the theoretical upper bound (e.g. Shannon limit, Carnot efficiency, or Big-O complexity) of ${t}. Why does scaling beyond this limit fail?`,
-      hints: [
-        `State the asymptotic bound governing ${t}.`,
-        `Explain the physical law enforcing this bound.`,
-        `Why do conventional hardware/software optimizations hit diminishing returns?`,
-        `Formulate the mathematical proof of the asymptotic limit.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Architect a novel architectural variant of ${t} utilizing sub-3nm nanosheets, quantum tunneling, or neuromorphic spiking dynamics to achieve 10x energy efficiency.`,
-      hints: [
-        `Select an emerging technological paradigm to integrate with ${t}.`,
-        `Explain how this hybrid architecture mathematically bypasses the legacy bottleneck.`,
-        `Detail the interface between conventional controllers and the novel structure.`,
-        `Provide a full schematic and block diagram explanation.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Develop a practical laboratory calibration procedure for ${t}. What instrumentation and test vectors are strictly mandatory?`,
-      hints: [
-        `Specify measurement tools (e.g., oscilloscope, logic analyzer, profiling harness).`,
-        `Describe zero-point calibration and baseline offset nullification.`,
-        `How do you measure signal-to-noise ratio (SNR) or throughput under calibrated load?`,
-        `Write the step-by-step standard operating procedure (SOP).`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Investigate the transient step response of ${t}. Formulate the damping ratio, rise time, and settling time equations.`,
-      hints: [
-        `Model ${t} as a second-order linear dynamic system.`,
-        `Explain the difference between underdamped, critically damped, and overdamped conditions.`,
-        `How do parasitic capacitances, inductances, or latency lags influence overshoot?`,
-        `Derive the transfer function H(s) in the Laplace s-domain.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Analyze parasitic coupling and cross-talk when multiple instances of ${t} are placed in ultra-dense spatial proximity.`,
-      hints: [
-        `Consider electromagnetic interference (EMI), capacitive coupling, or shared cache thrashing.`,
-        `What shielding or guard-ring topologies isolate adjacent channels in ${t}?`,
-        `Formulate the cross-talk attenuation formula in decibels (dB).`,
-        `Explain layout techniques for high-frequency differential isolation.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Formulate an autonomous self-healing or adaptive calibration loop for ${t} using real-time Bayesian optimization.`,
-      hints: [
-        `Describe the telemetry sensor network measuring drift in ${t}.`,
-        `Explain how the microcontroller or algorithm calculates error variance.`,
-        `What actuator or parameter adjustment corrects the drift in real-time?`,
-        `Prove that the adaptive closed-loop system is asymptotically stable (Lyapunov stability).`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Explain the packaging, thermal interface material (TIM), and heat-sink sizing calculations required for continuous 100W operation of ${t}.`,
-      hints: [
-        `Define thermal resistance θJA, θJC, and θCS in °C/Watt.`,
-        `Calculate junction temperature Tj given ambient temperature Ta = 50°C.`,
-        `Contrast forced-air convection with vapor chamber or liquid cooling for ${t}.`,
-        `Synthesize the complete thermal budget verification.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Diagnose an intermittent signal glitch observed only under high electromagnetic interference in an embedded system deploying ${t}.`,
-      hints: [
-        `How do ground bounce and power-rail droop induce false triggering in ${t}?`,
-        `Explain decoupling capacitor placement and ferrite bead filtering.`,
-        `How do you capture non-repetitive runt pulses on a high-bandwidth digital oscilloscope?`,
-        `Synthesize the root-cause diagnosis and hardware redesign protocol.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Conduct a cradle-to-grave lifecycle assessment (LCA) and environmental sustainability analysis of manufacturing and disposing ${t}.`,
-      hints: [
-        `Evaluate rare earth elements, toxic precursors, or energy-intensive fabrication steps.`,
-        `Compare embodied carbon against operational carbon savings over a 10-year lifespan.`,
-        `What recycling or material reclamation pathways exist for decommissioned units?`,
-        `Deliver the ISO 14040 environmental impact scorecard.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Synthesize an ultra-low-power zero-standby sleep state for ${t}, enabling sub-microampere leakage with instantaneous microsecond wake-up.`,
-      hints: [
-        `Consider power gating with high-threshold sleep transistors or non-volatile state retention.`,
-        `How do you prevent floating nodes and intermediate voltage states during wake-up?`,
-        `Describe the energy-harvesting capacitor reserve powering the wake-up detector.`,
-        `Provide the circuit state transition diagram and timing analysis.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Examine the cryptographic side-channel vulnerability of ${t}. Can differential power analysis (DPA) or electromagnetic leakage extract secret states?`,
-      hints: [
-        `How does instantaneous current draw correlate with processing operands in ${t}?`,
-        `Explain masking, dual-rail precharge logic, and noise injection countermeasures.`,
-        `Describe how physical isolation and Faraday cages defeat electromagnetic sniffing.`,
-        `Deliver a formal side-channel security verification report.`
-      ]
-    },
-    {
-      level: 3,
-      bloomLevel: 'Application',
-      type: 'text',
-      text: (t) => `Construct a complete automated Hardware-in-the-Loop (HIL) test regression suite for validating firmware releases interfacing with ${t}.`,
-      hints: [
-        `Describe the real-time simulator emulating edge sensors and load dynamics.`,
-        `How do you automate boundary condition injection and fault injection testing?`,
-        `Define the continuous integration / continuous deployment (CI/CD) test metrics.`,
-        `Provide the test matrix covering 100% of functional requirements.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Evaluation',
-      type: 'text',
-      text: (t) => `Analyze the unit economics and bill-of-materials (BOM) cost scaling when ramping production of ${t} from 1,000 units to 10,000,000 units.`,
-      hints: [
-        `Calculate non-recurring engineering (NRE) tooling amortization vs marginal silicon/material cost.`,
-        `How does yield percentage impact wafer cost?`,
-        `Identify tier-1 supplier negotiation strategies for volume semiconductor procurement.`,
-        `Provide the complete economies-of-scale cost curve.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Design a fault-tolerant distributed consensus protocol integrating ${t} across a decentralized cluster of 1,000 edge nodes.`,
-      hints: [
-        `How do you handle asynchronous network partitions and Byzantine node failures?`,
-        `Formulate the state replication mechanism with bounded latency.`,
-        `Explain how cryptographic proof-of-state verifies integrity without central authority.`,
-        `Synthesize the mathematical convergence proof under 33% malicious node presence.`
-      ]
-    },
-    {
-      level: 4,
-      bloomLevel: 'Analysis',
-      type: 'text',
-      text: (t) => `Investigate the quantum tunneling, ballistic transport, or nanoscale quantum confinement phenomena emerging in ultra-scaled versions of ${t}.`,
-      hints: [
-        `What happens when physical dimensions approach the de Broglie wavelength of electrons?`,
-        `Explain direct source-to-drain tunneling and subthreshold swing degradation.`,
-        `Discuss discrete dopant fluctuations and threshold voltage variability across dies.`,
-        `Synthesize novel materials (e.g. 2D MoS2, carbon nanotubes) bypassing silicon limits.`
-      ]
-    },
-    {
-      level: 5,
-      bloomLevel: 'Creation',
-      type: 'text',
-      text: (t) => `Grand Architecture Challenge: Synthesize the next-generation specification for ${t} to be deployed in deep-space autonomous probes with a 50-year zero-maintenance lifespan.`,
-      hints: [
-        `Integrate radiation hardening, self-reconfiguring redundant circuitry, and autonomous diagnostic agents.`,
-        `How does the system compensate for cosmic ray bit-flips and material degradation over 50 years?`,
-        `Describe the autonomous self-test and graceful degradation protocol.`,
-        `Deliver the complete architectural blueprint for the space probe system.`
-      ]
-    }
-  ];
-
-  let tIdx = 0;
-  while (questions.length < count) {
-    const tmpl = templates[tIdx % templates.length];
-    const qNum = questions.length + 1;
-    const cycle = Math.floor(tIdx / templates.length);
-    let baseText = typeof tmpl.text === 'function' ? tmpl.text(topicName) : (tmpl.text || `Explain core concepts of ${topicName}`);
-    if (cycle > 0) {
-      const prefixes = [
-        `[Advanced Deep Dive #${cycle}]: `,
-        `[System Diagnostic Case #${cycle}]: `,
-        `[Comparative Architecture Analysis #${cycle}]: `,
-        `[Industry Deployment Problem #${cycle}]: `
-      ];
-      baseText = `${prefixes[cycle % prefixes.length]}${baseText}`;
-    }
-    
-    questions.push({
-      id: `q_dyn_${qNum}_${Date.now()}_${tIdx}`,
-      level: tmpl.level,
-      questionText: baseText,
-      text: baseText,
-      bloomLevel: tmpl.bloomLevel,
-      type: tmpl.type,
-      options: tmpl.options || null,
-      correctIndex: tmpl.correctIndex ?? null,
-      hints: tmpl.hints,
-      expectedKeywords: [topicName.toLowerCase(), 'analysis', 'mechanism', 'design', 'optimization', 'stability', 'protocol']
-    });
-    tIdx++;
+  // Subject-accurate AI domain generator (100% subject-pure questions, options, hints)
+  const deepQuestions = generateOfflineDeepQuestions(t, count, documentText);
+  if (deepQuestions && deepQuestions.length > 0) {
+    return deepQuestions.slice(0, count).map((q, idx) => normalizeQuestion(q, idx, t));
   }
 
-  return questions.slice(0, count).map(q => ({
-    ...q,
-    questionText: q.questionText || q.text || `Explain conceptual principles of ${topicName}`,
-    text: q.text || q.questionText,
-    hints: Array.isArray(q.hints) 
-      ? q.hints 
-      : (typeof q.hints === 'object' && q.hints !== null
-          ? [q.hints.level1, q.hints.level2, q.hints.level3, q.hints.level4].filter(Boolean)
-          : [`Examine core principles of ${topicName}`, `Consider fundamental governing equations`, `Analyze boundary conditions`, `Synthesize causal pathway`])
-  }));
+  return baseQuestions.slice(0, count).map((q, idx) => normalizeQuestion(q, idx, t));
 }

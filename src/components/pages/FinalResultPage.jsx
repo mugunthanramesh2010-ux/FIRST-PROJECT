@@ -12,30 +12,35 @@ import {
   LayoutDashboard,
   FolderOpen
 } from 'lucide-react';
-import { openLocalFolderInExplorer } from '../../services/db';
+import { openLocalFolderInExplorer, getAllAssessmentSessions } from '../../services/db';
 
 export default function FinalResultPage({
   sessionResult,
   onOpenReport,
   onBackToDashboard
 }) {
-  const marksEarned = sessionResult?.totalEarnedMarks ?? 88.5;
-  const marksTotal = sessionResult?.facultyTotalMarks ?? 100;
-  const knowledgeScore = sessionResult?.knowledgeScore ?? 92;
-  const reasoningScore = sessionResult?.reasoningScore ?? 89;
-  const retentionScore = sessionResult?.retentionScore ?? 86;
-  const curiosityScore = sessionResult?.curiosityIndex ?? 90;
-  const masteryLevel = sessionResult?.masteryLevel ?? 'Advanced Mastery';
-  const authenticityScore = sessionResult?.authenticityScore ?? 98;
+  const latestDbSession = !sessionResult ? (getAllAssessmentSessions()[0] || null) : null;
+  const activeSession = sessionResult || latestDbSession;
+
+  const isDisqualified = !!activeSession?.disqualified;
+  const marksEarned = isDisqualified ? 0 : (activeSession?.totalEarnedMarks ?? 0);
+  const marksTotal = activeSession?.facultyTotalMarks ?? 100;
+  const knowledgeScore = isDisqualified ? 0 : (activeSession?.knowledgeScore ?? 0);
+  const reasoningScore = isDisqualified ? 0 : (activeSession?.reasoningScore ?? 0);
+  const retentionScore = isDisqualified ? 0 : (activeSession?.retentionScore ?? 0);
+  const curiosityScore = isDisqualified ? 0 : (activeSession?.curiosityIndex ?? 0);
+  const masteryLevel = isDisqualified ? 'Disqualified (Malpractice)' : (activeSession?.masteryLevel ?? (knowledgeScore === 0 ? 'Needs Revision (0% Correct)' : 'Learner'));
+  const authenticityScore = isDisqualified ? 0 : (activeSession?.authenticityScore ?? 100);
+  const topicName = activeSession?.topic || 'Viva Examination';
 
   const resultCards = [
-    { title: 'Marks', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: '#B7791F', bg: '#FFF3D6' },
-    { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: '#8B5E34', bg: '#FFF8E8' },
-    { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: '#D69E2E', bg: '#FFF3D6' },
-    { title: 'Mastery', value: masteryLevel, icon: Award, color: '#2F855A', bg: '#E6F4EA' },
-    { title: 'Retention', value: `${retentionScore}%`, icon: RotateCcw, color: '#2F855A', bg: '#E6F4EA' },
-    { title: 'Curiosity', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
-    { title: 'Authenticity', value: `${authenticityScore}%`, icon: ShieldCheck, color: '#2F855A', bg: '#E6F4EA' }
+    { title: 'Marks Awarded', value: `${marksEarned} / ${marksTotal}`, icon: Award, color: isDisqualified ? '#C53030' : (marksEarned === 0 ? '#C53030' : '#B7791F'), bg: isDisqualified || marksEarned === 0 ? '#FFF0F0' : '#FFF3D6' },
+    { title: 'Knowledge Score', value: `${knowledgeScore}%`, icon: Brain, color: knowledgeScore === 0 ? '#C53030' : '#8B5E34', bg: knowledgeScore === 0 ? '#FFF0F0' : '#FFF8E8' },
+    { title: 'Reasoning Score', value: `${reasoningScore}%`, icon: BrainCircuit, color: reasoningScore === 0 ? '#C53030' : '#D69E2E', bg: reasoningScore === 0 ? '#FFF0F0' : '#FFF3D6' },
+    { title: 'Cognitive Mastery', value: masteryLevel, icon: Award, color: isDisqualified || knowledgeScore === 0 ? '#C53030' : '#2F855A', bg: isDisqualified || knowledgeScore === 0 ? '#FFF0F0' : '#E6F4EA' },
+    { title: 'Concept Retention', value: `${retentionScore}%`, icon: RotateCcw, color: retentionScore === 0 ? '#C53030' : '#2F855A', bg: retentionScore === 0 ? '#FFF0F0' : '#E6F4EA' },
+    { title: 'Curiosity Index', value: `${curiosityScore}/100`, icon: Zap, color: '#C05621', bg: '#FFF3D6' },
+    { title: 'Authenticity Rating', value: `${authenticityScore}%`, icon: ShieldCheck, color: isDisqualified ? '#C53030' : '#2F855A', bg: isDisqualified ? '#FFF0F0' : '#E6F4EA' }
   ];
 
   // Subject-Aware Dynamic Concept Breakdown: Grounded in active subject rather than hardcoded MOSFET
@@ -106,7 +111,7 @@ export default function FinalResultPage({
   }
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">
+    <div className="space-y-[32px] animate-fade-in w-full py-4 text-left">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2D3A7] pb-4">

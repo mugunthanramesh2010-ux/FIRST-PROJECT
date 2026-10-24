@@ -62,7 +62,7 @@ export default function StudentManagementPage({ onNavigate, onOpenReport }) {
   };
 
   return (
-    <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-2">
+    <div className="space-y-[32px] animate-fade-in w-full py-2 text-left">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#CBD5E1] pb-4">
