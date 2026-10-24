@@ -48,13 +48,22 @@ export default function SelfLearningPage({ onTopicSelected }) {
 
     setIsGenerating(true);
     try {
-      // Generate dynamically with selected Ollama model or instant dynamic synthesizer
+      // Situation-Aware Model Routing (100% Background & Automatic):
+      // Derivation, STA timing, CDC, formulas -> reasoning model (llama3:latest if installed)
+      // Fast conceptual viva -> fast model (llama3.2:1b / llama3.2:latest)
+      // If offline -> instant procedural topic model
+      const lower = chosen.toLowerCase();
+      const isComplex = /derivation|numerical|stability|timing|sta|cdc|nyquist|algorithm|filter|math|formula/i.test(lower);
+      const autoModel = isComplex && ollamaStatus.models?.includes('llama3:latest')
+        ? 'llama3:latest'
+        : (ollamaStatus.activeModel || selectedModel || 'llama3.2:1b');
+
       const model = await generateUniversalTopicModelAsync(chosen, 'Universal Domain', count, '', {
-        model: selectedModel
+        model: autoModel
       });
       onTopicSelected(model, chosen);
     } catch (err) {
-      console.warn('Ollama generation exception handled, falling back:', err);
+      console.warn('AI generation exception handled, falling back to instant synthesizer:', err);
       const fallbackModel = generateUniversalTopicModel(chosen, 'Universal Domain', count);
       onTopicSelected(fallbackModel, chosen);
     } finally {
@@ -87,7 +96,7 @@ export default function SelfLearningPage({ onTopicSelected }) {
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
             <Sparkles className="w-4 h-4 text-[#B7791F]" />
             <span>
-              {ollamaStatus.available ? `Hidden AI: Ollama (${ollamaStatus.activeModel})` : 'Offline Domain Engine Active'}
+              100% Offline AI Cognitive Engine Active
             </span>
           </div>
         </div>
@@ -213,38 +222,15 @@ export default function SelfLearningPage({ onTopicSelected }) {
               </div>
             </div>
 
-            {/* Local Inference Model Selector (Ollama / Local Runtime / Dynamic Engine) */}
-            <div className="space-y-2.5 text-left pt-2 border-t border-[#E2D3A7]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-extrabold text-[#8B5E34] uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#B7791F]" />
-                  <span>AI Inference Engine (100% Offline Local Model):</span>
-                </label>
-                <span className="text-[11px] font-bold text-[#2F855A] bg-[#E6F4EA] px-2 py-0.5 rounded-md border border-[#A8DAB5]">
-                  {ollamaStatus.available ? 'Ollama Server Connected' : 'Offline Engine Ready'}
-                </span>
+            {/* Autonomous AI Engine Status (Background & Invisible Model Operations) */}
+            <div className="p-3.5 rounded-2xl bg-[#FFFDF8] border border-[#E2D3A7] flex items-center justify-between text-xs text-[#8B5E34]">
+              <div className="flex items-center gap-2 font-bold">
+                <Sparkles className="w-4 h-4 text-[#B7791F]" />
+                <span>Autonomous Offline Cognitive & Bloom Reasoning Engine</span>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                {(ollamaStatus.models && ollamaStatus.models.length > 0 ? ollamaStatus.models : ['llama3.2:1b', 'llama3.2:latest', 'llama3:latest']).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setSelectedModel(m)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                      selectedModel === m
-                        ? 'bg-[#B7791F] text-white border-[#B7791F] shadow-xs'
-                        : 'bg-[#FFF8E8] text-[#4A5568] border-[#E2D3A7] hover:border-[#B7791F]'
-                    }`}
-                  >
-                    <span>{m}</span>
-                    {selectedModel === m && <CheckCircle2 className="w-3 h-3 text-[#FFF3D6]" />}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[11px] text-[#718096]">
-                Questions, options, answers, and 4-tier progressive hints are synthesized instantly without transmitting any content to cloud services.
-              </p>
+              <span className="text-[11px] font-bold text-[#2F855A] bg-[#E6F4EA] px-2.5 py-0.5 rounded-md border border-[#A8DAB5]">
+                {ollamaStatus.available ? 'Local AI Active' : 'Offline Engine Ready'}
+              </span>
             </div>
 
             {/* Big Start Button */}
@@ -259,7 +245,7 @@ export default function SelfLearningPage({ onTopicSelected }) {
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin text-[#FFF3D6]" />
-                    <span>Synthesizing Exam with {selectedModel}...</span>
+                    <span>Synthesizing Adaptive Examination...</span>
                   </>
                 ) : (
                   <>

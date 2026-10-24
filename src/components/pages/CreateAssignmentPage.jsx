@@ -168,11 +168,11 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
               </div>
             </div>
 
-            {/* Hidden AI & Ollama Status Pill */}
+            {/* Autonomous Offline Assessment Engine Status Pill */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
               <Sparkles className="w-4 h-4 text-[#B7791F]" />
               <span>
-                Hidden AI: {ollamaStatus.available ? `Ollama (${ollamaStatus.activeModel})` : 'Offline Deep Subject Engine'}
+                100% Offline Cognitive Evaluation Engine Active
               </span>
             </div>
           </div>

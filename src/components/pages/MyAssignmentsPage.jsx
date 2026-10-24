@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Award, Play, Eye, RotateCw, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, Award, Play, Eye, RotateCw, BookOpen, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { getAssignmentsForStudent, getCohortAssignments } from '../../services/db';
 
 export default function MyAssignmentsPage({ currentUser, onStartAssignment, onViewResult }) {
