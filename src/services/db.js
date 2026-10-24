@@ -128,12 +128,12 @@ const DEFAULT_USERS = [
       learningVelocity: 1.4
     },
     cognitiveTwin: {
-      adaptiveIQ: 124,
-      retentionScore: 84,
-      reasoningScore: 89,
-      curiosityIndex: 91,
-      innovationIndex: 86,
-      overallMastery: 'Advanced'
+      adaptiveIQ: null,
+      retentionScore: null,
+      reasoningScore: null,
+      curiosityIndex: null,
+      innovationIndex: null,
+      overallMastery: 'Not Evaluated'
     },
     createdAt: new Date().toISOString()
   },
@@ -532,11 +532,21 @@ export function updateUserStats(userId, updates) {
   const users = getFromStorage(STORAGE_KEYS.USERS, []);
   const idx = users.findIndex(u => u.id === userId);
   if (idx !== -1) {
+    const updatedCognitiveTwin = {
+      ...(users[idx].cognitiveTwin || {}),
+      ...(updates.cognitiveTwin || {}),
+      ...(updates.knowledgeScore !== undefined ? { knowledgeScore: updates.knowledgeScore } : {}),
+      ...(updates.retentionScore !== undefined ? { retentionScore: updates.retentionScore } : {}),
+      ...(updates.reasoningScore !== undefined ? { reasoningScore: updates.reasoningScore } : {}),
+      ...(updates.curiosityIndex !== undefined ? { curiosityIndex: updates.curiosityIndex } : {}),
+      ...(updates.masteryLevel !== undefined ? { overallMastery: updates.masteryLevel } : {})
+    };
+
     users[idx] = {
       ...users[idx],
       ...updates,
       dnaProfile: { ...users[idx].dnaProfile, ...(updates.dnaProfile || {}) },
-      cognitiveTwin: { ...users[idx].cognitiveTwin, ...(updates.cognitiveTwin || {}) }
+      cognitiveTwin: updatedCognitiveTwin
     };
     setInStorage(STORAGE_KEYS.USERS, users);
 

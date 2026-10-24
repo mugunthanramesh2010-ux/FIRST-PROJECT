@@ -358,31 +358,43 @@ export default function QuestionPage({
         {answerMode === 'mcq' ? (
           <div className="space-y-3 w-full">
             <div className="grid grid-cols-1 gap-3 w-full">
-              {availableOptions.map((opt, idx) => {
-                const isSelected = selectedOption === idx;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedOption(idx)}
-                    className={`p-5 sm:p-6 rounded-2xl border-2 cursor-pointer flex items-center gap-5 transition-all shadow-sm ${
-                      isSelected
-                        ? 'border-[#B7791F] bg-[#FFF3D6] ring-4 ring-[#B7791F]/20 scale-[1.008]'
-                        : 'border-[#E2D3A7] bg-[#FFFCF4] hover:border-[#B7791F] hover:bg-[#FFFDF8]'
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center font-black text-base shrink-0 ${
-                      isSelected
-                        ? 'border-[#B7791F] bg-[#B7791F] text-white shadow-xs'
-                        : 'border-[#E2D3A7] bg-[#FFF8E8] text-[#8B5E34]'
-                    }`}>
-                      {String.fromCharCode(65 + idx)}
+              {(() => {
+                const availableOptions = (shuffledItems && shuffledItems.length > 0)
+                  ? shuffledItems
+                  : (Array.isArray(question?.options) && question.options.length > 0)
+                    ? question.options.map((opt, i) => ({
+                        text: typeof opt === 'object' && opt !== null ? (opt.text || opt.title || JSON.stringify(opt)) : String(opt),
+                        originalIndex: i
+                      }))
+                    : [];
+
+                return availableOptions.map((opt, idx) => {
+                  const isSelected = selectedOption === idx;
+                  const optionLabel = typeof opt === 'object' && opt !== null ? (opt.text || opt.title || JSON.stringify(opt)) : String(opt);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedOption(idx)}
+                      className={`p-5 sm:p-6 rounded-2xl border-2 cursor-pointer flex items-center gap-5 transition-all shadow-sm ${
+                        isSelected
+                          ? 'border-[#B7791F] bg-[#FFF3D6] ring-4 ring-[#B7791F]/20 scale-[1.008]'
+                          : 'border-[#E2D3A7] bg-[#FFFCF4] hover:border-[#B7791F] hover:bg-[#FFFDF8]'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center font-black text-base shrink-0 ${
+                        isSelected
+                          ? 'border-[#B7791F] bg-[#B7791F] text-white shadow-xs'
+                          : 'border-[#E2D3A7] bg-[#FFF8E8] text-[#8B5E34]'
+                      }`}>
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+                      <span className="text-base font-semibold text-[#2D3748] flex-1 break-words">
+                        {optionLabel}
+                      </span>
                     </div>
-                    <span className="text-base font-semibold text-[#2D3748] flex-1 break-words">
-                      {opt}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </div>
         ) : (

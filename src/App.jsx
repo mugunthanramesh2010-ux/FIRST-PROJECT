@@ -468,6 +468,8 @@ export default function App() {
           curiosityIndex: calculatedCuriosityIndex,
           masteryLevel: calculatedMastery
         });
+        const freshUser = getCurrentUser();
+        if (freshUser) setCurrentUser(freshUser);
       } catch (err) {}
     }
 
