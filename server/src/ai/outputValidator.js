@@ -94,6 +94,9 @@ export class OutputValidator {
     if (Array.isArray(clone.hints)) {
       clone.hints = clone.hints.map(h => String(h || '').trim());
     }
+    if (Array.isArray(clone.expectedKeywords)) {
+      clone.expectedKeywords = clone.expectedKeywords.map(k => String(k || '').trim()).filter(Boolean);
+    }
     return clone;
   }
 }

@@ -290,19 +290,17 @@ export class AdaptiveEngine {
       feedback = `Partial formulation. Captured ${matched.length > 0 ? matched.join(', ') : 'initial intuition'}. Prerequisite review advised for: ${missing.slice(0, 3).join(', ')}.`;
     }
 
+    const finalStatus = score >= 80 ? 'Correct' : score >= 50 ? 'Partially Correct' : 'Needs Improvement';
+
     return {
       score,
       isCorrect,
+      status: finalStatus,
       feedback,
       conceptMatched: matched,
       missingConcepts: missing,
       masteryIncrement: score >= 70 ? 1 : 0
     };
-  }
-
-  // Alias for backward compatibility with App.jsx
-  evaluateConceptualAnswer(userAnswer, question) {
-    return this.evaluateTextAnswer(userAnswer, question);
   }
 
   // Evaluate MCQ Answer

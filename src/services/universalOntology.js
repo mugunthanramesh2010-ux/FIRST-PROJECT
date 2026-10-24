@@ -914,7 +914,7 @@ function normalizeQuestionHints(q) {
 
 // Universal Dynamic Topic Synthesizer:
 // Supports customizable question counts: 5, 10, 20, up to 100 questions on demand!
-export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Domain', targetCount = null) {
+export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Domain', targetCount = null, documentText = '') {
   const cleanTopic = (rawTopic || '').trim();
   const lower = cleanTopic.toLowerCase();
 

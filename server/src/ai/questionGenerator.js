@@ -93,6 +93,34 @@ Return STRICT JSON:
       qData.sourceType = referenceEvidence.length > 0 ? 'reference_grounded' : 'domain_model_grounded';
       qData.telemetry = res.telemetry;
 
+      // Ensure expectedKeywords is populated
+      const rawKeywords = qData.expectedKeywords || qData.keywords || qData.keyConcepts || qData.key_concepts || qData.expected_keywords || [];
+      if (Array.isArray(rawKeywords) && rawKeywords.length > 0) {
+        qData.expectedKeywords = rawKeywords.map(k => String(k).trim()).filter(Boolean);
+      } else {
+        const derived = `${topic} ${subject} ${qData.questionText}`
+          .toLowerCase()
+          .replace(/[^a-z0-9_\s-]/g, ' ')
+          .split(/\s+/)
+          .filter(w => w.length >= 4 && !['what', 'explain', 'derive', 'describe', 'calculate', 'which', 'system', 'equations'].includes(w));
+        qData.expectedKeywords = Array.from(new Set(derived)).slice(0, 6);
+      }
+      if (!qData.expectedKeywords || qData.expectedKeywords.length === 0) {
+        qData.expectedKeywords = [topic.toLowerCase(), subject.toLowerCase()];
+      }
+
+      // Ensure at least 3 progressive hints exist
+      if (!Array.isArray(qData.hints) || qData.hints.length < 3) {
+        const existing = Array.isArray(qData.hints) ? qData.hints : [];
+        const fallbackHints = [
+          `Hint 1: Consider foundational definitions and governing relations for ${topic}.`,
+          `Hint 2: Formulate the core mathematical or algorithmic equations governing ${conceptId || topic}.`,
+          `Hint 3: Analyze boundary conditions, asymptotic behavior, or step-by-step transformations.`,
+          `Hint 4: Relate key variables to physical significance or performance metrics without leaking final solution.`
+        ];
+        qData.hints = [...existing, ...fallbackHints.slice(existing.length)];
+      }
+
       const validation = outputValidator.validate(qData, context);
       if (validation.isValid) {
         return validation.sanitizedQuestion;
