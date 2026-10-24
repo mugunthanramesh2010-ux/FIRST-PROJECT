@@ -5,65 +5,64 @@ export default function StudentKnowledgeMapPage({
   topicModel,
   onPracticeConcept
 }) {
-  const rootTopic = topicModel?.title || 'MOSFET';
+  const rootTopic = topicModel?.title || 'Communication Engineering';
 
-  // Interactive Tree nodes as mandated in SIH prompt:
-  // MOSFET
-  // ├ Semiconductor Basics
-  // ├ Threshold Voltage
-  // ├ Inversion Layer
-  // ├ Drain Current
-  // └ Applications
-  // Green = Mastered, Amber = Learning, Red = Weak
-  const [nodes] = useState([
-    {
-      id: 'node-1',
-      name: 'Semiconductor Basics',
-      status: 'Mastered', // Green
-      color: '#2F855A',
-      bg: '#E6F4EA',
-      border: '#A8DAB5',
-      depth: 94
-    },
-    {
-      id: 'node-2',
-      name: 'Threshold Voltage',
-      status: 'Mastered', // Green
-      color: '#2F855A',
-      bg: '#E6F4EA',
-      border: '#A8DAB5',
-      depth: 90
-    },
-    {
-      id: 'node-3',
-      name: 'Inversion Layer',
-      status: 'Learning', // Amber
-      color: '#C05621',
-      bg: '#FFF3D6',
-      border: '#E2D3A7',
-      depth: 72
-    },
-    {
-      id: 'node-4',
-      name: 'Drain Current',
-      status: 'Learning', // Amber
-      color: '#C05621',
-      bg: '#FFF3D6',
-      border: '#E2D3A7',
-      depth: 68
-    },
-    {
-      id: 'node-5',
-      name: 'Applications',
-      status: 'Weak', // Red
-      color: '#C53030',
-      bg: '#FFF0F0',
-      border: '#FECACA',
-      depth: 42
+  // Dynamically compute tree nodes based on topicModel graphNodes or subject domain
+  const computeNodes = () => {
+    if (topicModel?.graphNodes && topicModel.graphNodes.length > 0) {
+      return topicModel.graphNodes.slice(0, 5).map((gn, idx) => {
+        const isMastered = idx < 2;
+        const isLearning = idx >= 2 && idx < 4;
+        const status = isMastered ? 'Mastered' : isLearning ? 'Learning' : 'Weak';
+        return {
+          id: gn.id || `node-${idx + 1}`,
+          name: gn.label || gn.id,
+          status,
+          color: isMastered ? '#2F855A' : isLearning ? '#C05621' : '#C53030',
+          bg: isMastered ? '#E6F4EA' : isLearning ? '#FFF3D6' : '#FFF0F0',
+          border: isMastered ? '#A8DAB5' : isLearning ? '#E2D3A7' : '#FECACA',
+          depth: 95 - (idx * 12)
+        };
+      });
     }
-  ]);
 
-  const [selectedNode, setSelectedNode] = useState(nodes[4]); // Defaults to weak node
+    const lower = rootTopic.toLowerCase();
+    if (lower.includes('communication') || lower.includes('telecom') || lower.includes('signal')) {
+      return [
+        { id: 'c-1', name: 'Nyquist Sampling & Aliasing Bounds', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 95 },
+        { id: 'c-2', name: 'Digital Modulation (QPSK / 16-QAM)', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 90 },
+        { id: 'c-3', name: 'Shannon Channel Capacity & SNR', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 74 },
+        { id: 'c-4', name: 'Cascaded Noise Figure & Friis Link', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 68 },
+        { id: 'c-5', name: 'OFDM Multipath & Cyclic Prefix', status: 'Weak', color: '#C53030', bg: '#FFF0F0', border: '#FECACA', depth: 42 }
+      ];
+    }
+
+    if (lower.includes('fpga') || lower.includes('vlsi') || lower.includes('verilog')) {
+      return [
+        { id: 'f-1', name: 'Look-Up Table (LUT) & CLB Slice', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 95 },
+        { id: 'f-2', name: 'Static Timing Analysis (Setup Slack)', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 88 },
+        { id: 'f-3', name: 'Clock Domain Crossing & 2-FF Sync', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 72 },
+        { id: 'f-4', name: 'Asynchronous FIFO Gray Pointers', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 65 },
+        { id: 'f-5', name: 'High-Level Synthesis AI Fabric', status: 'Weak', color: '#C53030', bg: '#FFF0F0', border: '#FECACA', depth: 40 }
+      ];
+    }
+
+    // Default / Semiconductor
+    return [
+      { id: 'node-1', name: 'Semiconductor Basics', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 94 },
+      { id: 'node-2', name: 'Threshold Voltage', status: 'Mastered', color: '#2F855A', bg: '#E6F4EA', border: '#A8DAB5', depth: 90 },
+      { id: 'node-3', name: 'Inversion Layer', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 72 },
+      { id: 'node-4', name: 'Drain Current', status: 'Learning', color: '#C05621', bg: '#FFF3D6', border: '#E2D3A7', depth: 68 },
+      { id: 'node-5', name: 'Applications', status: 'Weak', color: '#C53030', bg: '#FFF0F0', border: '#FECACA', depth: 42 }
+    ];
+  };
+
+  const nodes = computeNodes();
+  const [selectedNode, setSelectedNode] = useState(nodes[nodes.length - 1] || nodes[0]);
+
+  React.useEffect(() => {
+    setSelectedNode(nodes[nodes.length - 1] || nodes[0]);
+  }, [rootTopic]);
 
   return (
     <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">

@@ -7,21 +7,21 @@ export default function SelfLearningPage({ onTopicSelected }) {
   const [questionCount, setQuestionCount] = useState(10);
 
   const exampleTopics = [
-    'MOSFET',
-    'CNN',
-    'Machine Learning',
+    'Communication Engineering',
+    'FPGA-Based VLSI',
+    'MOSFET & CMOS',
+    'Convolutional Neural Networks',
+    'Deep Learning',
+    'Constitutional Law',
     'Satellite Communication',
-    'Blockchain',
-    'Medicine',
-    'Law',
-    'Agriculture',
-    'Economics'
+    'Robotics & Control',
+    'Biomedical Engineering'
   ];
 
   const questionPresets = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
   const handleStart = (topicName) => {
-    const chosen = topicName || topicInput.trim() || 'General Science & Engineering';
+    const chosen = topicName || topicInput.trim() || 'Communication Engineering';
     const count = Math.min(100, Math.max(1, parseInt(questionCount, 10) || 10));
     const model = generateUniversalTopicModel(chosen, 'Universal Domain', count);
     onTopicSelected(model);
@@ -42,7 +42,7 @@ export default function SelfLearningPage({ onTopicSelected }) {
       </div>
 
       {/* Main Topic Input Box Container */}
-      <div className="max-w-2xl mx-auto py-6">
+      <div className="w-full max-w-3xl mx-auto py-6">
         <div className="ent-card p-6 sm:p-8 space-y-6 text-center bg-[#FFFCF4] border-[#E2D3A7]">
           
           <div className="w-14 h-14 rounded-[14px] bg-[#FFF3D6] border border-[#E2D3A7] mx-auto flex items-center justify-center text-[#B7791F]">

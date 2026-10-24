@@ -657,21 +657,339 @@ const BENCHMARK_TOPICS = {
       researcherPerspective: 'Compares comparative constitutional judicial review between India, USA, and South Africa.',
       startupFounderPerspective: 'Navigates regulatory compliance and digital constitutional rights for public tech platforms.'
     }
+  },
+
+  communication_engineering: {
+    title: 'Communication Engineering',
+    fullName: 'Analog and Digital Communication Systems & Signal Processing',
+    domain: 'Electronics and Communication Engineering (ECE)',
+    category: 'Telecommunications & Signal Processing',
+    complexity: 4,
+    prerequisites: [
+      { id: 'signals', name: 'Signals & Systems (Fourier & Laplace)', level: 'Fundamental', desc: 'Continuous and discrete Fourier transform, LTI system response, convolution.' },
+      { id: 'prob_noise', name: 'Probability, Random Variables & AWGN Noise', level: 'Fundamental', desc: 'Gaussian PDF, power spectral density (PSD), autocorrelation, thermal Johnson-Nyquist noise.' },
+      { id: 'info_theory', name: 'Information Theory & Channel Capacity', level: 'Intermediate', desc: 'Shannon-Hartley theorem, entropy, spectral efficiency (bps/Hz), mutual information.' }
+    ],
+    graphNodes: [
+      { id: 'sampling', label: 'Nyquist Sampling & Aliasing Criteria', status: 'mastered', x: 80, y: 160 },
+      { id: 'modulation', label: 'Analog & Digital Modulation (QPSK / 16-QAM)', status: 'mastered', x: 260, y: 120 },
+      { id: 'capacity', label: 'Shannon Channel Capacity & SNR Bounds', status: 'active', x: 440, y: 180 },
+      { id: 'noise_fig', label: 'Cascaded Noise Figure & Friis Formula', status: 'unvisited', x: 620, y: 130 },
+      { id: 'ofdm', label: 'Multipath Fading & OFDM Cyclic Prefix', status: 'unvisited', x: 800, y: 190 },
+      { id: 'mimo', label: 'Massive MIMO & 6G Beamforming', status: 'unvisited', x: 920, y: 140 }
+    ],
+    graphEdges: [
+      { from: 'sampling', to: 'modulation' },
+      { from: 'modulation', to: 'capacity' },
+      { from: 'capacity', to: 'noise_fig' },
+      { from: 'noise_fig', to: 'ofdm' },
+      { from: 'ofdm', to: 'mimo' }
+    ],
+    questions: [
+      {
+        id: 'comm_q1',
+        level: 1,
+        evolutionStage: 'Stage 1: Fundamentals (What)',
+        type: 'text',
+        mode: 'Text',
+        text: 'State the Nyquist Sampling Theorem for a bandlimited continuous signal with maximum frequency f_max. Explain mathematically what happens if the sampling rate fs < 2*f_max, and why an analog anti-aliasing pre-filter is mandatory before the Analog-to-Digital Converter (ADC).',
+        bloomLevel: 'Understanding',
+        expectedKeywords: ['nyquist', 'sampling rate', 'aliasing', 'f_max', 'spectral folding', 'anti-aliasing filter', 'bandlimited', 'reconstruction', 'adc'],
+        hints: {
+          level1: 'Recall the minimum sampling frequency required to reconstruct a bandlimited signal without information loss (fs >= 2*f_max).',
+          level2: 'Analyze the frequency-domain spectrum of an impulse-sampled signal: Xs(f) = (1/Ts) * sum(X(f - n*fs)).',
+          level3: 'When fs < 2*f_max, adjacent spectral replicas overlap in the transition band, causing irreversible high-frequency folding into the baseband.',
+          level4: 'An analog low-pass anti-aliasing filter must precede the ADC because once digital sampling occurs, digital filtering cannot separate folded aliased frequencies.'
+        },
+        reasonWhy: 'Stage 1 Fundamental: Tests foundational sampling theory and anti-aliasing engineering in ADC frontend design.',
+        industryApplication: 'Critical for digital audio codecs, software-defined radio (SDR) frontends, and radar signal digitizers.'
+      },
+      {
+        id: 'comm_q2',
+        level: 2,
+        evolutionStage: 'Stage 2: Comparative & Causal (Why)',
+        type: 'mcq',
+        mode: 'MCQ',
+        text: 'Why do high-throughput wireless standards (LTE, 5G NR, Wi-Fi 6) transition from QPSK to 16-QAM or 64-QAM in favorable channel conditions, and what engineering trade-off is incurred?',
+        options: [
+          '16-QAM packs 4 bits/symbol delivering double the spectral efficiency of QPSK (2 bits/symbol), but requires approximately 7 dB higher SNR to achieve the same Bit Error Rate (BER) due to reduced Euclidean distance between constellation points.',
+          '16-QAM eliminates all inter-symbol interference (ISI) and multipath fading, but requires analog frequency modulation instead of digital phase shifting.',
+          'QPSK requires higher transmission power because it uses non-coherent envelope detection, whereas 16-QAM uses passive diode demodulation.',
+          '16-QAM has a lower peak-to-average power ratio (PAPR) than QPSK, allowing RF power amplifiers to operate at maximum saturation efficiency.'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: {
+          level1: 'Calculate bits per symbol: QPSK = log2(4) = 2 bits/symbol; 16-QAM = log2(16) = 4 bits/symbol.',
+          level2: 'What happens to the minimum distance d_min between adjacent constellation constellation points for a fixed average transmit power?',
+          level3: 'Smaller constellation distance d_min means additive white Gaussian noise (AWGN) is much more likely to cross decision boundaries.',
+          level4: 'Therefore, Link Adaptation (Adaptive Modulation and Coding - AMC) dynamically selects 16-QAM only when Channel State Information (CSI) indicates high SNR.'
+        },
+        reasonWhy: 'Stage 2 Comparative: Evaluates spectral efficiency vs noise immunity trade-offs in modern digital telecommunications.',
+        industryApplication: 'Directly used in 5G link adaptation, satellite transponders, and cable broadband (DOCSIS) modems.'
+      },
+      {
+        id: 'comm_q3',
+        level: 3,
+        evolutionStage: 'Stage 3: Engineering Design & Case Study',
+        type: 'mixed',
+        mode: 'Case Study',
+        text: 'Case Study: In a satellite ground receiver link, a low-noise amplifier (LNA) with Noise Figure F1 = 1.2 dB (G1 = 20 dB) is connected to a 30-meter coaxial cable with 6 dB attenuation (F2 = 6 dB, G2 = -6 dB), followed by a receiver stage with F3 = 8 dB. Using Friis\' Formula for cascaded stages: F_total = F1 + (F2 - 1)/G1 + (F3 - 1)/(G1*G2), explain why placing the LNA directly at the antenna feedhorn before the cable is essential.',
+        bloomLevel: 'Application & Synthesis',
+        expectedKeywords: ['friis', 'lna', 'noise figure', 'cascaded', 'antenna feedhorn', 'coaxial attenuation', 'gain', 'system noise temperature'],
+        hints: {
+          level1: 'Convert all dB quantities to linear power ratios: G1 = 20 dB = 100, F2 = 6 dB = 3.98, G2 = -6 dB = 0.25.',
+          level2: 'Inspect Friis formula: the noise contribution of subsequent stages is divided by the cumulative linear gain of preceding stages.',
+          level3: 'With LNA first (G1 = 100), cable noise (F2 - 1)/G1 = (3.98 - 1)/100 = 0.0298 is negligible.',
+          level4: 'If the lossy cable were placed before the LNA, G1 would be 0.25, and the cable attenuation would directly degrade system noise figure dB-for-dB.'
+        },
+        reasonWhy: 'Stage 3 Practical Design: Tests RF link budget engineering and antenna frontend architecture.',
+        industryApplication: 'Standard RF engineering design rule for Starlink terminals, deep space ground stations, and cellular base stations.'
+      },
+      {
+        id: 'comm_q4',
+        level: 4,
+        evolutionStage: 'Stage 4: Optimization & Research Frontier',
+        type: 'mixed',
+        mode: 'Research Paper Mode',
+        text: 'Research Paper Inquiry: In wideband wireless communication channels, frequency-selective multipath fading causes severe Inter-Symbol Interference (ISI). Analyze how Orthogonal Frequency Division Multiplexing (OFDM) combined with a Cyclic Prefix (CP) converts a frequency-selective channel into parallel flat-fading subchannels. What constraint must the CP length satisfy with respect to channel delay spread tau_max?',
+        bloomLevel: 'Creation & Evaluation',
+        expectedKeywords: ['ofdm', 'cyclic prefix', 'multipath fading', 'frequency-selective', 'delay spread', 'circular convolution', 'idft', 'isi', 'ici'],
+        hints: {
+          level1: 'Consider how dividing a wideband channel of bandwidth B into N narrow subcarriers of bandwidth Delta_f = B/N affects symbol duration Ts.',
+          level2: 'When Ts >> tau_max, each individual subcarrier experiences flat (non-frequency-selective) fading.',
+          level3: 'The Cyclic Prefix copies the end of the OFDM symbol to the beginning, converting linear channel convolution into circular convolution.',
+          level4: 'The CP duration T_cp must strictly exceed the maximum channel multipath delay spread tau_max (T_cp >= tau_max) to eliminate both ISI and ICI.'
+        },
+        reasonWhy: 'Stage 4 Research Frontier: Tests advanced multi-carrier modulation, channel equalization, and 5G/6G physical layer mechanics.',
+        industryApplication: 'Foundational physical layer technology in 4G LTE, 5G NR, Wi-Fi 6/7, and DVB-T2 digital broadcasting.'
+      }
+    ],
+    innovationChallenge: 'Formulate an Orthogonal Time Frequency Space (OTFS) modulation framework that replaces OFDM in high-mobility LEO satellite communications (Doppler spread > 50 kHz) where OFDM orthogonality collapses.',
+    industryReadiness: {
+      engineerPerspective: 'Designs RF matching networks, baseband filter taps, and constellation decoders for 5G mmWave transceivers.',
+      researcherPerspective: 'Publishes on Reconfigurable Intelligent Surfaces (RIS) and terahertz channel modeling for 6G networks.',
+      startupFounderPerspective: 'Validates Software-Defined Radio (SDR) unit economics and Open-RAN interoperability for private 5G deployments.'
+    }
+  },
+
+  fpga_vlsi: {
+    title: 'FPGA-Based VLSI',
+    fullName: 'Field-Programmable Gate Array Architecture & Digital VLSI Design',
+    domain: 'Electronics and Communication Engineering (ECE)',
+    category: 'Digital VLSI Design & Reconfigurable Computing',
+    complexity: 4,
+    prerequisites: [
+      { id: 'dig_logic', name: 'Digital Logic Design & Finite State Machines', level: 'Fundamental', desc: 'Boolean algebra, Karnaugh maps, synchronous sequential circuits, Mealy/Moore FSMs.' },
+      { id: 'hdl', name: 'Hardware Description Languages (Verilog / VHDL / SystemVerilog)', level: 'Fundamental', desc: 'RTL synthesis, blocking vs non-blocking assignments, testbenches.' },
+      { id: 'sta', name: 'Static Timing Analysis & Synchronous Design', level: 'Intermediate', desc: 'Setup time, hold time, clock skew, jitter, critical path delay.' }
+    ],
+    graphNodes: [
+      { id: 'lut_arch', label: 'Look-Up Table (LUT) & CLB Architecture', status: 'mastered', x: 80, y: 160 },
+      { id: 'sta_analysis', label: 'Static Timing Analysis (Setup & Hold Slack)', status: 'mastered', x: 260, y: 120 },
+      { id: 'cdc', label: 'Clock Domain Crossing & Metastability Mitigation', status: 'active', x: 440, y: 180 },
+      { id: 'fsm_synth', label: 'FSM Synthesis & Pipelined Datapath Design', status: 'unvisited', x: 620, y: 130 },
+      { id: 'dsp_ram', label: 'DSP Blocks, Block RAM & Memory Controllers', status: 'unvisited', x: 800, y: 190 },
+      { id: 'hls_accel', label: 'High-Level Synthesis & AI Acceleration Fabric', status: 'unvisited', x: 920, y: 140 }
+    ],
+    graphEdges: [
+      { from: 'lut_arch', to: 'sta_analysis' },
+      { from: 'sta_analysis', to: 'cdc' },
+      { from: 'cdc', to: 'fsm_synth' },
+      { from: 'fsm_synth', to: 'dsp_ram' },
+      { from: 'dsp_ram', to: 'hls_accel' }
+    ],
+    questions: [
+      {
+        id: 'fpga_q1',
+        level: 1,
+        evolutionStage: 'Stage 1: Fundamentals (What)',
+        type: 'text',
+        mode: 'Text',
+        text: 'Explain the internal architecture of a modern FPGA Configurable Logic Block (CLB). How does a 6-input SRAM-based Look-Up Table (6-LUT) implement any arbitrary 6-variable Boolean function, and how do dedicated multiplexers, carry chains, and flip-flops cooperate within the slice?',
+        bloomLevel: 'Understanding',
+        expectedKeywords: ['lut', 'sram', 'clb', 'slice', 'multiplexer', 'truth table', 'flip-flop', 'carry chain', 'combinational'],
+        hints: {
+          level1: 'An n-input LUT consists of 2^n SRAM configuration memory cells connected to a 2^n-to-1 multiplexer tree.',
+          level2: 'The n input variables serve as address selection lines for the multiplexer tree to read out the programmed truth table bit.',
+          level3: 'Dedicated carry logic (e.g., CARRY4/CARRY8) provides ultra-fast ripple-carry bypass without consuming general routing fabric.',
+          level4: 'The output can be routed either combinational (bypassing flip-flop) or registered (through D-type flip-flop) for synchronous pipelining.'
+        },
+        reasonWhy: 'Stage 1 Fundamental: Tests foundational understanding of FPGA silicon architecture and logic mapping.',
+        industryApplication: 'Essential for RTL synthesis optimization, AMD Xilinx UltraScale+, and Intel Agilex architecture targeting.'
+      },
+      {
+        id: 'fpga_q2',
+        level: 2,
+        evolutionStage: 'Stage 2: Comparative & Causal (Why)',
+        type: 'mcq',
+        mode: 'MCQ',
+        text: 'In Static Timing Analysis (STA) of a synchronous register-to-register path operating at clock period T_clk = 5.0 ns (200 MHz), the parameters are: Clock-to-Q delay T_cq = 0.8 ns, maximum combinational logic delay T_comb = 3.6 ns, register setup time T_setup = 1.0 ns, and clock skew T_skew = 0.0 ns. What is the Setup Slack, and will this timing path close?',
+        options: [
+          'Setup Slack = -0.4 ns; timing VIOLATION occurs because data arrival time (5.4 ns) exceeds data required time (5.0 ns).',
+          'Setup Slack = +0.6 ns; timing CLOSES safely with 600 ps positive margin.',
+          'Setup Slack = 0.0 ns; timing is critically closed and immune to temperature variations.',
+          'Setup Slack cannot be evaluated without knowing the hold time of the destination register.'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: {
+          level1: 'Data Arrival Time = T_cq + T_comb = 0.8 ns + 3.6 ns = 4.4 ns.',
+          level2: 'Data Required Time for setup = T_clk + T_skew - T_setup = 5.0 ns + 0 - 1.0 ns = 4.0 ns (or relative to clock: total delay = 4.4 + 1.0 = 5.4 ns vs 5.0 ns period).',
+          level3: 'Setup Slack = Data Required Time - Data Arrival Time = 5.0 - (0.8 + 3.6 + 1.0) = 5.0 - 5.4 = -0.4 ns.',
+          level4: 'A negative slack (-400 ps) signifies that the signal arrives too late before the capturing clock edge, causing setup timing violation.'
+        },
+        reasonWhy: 'Stage 2 Comparative: Tests core Static Timing Analysis calculations and timing closure methodology.',
+        industryApplication: 'Standard daily requirement for digital ASIC and FPGA timing closure signoff engineers.'
+      },
+      {
+        id: 'fpga_q3',
+        level: 3,
+        evolutionStage: 'Stage 3: Engineering Design & Case Study',
+        type: 'mixed',
+        mode: 'Case Study',
+        text: 'Case Study: A PCIe Gen4 DMA streaming controller transfers 512-bit data words between a 100 MHz reference clock domain and a 250 MHz core processing clock domain. Explain why passing multi-bit binary counters across asynchronous clock domains directly causes catastrophic data corruption, and how an Asynchronous FIFO utilizing Gray-coded read/write pointers and 2-flip-flop synchronizers guarantees safe Clock Domain Crossing (CDC).',
+        bloomLevel: 'Application & Synthesis',
+        expectedKeywords: ['clock domain crossing', 'cdc', 'metastability', 'gray code', 'asynchronous fifo', '2-ff synchronizer', 'mtbf', 'pointer'],
+        hints: {
+          level1: 'In standard binary counting, multiple bits toggle simultaneously (e.g. 0111 to 1000 toggles 4 bits).',
+          level2: 'Due to slight routing delay differences, the receiving clock domain may sample intermediate transient states (e.g. 1111), corrupting the pointer.',
+          level3: 'Gray code guarantees that exactly ONE bit changes between consecutive counts, preventing multi-bit sampling skew.',
+          level4: 'A 2-flip-flop synchronizer chain provides sufficient settling time to resolve potential metastability, elevating MTBF to centuries.'
+        },
+        reasonWhy: 'Stage 3 Practical Design: Tests asynchronous design principles and metastability mitigation in complex SoCs.',
+        industryApplication: 'Critical for high-speed Ethernet MAC, PCIe controllers, DDR5 memory interfaces, and satellite avionics.'
+      },
+      {
+        id: 'fpga_q4',
+        level: 4,
+        evolutionStage: 'Stage 4: Optimization & Research Frontier',
+        type: 'mixed',
+        mode: 'Research Paper Mode',
+        text: 'Research Paper Inquiry: In hardware acceleration of Large Language Models (LLMs), memory bandwidth (HBM / GDDR6) rather than raw compute FLOPS creates the primary inference bottleneck. Compare the memory hierarchy and systolic datapath trade-offs between an FPGA-based systolic tensor array and a coarse-grained reconfigurable architecture (CGRA) for INT4 / FP8 quantized transformer inference.',
+        bloomLevel: 'Creation & Evaluation',
+        expectedKeywords: ['hbm', 'systolic array', 'cgra', 'quantization', 'memory bandwidth', 'fp8', 'transformer', 'throughput', 'pipelining'],
+        hints: {
+          level1: 'Analyze how systolic matrix arrays minimize memory access by reusing activations and weights across adjacent Processing Elements (PEs).',
+          level2: 'FPGA fine-grained routing overhead consumes significant dynamic power compared to CGRA word-level coarse interconnects.',
+          level3: 'High-Bandwidth Memory (HBM3) stacks provide >800 GB/s bandwidth, but feeding distributed DSP blocks requires wide AXI pipelining.',
+          level4: 'Evaluate how INT4/FP8 weight packing quadruples effective memory bandwidth compared to FP16.'
+        },
+        reasonWhy: 'Stage 4 Research Frontier: Explores cutting-edge reconfigurable AI accelerator hardware architectures.',
+        industryApplication: 'Central to hardware engineering at Groq, Tenstorrent, AMD Xilinx AI Engine, and Cerebras.'
+      }
+    ],
+    innovationChallenge: 'Design an automated high-level synthesis (HLS) pragma framework that automatically restructures C++ recursive graph neural networks into dynamically reconfigurable FPGA systolic pipelines without pipeline stalls.',
+    industryReadiness: {
+      engineerPerspective: 'Achieves timing closure on 400 MHz UltraScale+ designs with automated floorplanning and physical synthesis.',
+      researcherPerspective: 'Publishes at IEEE ISSCC/DAC on asynchronous network-on-chip (NoC) and reconfigurable AI processors.',
+      startupFounderPerspective: 'Benchmarks FPGA acceleration cost-per-inference vs NVIDIA L4 GPUs in edge vision deployments.'
+    }
   }
 };
 
+// Helper: Ensure every question object has hints accessible BOTH as array [0..3] AND as object properties .level1..4
+function normalizeQuestionHints(q) {
+  if (!q) return q;
+  let h1 = '', h2 = '', h3 = '', h4 = '';
+  if (Array.isArray(q.hints)) {
+    h1 = q.hints[0] || '';
+    h2 = q.hints[1] || '';
+    h3 = q.hints[2] || '';
+    h4 = q.hints[3] || '';
+  } else if (q.hints && typeof q.hints === 'object') {
+    h1 = q.hints.level1 || q.hints[0] || '';
+    h2 = q.hints.level2 || q.hints[1] || '';
+    h3 = q.hints.level3 || q.hints[2] || '';
+    h4 = q.hints.level4 || q.hints[3] || '';
+  }
+
+  // Create dual-access array with object keys
+  const normalized = [h1, h2, h3, h4];
+  normalized.level1 = h1;
+  normalized.level2 = h2;
+  normalized.level3 = h3;
+  normalized.level4 = h4;
+  q.hints = normalized;
+  return q;
+}
+
 // Universal Dynamic Topic Synthesizer:
-// Supports customizable question counts: 5, 10, 20, up to 30 questions on demand!
+// Supports customizable question counts: 5, 10, 20, up to 100 questions on demand!
 export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Domain', targetCount = null) {
-  const cleanTopic = rawTopic.trim();
+  const cleanTopic = (rawTopic || '').trim();
   const lower = cleanTopic.toLowerCase();
 
   let model = null;
-  // Check if topic matches curated library
-  for (const [key, bModel] of Object.entries(BENCHMARK_TOPICS)) {
-    if (lower === key || lower.includes(key) || key.includes(lower)) {
-      model = JSON.parse(JSON.stringify(bModel));
-      break;
+
+  // Prioritized and robust subject mapping:
+  // 1. Communication Engineering (prevents falling back to FPGA or MOSFET)
+  if (
+    lower.includes('communication') ||
+    lower.includes('telecom') ||
+    lower.includes('comm eng') ||
+    lower.includes('wireless') ||
+    lower.includes('signal processing') ||
+    lower.includes('ece-301')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.communication_engineering));
+  }
+  // 2. FPGA-Based VLSI (prevents confusing with MOSFET or discrete circuits)
+  else if (
+    lower.includes('fpga') ||
+    lower.includes('vlsi') ||
+    lower.includes('asic') ||
+    lower.includes('verilog') ||
+    lower.includes('vhdl') ||
+    lower.includes('ece-302')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.fpga_vlsi));
+  }
+  // 3. MOSFET & Semiconductor Physics
+  else if (
+    lower.includes('mosfet') ||
+    lower.includes('cmos') ||
+    lower.includes('semiconductor') ||
+    lower.includes('finfet') ||
+    lower.includes('ece-201')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.mosfet));
+  }
+  // 4. CNN & Computer Vision
+  else if (
+    lower.includes('cnn') ||
+    lower.includes('convolution') ||
+    lower.includes('vision') ||
+    lower.includes('resnet')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.cnn));
+  }
+  // 5. Transformers & LLM
+  else if (
+    lower.includes('transformer') ||
+    lower.includes('attention') ||
+    lower.includes('llm') ||
+    lower.includes('bert') ||
+    lower.includes('gpt')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.transformers));
+  }
+  // 6. Indian Constitution & Law
+  else if (
+    lower.includes('constitution') ||
+    lower.includes('law') ||
+    lower.includes('jurisprudence') ||
+    lower.includes('article')
+  ) {
+    model = JSON.parse(JSON.stringify(BENCHMARK_TOPICS.constitution));
+  }
+  // 7. General search across benchmark keys
+  else {
+    for (const [key, bModel] of Object.entries(BENCHMARK_TOPICS)) {
+      if (lower === key || lower.includes(key) || key.includes(lower)) {
+        model = JSON.parse(JSON.stringify(bModel));
+        break;
+      }
     }
   }
 
@@ -814,6 +1132,11 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
   // Expand questions to requested count (e.g. 5, 10, 20, up to 100)
   const qCount = targetCount ? Math.min(100, Math.max(1, targetCount)) : Math.max(5, model.questions?.length || 5);
   model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount);
+
+  // Normalize hints on every single question so both array and object lookups work
+  if (Array.isArray(model.questions)) {
+    model.questions = model.questions.map(normalizeQuestionHints);
+  }
 
   return model;
 }

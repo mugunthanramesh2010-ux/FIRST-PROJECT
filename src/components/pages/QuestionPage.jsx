@@ -100,10 +100,10 @@ export default function QuestionPage({
   const questionTitle = question?.questionText || question?.text || 'Explain the conceptual mechanism and governing equations for this topic.';
 
   return (
-    <div className="w-full max-w-[900px] mx-auto py-6 space-y-[24px] animate-fade-in text-left">
+    <div className="w-full max-w-[960px] mx-auto py-4 sm:py-6 space-y-6 animate-fade-in text-left flex flex-col items-center">
       
       {/* 1. TOP BAR: Question X / Y | Difficulty | Marks | Timer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm font-bold text-[#2D3748]">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-1 text-sm font-bold text-[#2D3748]">
         
         {/* Question Counter */}
         <div className="text-lg font-extrabold text-[#2D3748]">
@@ -135,14 +135,14 @@ export default function QuestionPage({
       </div>
 
       {/* 2. CENTER CARD: Question Statement */}
-      <div className="w-full max-w-[900px] mx-auto bg-[#FFFCF4] border border-[#E2D3A7] rounded-[18px] p-6 sm:p-[32px] shadow-[0px_8px_24px_rgba(183,121,31,0.08)]">
-        <h2 className="text-xl sm:text-[24px] font-bold text-[#2D3748] leading-[1.4] tracking-tight">
+      <div className="w-full bg-[#FFFCF4] border border-[#E2D3A7] rounded-[18px] p-6 sm:p-8 shadow-[0px_8px_24px_rgba(183,121,31,0.08)]">
+        <h2 className="text-xl sm:text-[24px] font-bold text-[#2D3748] leading-[1.4] tracking-tight break-words">
           {questionTitle}
         </h2>
       </div>
 
       {/* 3. ANSWER MODE INDICATOR OR SWITCHER */}
-      <div className="w-full max-w-[900px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3">
         {isMcqOnly ? (
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-[12px] bg-[#FFF3D6] border border-[#E2D3A7] text-xs font-bold text-[#8B5E34]">
             <CheckSquare className="w-4 h-4 text-[#B7791F]" />
@@ -188,11 +188,11 @@ export default function QuestionPage({
       </div>
 
       {/* 4. ANSWER AREA & BOTTOM BUTTONS */}
-      <form onSubmit={handleSubmit} className="w-full max-w-[900px] mx-auto space-y-6">
+      <form onSubmit={handleSubmit} className="w-full space-y-6">
         
         {answerMode === 'mcq' ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-3 w-full">
+            <div className="grid grid-cols-1 gap-3 w-full">
               {availableOptions.map((opt, idx) => {
                 const isSelected = selectedOption === idx;
                 return (
@@ -212,7 +212,7 @@ export default function QuestionPage({
                     }`}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span className="text-base font-semibold text-[#2D3748] flex-1">
+                    <span className="text-base font-semibold text-[#2D3748] flex-1 break-words">
                       {opt}
                     </span>
                   </div>
@@ -221,14 +221,14 @@ export default function QuestionPage({
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             <textarea
               value={textAnswer}
               onChange={(e) => setTextAnswer(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               placeholder="State your technical answer clearly. Articulate physical operational mechanisms, governing laws, or analytical derivations..."
-              className="w-full max-w-[900px] h-[220px] text-base sm:text-[18px] p-5 rounded-[14px] bg-[#FFFDF8] border border-[#E2D3A7] text-[#2D3748] outline-none resize-vertical leading-[1.6] shadow-inner focus:border-[#B7791F] focus:ring-3 focus:ring-[#B7791F]/15 transition-all font-sans"
+              className="w-full min-h-[220px] text-base sm:text-[18px] p-5 rounded-[14px] bg-[#FFFDF8] border border-[#E2D3A7] text-[#2D3748] outline-none resize-vertical leading-[1.6] shadow-inner focus:border-[#B7791F] focus:ring-3 focus:ring-[#B7791F]/15 transition-all font-sans break-words"
               required
             />
           </div>

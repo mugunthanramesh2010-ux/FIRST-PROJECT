@@ -52,14 +52,19 @@ export default function EnterpriseSidebar({
   return (
     <aside
       className={`fixed top-0 left-0 bottom-0 z-50 bg-[#FFF2CC] border-r border-[#E2D3A7] transition-all duration-300 flex flex-col justify-between select-none shadow-[2px_0_12px_rgba(183,121,31,0.04)] ${
-        isCollapsed ? 'w-[72px]' : 'w-[260px]'
+        isCollapsed
+          ? '-translate-x-full lg:translate-x-0 w-[260px] lg:w-[72px]'
+          : 'translate-x-0 w-[260px]'
       }`}
     >
       <div>
         {/* Brand Header */}
         <div className="h-[72px] border-b border-[#E2D3A7] px-4 flex items-center justify-between">
           <div
-            onClick={() => setActiveTab(isFaculty ? 'faculty-dashboard' : 'student-dashboard')}
+            onClick={() => {
+              setActiveTab(isFaculty ? 'faculty-dashboard' : 'student-dashboard');
+              if (typeof window !== 'undefined' && window.innerWidth < 1024) setIsCollapsed(true);
+            }}
             className={`flex items-center gap-2.5 cursor-pointer overflow-hidden ${
               isCollapsed ? 'justify-center w-full' : ''
             }`}
@@ -92,9 +97,9 @@ export default function EnterpriseSidebar({
           )}
         </div>
 
-        {/* Expand Trigger when collapsed */}
+        {/* Expand Trigger when collapsed on desktop */}
         {isCollapsed && (
-          <div className="p-3 border-b border-[#E2D3A7] flex justify-center">
+          <div className="p-3 border-b border-[#E2D3A7] hidden lg:flex justify-center">
             <button
               onClick={() => setIsCollapsed(false)}
               className="btn-icon w-8 h-8 text-[#718096] hover:text-[#B7791F] bg-[#FFF8E8] border-[#E2D3A7]"
@@ -113,7 +118,12 @@ export default function EnterpriseSidebar({
             return (
               <button
                 key={idx}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setIsCollapsed(true);
+                  }
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-xs font-bold transition-all ${
                   isCollapsed ? 'justify-center px-0' : ''
                 } ${

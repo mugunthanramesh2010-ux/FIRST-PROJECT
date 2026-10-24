@@ -161,7 +161,7 @@ export class AdaptiveEngine {
     };
   }
 
-  // Evaluate Text Answer using Local Deterministic Semantic Keyword Matcher
+  // Evaluate Text Answer using Local Deterministic Semantic Keyword & Equation Matcher
   evaluateTextAnswer(userAnswer, question) {
     const cleanAnswer = typeof userAnswer === 'string' ? userAnswer.toLowerCase().trim() : String(userAnswer || '').toLowerCase().trim();
     if (!cleanAnswer) {
@@ -178,8 +178,31 @@ export class AdaptiveEngine {
     const matched = [];
     const missing = [];
 
+    // Technical domain synonym expansion map
+    const synonymMap = {
+      'nyquist': ['sampling theorem', 'sampling rate', 'fs', '2*fm', '2f_max', '2 fmax', 'undersampling'],
+      'aliasing': ['spectral folding', 'overlap', 'folding frequency', 'high frequency folding', 'distortion'],
+      'anti-aliasing filter': ['low-pass filter', 'lpf', 'pre-filter', 'cutoff frequency', 'analog filter'],
+      'qpsk': ['4-psk', 'quadrature phase', '2 bits/symbol', 'constellation'],
+      '16-qam': ['qam', 'quadrature amplitude', '4 bits/symbol', 'constellation points', 'spectral efficiency'],
+      'friis': ['cascaded noise', 'noise temperature', 'f_total', 'system noise figure', 'lna'],
+      'ofdm': ['cyclic prefix', 'orthogonal frequency', 'subcarrier', 'isi', 'idft', 'fft'],
+      'lut': ['look-up table', 'truth table', 'sram cell', 'multiplexer', 'clb'],
+      'sta': ['static timing', 'setup slack', 'hold slack', 'data arrival', 'data required', 'clock period'],
+      'cdc': ['clock domain crossing', 'metastability', '2-ff', 'synchronizer', 'asynchronous fifo', 'gray code'],
+      'shannon capacity': ['c = b', 'bandwidth-power', 'snr', 'channel capacity', 'spectral efficiency'],
+      'threshold voltage': ['vth', 'vt', 'band bending', 'inversion', 'psi_s', '2phib']
+    };
+
     expected.forEach(kw => {
-      if (cleanAnswer.includes(kw.toLowerCase())) {
+      const kwLower = kw.toLowerCase();
+      let isFound = cleanAnswer.includes(kwLower);
+
+      if (!isFound && synonymMap[kwLower]) {
+        isFound = synonymMap[kwLower].some(syn => cleanAnswer.includes(syn));
+      }
+
+      if (isFound) {
         matched.push(kw);
       } else {
         missing.push(kw);
@@ -187,33 +210,37 @@ export class AdaptiveEngine {
     });
 
     const matchRatio = matched.length / Math.max(1, expected.length);
-    // Base score from keyword presence + depth bonus
+    // Base score from keyword and synonym presence
     let score = Math.round(matchRatio * 75);
-    if (cleanAnswer.length > 120) score += 15;
-    if (cleanAnswer.length > 250) score += 10;
+
+    // Reward equation and technical unit articulation (e.g., =, >=, <=, dB, ns, MHz, GHz, V, fs)
+    const hasEquations = /[=><\+\-\*\/\^]|log2|sqrt|db|ns|ps|mhz|ghz|khz|mv|vth|fs/i.test(cleanAnswer);
+    if (hasEquations) score += 10;
+    if (cleanAnswer.length > 120) score += 10;
+    if (cleanAnswer.length > 250) score += 5;
 
     // Deduct for excessive hint reliance
-    const hintPenalty = this.hintsUsedInCurrentQuestion * 6;
-    score = Math.max(10, Math.min(100, score - hintPenalty));
+    const hintPenalty = this.hintsUsedInCurrentQuestion * 5;
+    score = Math.max(15, Math.min(100, score - hintPenalty));
 
     // Dynamic Learning DNA update
-    if (matchRatio >= 0.7) {
+    if (matchRatio >= 0.6 || score >= 70) {
       this.knowledgeScore = Math.min(100, this.knowledgeScore + 4);
       this.reasoningScore = Math.min(100, this.reasoningScore + 5);
       this.learningVelocity = parseFloat((this.learningVelocity + 0.05).toFixed(2));
       this.dna.analytical = Math.min(99, this.dna.analytical + 2);
     } else {
-      this.knowledgeScore = Math.max(20, this.knowledgeScore - 3);
+      this.knowledgeScore = Math.max(20, this.knowledgeScore - 2);
       this.dna.memory = Math.max(30, this.dna.memory - 1);
     }
 
     let feedback = '';
     if (score >= 85) {
-      feedback = 'Outstanding reasoning! Strong conceptual articulation of core operational dynamics.';
+      feedback = `Outstanding technical synthesis! Strong conceptual mastery of ${matched.slice(0, 3).join(', ')}.`;
     } else if (score >= 65) {
-      feedback = `Good progress. You captured key aspects (${matched.slice(0, 3).join(', ')}). Review prerequisites for missing depth: ${missing.slice(0, 2).join(', ')}.`;
+      feedback = `Accurate technical articulation. Demonstrated core understanding of ${matched.join(', ')}. To reach full mastery, incorporate ${missing.slice(0, 2).join(', ')}.`;
     } else {
-      feedback = `Fundamental gaps detected. Missing critical elements: ${missing.join(', ')}. Activating prerequisite reinforcement.`;
+      feedback = `Partial formulation. Captured ${matched.length > 0 ? matched.join(', ') : 'initial intuition'}. Prerequisite review advised for: ${missing.slice(0, 3).join(', ')}.`;
     }
 
     return {

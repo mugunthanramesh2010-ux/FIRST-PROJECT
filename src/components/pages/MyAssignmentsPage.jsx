@@ -1,59 +1,48 @@
-import React, { useState } from 'react';
-import { Clock, Award, Play, Eye, RotateCw } from 'lucide-react';
-import { getCohortAssignments } from '../../services/db';
+import React, { useState, useEffect } from 'react';
+import { Clock, Award, Play, Eye, RotateCw, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getAssignmentsForStudent, getCohortAssignments } from '../../services/db';
 
 export default function MyAssignmentsPage({ currentUser, onStartAssignment, onViewResult }) {
-  const [assignments] = useState(() => {
-    const list = getCohortAssignments();
-    if (!list || list.length === 0) {
-      return [
-        {
-          id: 'asg-1',
-          assignmentName: 'Semiconductor Inversion & MOSFET Viva',
-          subject: 'Solid State Semiconductor Devices',
-          topic: 'MOSFET',
-          faculty: 'Dr. S. Ramanathan',
-          deadline: 'Today, 5:00 PM',
-          marks: 100,
-          questionCount: 10,
-          status: 'ACTIVE'
-        },
-        {
-          id: 'asg-2',
-          assignmentName: 'Deep Learning Convolutions & Backprop',
-          subject: 'Artificial Intelligence & Neural Networks',
-          topic: 'CNN',
-          faculty: 'Dr. K. Jayanthi',
-          deadline: 'Tomorrow, 11:59 PM',
-          marks: 100,
-          questionCount: 20,
-          status: 'IN_PROGRESS'
-        },
-        {
-          id: 'asg-3',
-          assignmentName: 'Constitutional Basic Structure Oral Review',
-          subject: 'Constitutional Law & Jurisprudence',
-          topic: 'Law',
-          faculty: 'Prof. M. S. Narayana',
-          deadline: 'Completed on 28 Sep',
-          marks: 100,
-          questionCount: 5,
-          status: 'COMPLETED'
-        }
-      ];
-    }
-    return list.map((a, idx) => ({
+  const [assignments, setAssignments] = useState(() => {
+    const list = getAssignmentsForStudent(currentUser);
+    return (list || []).map((a, idx) => ({
       id: a.id || `asg-${idx}`,
-      assignmentName: a.subjectName || a.assignmentName || 'Adaptive Viva Assessment',
-      subject: a.subject || 'Electronics and Communication',
-      topic: a.topic || 'MOSFET',
-      faculty: a.facultyName || a.faculty || 'Faculty In-Charge',
+      subjectId: a.subjectId || (a.subject?.toLowerCase().includes('communication') ? 'sub_comm_eng' : 'sub_custom'),
+      subjectCode: a.subjectCode || 'ECE-301',
+      assignmentName: a.subjectName || a.assignmentName || `${a.subject || 'Engineering'} Viva Assessment`,
+      subject: a.subject || 'Communication Engineering',
+      topic: a.topic || a.subject || 'Communication Engineering',
+      subtopic: a.subtopic || '',
+      faculty: a.facultyName || a.faculty || 'Dr. S. Ramanathan',
       deadline: a.deadlineMinutes ? `${a.deadlineMinutes} mins session` : (a.deadline || 'Active Deadline'),
       marks: a.totalMarks || 100,
-      questionCount: a.questionCount || (idx === 1 ? 20 : 10),
-      status: a.status || (idx === 0 ? 'ACTIVE' : (idx === 1 ? 'IN_PROGRESS' : 'COMPLETED'))
+      questionCount: a.questionCount || 10,
+      mode: a.mode || 'Mixed',
+      status: a.status || 'ACTIVE'
     }));
   });
+
+  // Re-sync assignments if user changes
+  useEffect(() => {
+    const list = getAssignmentsForStudent(currentUser);
+    if (list && list.length > 0) {
+      setAssignments(list.map((a, idx) => ({
+        id: a.id || `asg-${idx}`,
+        subjectId: a.subjectId || (a.subject?.toLowerCase().includes('communication') ? 'sub_comm_eng' : 'sub_custom'),
+        subjectCode: a.subjectCode || 'ECE-301',
+        assignmentName: a.subjectName || a.assignmentName || `${a.subject || 'Engineering'} Viva Assessment`,
+        subject: a.subject || 'Communication Engineering',
+        topic: a.topic || a.subject || 'Communication Engineering',
+        subtopic: a.subtopic || '',
+        faculty: a.facultyName || a.faculty || 'Dr. S. Ramanathan',
+        deadline: a.deadlineMinutes ? `${a.deadlineMinutes} mins session` : (a.deadline || 'Active Deadline'),
+        marks: a.totalMarks || 100,
+        questionCount: a.questionCount || 10,
+        mode: a.mode || 'Mixed',
+        status: a.status || 'ACTIVE'
+      })));
+    }
+  }, [currentUser]);
 
   return (
     <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto text-left py-4">

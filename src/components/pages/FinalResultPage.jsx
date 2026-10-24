@@ -38,16 +38,72 @@ export default function FinalResultPage({
     { title: 'Authenticity', value: `${authenticityScore}%`, icon: ShieldCheck, color: '#2F855A', bg: '#E6F4EA' }
   ];
 
-  const strongConcepts = [
-    'Semiconductor Electrostatics & Depletion Width',
-    'Threshold Voltage (Vt) Band Bending Formulation',
-    'Linear & Saturation Regional Operating Modes'
-  ];
+  // Subject-Aware Dynamic Concept Breakdown: Grounded in active subject rather than hardcoded MOSFET
+  const currentSubj = (sessionResult?.subject || sessionResult?.topic || '').toLowerCase();
+  
+  let strongConcepts = [];
+  let weakConcepts = [];
 
-  const weakConcepts = [
-    'Short Channel Subthreshold Leakage (DIBL)',
-    'Miller Capacitance Dynamic Switching Optimization'
-  ];
+  if (currentSubj.includes('communication') || currentSubj.includes('telecom') || currentSubj.includes('signal')) {
+    strongConcepts = [
+      'Nyquist Sampling Theorem & Anti-Aliasing Filtering',
+      'Digital Modulation Constellations (QPSK / 16-QAM)',
+      'Cascaded Noise Figure & Friis Frontend Optimization'
+    ];
+    weakConcepts = [
+      'Shannon Channel Capacity & Bandwidth-Power Trade-off',
+      'Multipath Fading & OFDM Cyclic Prefix Delay Spread'
+    ];
+  } else if (currentSubj.includes('fpga') || currentSubj.includes('vlsi') || currentSubj.includes('verilog')) {
+    strongConcepts = [
+      'SRAM Look-Up Table (LUT) Logic Mapping & CLB Slices',
+      'Static Timing Analysis (Setup & Hold Slack Calculations)',
+      'Synchronous Pipelining & Critical Path Delay'
+    ];
+    weakConcepts = [
+      'Clock Domain Crossing & 2-FF Metastability Mitigation',
+      'Asynchronous FIFO Gray-Coded Pointer Synchronization'
+    ];
+  } else if (currentSubj.includes('cnn') || currentSubj.includes('vision') || currentSubj.includes('deep learning')) {
+    strongConcepts = [
+      'Convolutional Feature Extraction & Receptive Fields',
+      'Backpropagation Gradient Flow & Activation Functions'
+    ];
+    weakConcepts = [
+      'Vanishing Gradient Mitigation & Residual Skip Connections',
+      'Batch Normalization Dynamics Under Overfitting'
+    ];
+  } else if (currentSubj.includes('constitution') || currentSubj.includes('law')) {
+    strongConcepts = [
+      'Preamble Sovereign Values & Separation of Powers',
+      'Article 21 Procedural Due Process Jurisprudence'
+    ];
+    weakConcepts = [
+      'Article 368 Basic Structure Inviolability Constraints',
+      'Writ Jurisdiction Scope (Art 32 vs Art 226)'
+    ];
+  } else if (currentSubj.includes('mosfet') || currentSubj.includes('semiconductor')) {
+    strongConcepts = [
+      'Semiconductor Electrostatics & Depletion Width',
+      'Threshold Voltage (Vt) Band Bending Formulation',
+      'Linear & Saturation Regional Operating Modes'
+    ];
+    weakConcepts = [
+      'Short Channel Subthreshold Leakage (DIBL)',
+      'Miller Capacitance Dynamic Switching Optimization'
+    ];
+  } else {
+    const topicTitle = sessionResult?.topic || sessionResult?.subject || 'Core Discipline';
+    strongConcepts = [
+      `Foundational Operational Axioms of ${topicTitle}`,
+      `Steady-State System Response & Equilibrium Dynamics`,
+      `Governing Mathematical Parameters & Formulation`
+    ];
+    weakConcepts = [
+      `Non-Linear Boundary Condition Stress Limits`,
+      `Asymptotic Optimization & Edge Case Fault Tolerance`
+    ];
+  }
 
   return (
     <div className="space-y-[32px] animate-fade-in max-w-[1280px] mx-auto py-4 text-left">

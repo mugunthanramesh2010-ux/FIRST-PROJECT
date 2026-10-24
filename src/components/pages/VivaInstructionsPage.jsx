@@ -7,7 +7,7 @@ export default function VivaInstructionsPage({
   onBack
 }) {
   const subject = topicModel?.domain || 'Electronics and Communication Engineering (ECE)';
-  const topic = topicModel?.title || 'MOSFET';
+  const topic = topicModel?.title || 'Communication Engineering';
   const questionCount = topicModel?.questions?.length || 10;
   const marks = 100;
   const timeLimit = '15 Minutes';
@@ -47,7 +47,7 @@ export default function VivaInstructionsPage({
       </div>
 
       {/* Main Instructions Card */}
-      <div className="max-w-2xl mx-auto text-left">
+      <div className="w-full max-w-3xl mx-auto text-left">
         <div className="ent-card p-6 sm:p-8 space-y-6 bg-[#FFFCF4] border-[#E2D3A7]">
           
           <div className="space-y-1 border-b border-[#E2D3A7] pb-4">

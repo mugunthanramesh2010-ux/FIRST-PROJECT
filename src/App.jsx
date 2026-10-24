@@ -408,8 +408,8 @@ export default function App() {
 
           {/* 2. MAIN APPLICATION WORKSPACE */}
           <div
-            className={`flex-1 flex flex-col min-w-0 transition-all duration-300 pb-16 ${
-              isSidebarCollapsed ? 'pl-[72px]' : 'pl-[260px]'
+            className={`flex-1 flex flex-col min-w-0 transition-all duration-300 pb-16 pl-0 ${
+              isSidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
             }`}
           >
             {/* Top Enterprise Header (Height 72px) */}
@@ -424,8 +424,8 @@ export default function App() {
               onOpenInstallModal={() => setInstallModalOpen(true)}
             />
 
-            {/* Main Page Router (Max 5-7 major elements per screen, 1280px Content Width) */}
-            <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-[1280px] w-full mx-auto">
+            {/* Main Page Router (Centered within available space beside sidebar) */}
+            <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center">
               
               {/* STUDENT WORKFLOW PAGES (Pages 8 to 17 & 24) */}
               {currentUser?.role === 'student' && (

@@ -25,7 +25,7 @@ export default function AnswerEvaluationPage({
       </div>
 
       {/* Main Evaluation Card */}
-      <div className="max-w-2xl mx-auto text-left">
+      <div className="w-full max-w-3xl mx-auto text-left">
         <div className="ent-card p-6 sm:p-8 space-y-6 bg-[#FFFCF4] border-[#E2D3A7]">
           
           {/* Status Display: Correct / Partially Correct / Needs Improvement */}

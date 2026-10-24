@@ -94,7 +94,7 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
       </div>
 
       {/* Main Form Container */}
-      <div className="w-full max-w-[520px] mx-auto">
+      <div className="w-full max-w-2xl mx-auto">
         <div className="ent-card p-6 sm:p-8 space-y-6 bg-[#FFFCF4] border-[#E2D3A7]">
           
           <div className="flex items-center gap-3 border-b border-[#E2D3A7] pb-4">
@@ -104,6 +104,33 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
             <div>
               <h2 className="text-lg font-bold text-[#2D3748]">New Viva Assignment</h2>
               <p className="text-xs text-[#718096]">Custom syllabus module with 1 to 100 questions</p>
+            </div>
+          </div>
+
+          {/* Quick Subject Presets */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold text-[#718096] uppercase tracking-wider block">Quick Subject Templates</span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { name: 'Communication Engineering', topic: 'Communication Engineering' },
+                { name: 'FPGA-Based VLSI', topic: 'FPGA-Based VLSI' },
+                { name: 'Semiconductor Physics', topic: 'MOSFET' },
+                { name: 'Deep Learning', topic: 'Convolutional Neural Networks' }
+              ].map((preset) => (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    assignmentName: `${preset.name} Coursework Assessment`,
+                    subject: preset.name,
+                    topic: preset.topic
+                  }))}
+                  className="px-3 py-1.5 rounded-[10px] text-xs font-bold bg-[#FFF8E8] text-[#8B5E34] border border-[#E2D3A7] hover:bg-[#FFF3D6] hover:border-[#B7791F] transition-all cursor-pointer"
+                >
+                  + {preset.name}
+                </button>
+              ))}
             </div>
           </div>
 

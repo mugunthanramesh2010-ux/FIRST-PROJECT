@@ -31,6 +31,7 @@ const DEFAULT_USERS = [
     year: 'III',
     section: 'A',
     role: 'student',
+    assignedSubjects: ['sub_comm_eng', 'sub_vlsi_fpga', 'sub_semiconductor'],
     passwordHash: '3b098b671a5c4e8b3873998b609919f6a73c0f47e30d433b93f2f81156828be9', // hashed 'password123'
     failedAttempts: 0,
     isLocked: false,
@@ -63,11 +64,122 @@ const DEFAULT_USERS = [
     year: 'ALL',
     section: 'ALL',
     role: 'faculty',
+    taughtSubjects: ['sub_comm_eng', 'sub_vlsi_fpga', 'sub_semiconductor'],
     passwordHash: '3b098b671a5c4e8b3873998b609919f6a73c0f47e30d433b93f2f81156828be9', // 'password123'
     failedAttempts: 0,
     isLocked: false,
     mustChangePassword: false,
     createdAt: new Date().toISOString()
+  }
+];
+
+// STABLE SUBJECT REGISTRY (Add & Fix Only - Preserves all existing models)
+export const SYSTEM_SUBJECTS = [
+  {
+    id: 'sub_comm_eng',
+    code: 'ECE-301',
+    name: 'Communication Engineering',
+    fullName: 'Analog and Digital Communication Engineering',
+    department: 'Electronics and Communication Engineering (ECE)',
+    year: 'III',
+    semester: 'V',
+    category: 'Core Engineering',
+    topics: [
+      'Amplitude & Frequency Modulation (AM/FM/PM)',
+      'Digital Modulation (BPSK, QPSK, 16-QAM)',
+      'Nyquist Sampling & Reconstruction Theorem',
+      'Shannon Channel Capacity & Bandwidth Trade-off',
+      'Noise Analysis & AWGN Channels',
+      'Multiplexing & Multiple Access (TDM/FDM/OFDM)',
+      'Phase-Locked Loops & Carrier Recovery',
+      'Antennas & RF Wave Propagation'
+    ],
+    defaultTopic: 'Communication Engineering',
+    prerequisites: ['Signals & Systems', 'Probability & Random Processes', 'Fourier Analysis'],
+    description: 'Covers modulation, sampling theory, Shannon capacity, digital communication transceivers, and AWGN channel characteristics.'
+  },
+  {
+    id: 'sub_vlsi_fpga',
+    code: 'ECE-302',
+    name: 'FPGA-Based VLSI Design',
+    fullName: 'Digital System Design using FPGA & VLSI Architecture',
+    department: 'Electronics and Communication Engineering (ECE)',
+    year: 'III',
+    semester: 'V',
+    category: 'Core Engineering',
+    topics: [
+      'Verilog/VHDL RTL Modeling & Synthesis',
+      'FPGA Architecture (LUTs, CLBs, Interconnects, DSP Slices)',
+      'Static Timing Analysis (Setup & Hold Time, Slack)',
+      'Clock Domain Crossing (CDC) & Metastability',
+      'Finite State Machine (FSM) Synthesis',
+      'ASIC vs FPGA Architectural Trade-offs',
+      'Digital Signal Processing on FPGA'
+    ],
+    defaultTopic: 'FPGA-Based VLSI',
+    prerequisites: ['Digital Electronics', 'Computer Organization', 'Logic Design'],
+    description: 'Hardware description languages, programmable logic devices, timing closure, and synthesis for FPGA architectures.'
+  },
+  {
+    id: 'sub_semiconductor',
+    code: 'ECE-201',
+    name: 'Semiconductor Device Physics (MOSFET & CMOS)',
+    fullName: 'Solid State Electronic Devices & Semiconductor Physics',
+    department: 'Electronics and Communication Engineering (ECE)',
+    year: 'II',
+    semester: 'III',
+    category: 'Core Engineering',
+    topics: [
+      'MOSFET Electrostatics & Inversion Layer',
+      'Threshold Voltage Formulation',
+      'Drain Current Derivation & Saturation',
+      'Short-Channel Effects (DIBL, Velocity Saturation)',
+      'CMOS Inverter Transfer Characteristics',
+      'FinFET & Gate-All-Around (GAA) Architectures'
+    ],
+    defaultTopic: 'MOSFET',
+    prerequisites: ['Engineering Physics', 'Basic Electrical Engineering'],
+    description: 'Semiconductor physics, energy band diagrams, carrier transport, and MOSFET modeling.'
+  },
+  {
+    id: 'sub_deep_learning',
+    code: 'CSE-401',
+    name: 'Artificial Intelligence & Deep Learning',
+    fullName: 'Convolutional Networks, Transformers & Neural Optimization',
+    department: 'Computer Science Engineering / AI & ML',
+    year: 'IV',
+    semester: 'VII',
+    category: 'Specialization',
+    topics: [
+      'Convolutional Neural Networks (CNN)',
+      'Backpropagation & Gradient Descent Optimization',
+      'Self-Attention & Transformer Architecture',
+      'Generative Models & Latent Diffusion',
+      'Model Quantization & Edge Deployment'
+    ],
+    defaultTopic: 'CNN',
+    prerequisites: ['Linear Algebra', 'Multivariate Calculus', 'Python Programming'],
+    description: 'Deep neural network architectures, computer vision, natural language transformers, and training optimization.'
+  },
+  {
+    id: 'sub_const_law',
+    code: 'LAW-101',
+    name: 'Constitutional Law & Jurisprudence',
+    fullName: 'Constitutional Governance, Basic Structure & Human Rights',
+    department: 'Law & Governance',
+    year: 'II',
+    semester: 'III',
+    category: 'Interdisciplinary',
+    topics: [
+      'Basic Structure Doctrine (Kesavananda Bharati)',
+      'Fundamental Rights (Part III) & Due Process',
+      'Writ Jurisdiction (Article 32 & 226)',
+      'Judicial Review & Federal Separation of Powers',
+      'Emerging Privacy & Algorithmic Rights'
+    ],
+    defaultTopic: 'Indian Constitution',
+    prerequisites: ['Introduction to Jurisprudence', 'Political Science'],
+    description: 'Constitutional framework, constitutional amendments, fundamental rights, and judicial review.'
   }
 ];
 
@@ -94,7 +206,33 @@ export function initDatabase() {
   const users = getFromStorage(STORAGE_KEYS.USERS, null);
   if (!users || users.length === 0) {
     setInStorage(STORAGE_KEYS.USERS, DEFAULT_USERS);
+  } else {
+    // Ensure existing user records have assignedSubjects if missing
+    let updatedUsers = false;
+    const patchedUsers = users.map(u => {
+      if (u.role === 'student' && (!u.assignedSubjects || u.assignedSubjects.length === 0)) {
+        updatedUsers = true;
+        return { ...u, assignedSubjects: ['sub_comm_eng', 'sub_vlsi_fpga', 'sub_semiconductor'] };
+      }
+      return u;
+    });
+    if (updatedUsers) {
+      setInStorage(STORAGE_KEYS.USERS, patchedUsers);
+    }
   }
+
+  // Ensure Communication Engineering and verified assignments are initialized
+  const assignments = getFromStorage(ASSIGNMENTS_KEY, null);
+  if (!assignments || !assignments.some(a => (a.subject || a.subjectName || '').toLowerCase().includes('communication'))) {
+    const currentList = Array.isArray(assignments) ? assignments : [];
+    const missing = DEFAULT_COHORT_ASSIGNMENTS.filter(
+      def => !currentList.some(curr => curr.id === def.id || (curr.subject && curr.subject.toLowerCase() === def.subject.toLowerCase()))
+    );
+    if (missing.length > 0) {
+      setInStorage(ASSIGNMENTS_KEY, [...missing, ...currentList]);
+    }
+  }
+
   const logs = getFromStorage(STORAGE_KEYS.AUDIT_LOGS, null);
   if (!logs) {
     setInStorage(STORAGE_KEYS.AUDIT_LOGS, [
@@ -591,37 +729,147 @@ export function saveStudentTimingRecord(studentRegNo, record) {
 // Cohort Subject Assignment & 1000+ Student File Records
 const ASSIGNMENTS_KEY = 'viva_cohort_assignments_v1';
 
+export const DEFAULT_COHORT_ASSIGNMENTS = [
+  {
+    id: 'asg_comm_eng_01',
+    subjectId: 'sub_comm_eng',
+    subjectCode: 'ECE-301',
+    subject: 'Communication Engineering',
+    subjectName: 'Communication Engineering Viva Assessment',
+    topic: 'Communication Engineering',
+    subtopic: 'Analog & Digital Modulation, Nyquist Sampling and Shannon Capacity',
+    assignedTo: 'Whole Class (All Cohort - 1000 Members)',
+    department: 'Electronics and Communication Engineering (ECE)',
+    facultyName: 'Dr. S. Ramanathan',
+    facultyId: 'FAC-ECE-01',
+    totalMarks: 100,
+    deadlineMinutes: 15,
+    questionCount: 10,
+    status: 'ACTIVE',
+    mode: 'Mixed',
+    assignedDate: new Date().toLocaleDateString()
+  },
+  {
+    id: 'asg_vlsi_fpga_02',
+    subjectId: 'sub_vlsi_fpga',
+    subjectCode: 'ECE-302',
+    subject: 'FPGA-Based VLSI Design',
+    subjectName: 'FPGA Architecture & Static Timing Analysis Viva',
+    topic: 'FPGA-Based VLSI',
+    subtopic: 'LUT Architecture, Clock Domain Crossing & Timing Closure',
+    assignedTo: 'Whole Class (All Cohort - 1000 Members)',
+    department: 'Electronics and Communication Engineering (ECE)',
+    facultyName: 'Dr. S. Ramanathan',
+    facultyId: 'FAC-ECE-01',
+    totalMarks: 100,
+    deadlineMinutes: 20,
+    questionCount: 10,
+    status: 'ACTIVE',
+    mode: 'Mixed',
+    assignedDate: new Date().toLocaleDateString()
+  },
+  {
+    id: 'asg_semi_mosfet_03',
+    subjectId: 'sub_semiconductor',
+    subjectCode: 'ECE-201',
+    subject: 'Solid State Semiconductor Devices',
+    subjectName: 'Semiconductor Inversion & MOSFET Viva',
+    topic: 'MOSFET',
+    subtopic: 'Gate Oxide Electrostatics & Threshold Inversion',
+    assignedTo: 'Whole Class (All Cohort - 1000 Members)',
+    department: 'Electronics and Communication Engineering (ECE)',
+    facultyName: 'Dr. S. K. Narayanan',
+    facultyId: 'FAC-ECE-02',
+    totalMarks: 100,
+    deadlineMinutes: 15,
+    questionCount: 10,
+    status: 'ACTIVE',
+    mode: 'Mixed',
+    assignedDate: new Date().toLocaleDateString()
+  }
+];
+
 export function getCohortAssignments() {
-  return getFromStorage(ASSIGNMENTS_KEY, [
-    {
-      id: 'assign_default',
-      subjectName: 'Semiconductor Device Physics (MOSFET & CMOS)',
-      assignedTo: 'Whole Class (All Cohort - 1000 Members)',
-      facultyName: 'Dr. S. K. Narayanan',
-      totalMarks: 100,
-      deadlineMinutes: 15,
-      status: 'ACTIVE',
-      assignedDate: new Date().toLocaleDateString()
+  return getFromStorage(ASSIGNMENTS_KEY, DEFAULT_COHORT_ASSIGNMENTS);
+}
+
+export function getAllSubjects() {
+  const custom = getFromStorage('viva_custom_subjects_v1', []);
+  return [...SYSTEM_SUBJECTS, ...custom];
+}
+
+export function getSubjectById(subjectIdOrName) {
+  if (!subjectIdOrName) return null;
+  const all = getAllSubjects();
+  const lower = String(subjectIdOrName).toLowerCase().trim();
+  return (
+    all.find(s => s.id === subjectIdOrName || s.code.toLowerCase() === lower || s.name.toLowerCase() === lower) ||
+    all.find(s => s.name.toLowerCase().includes(lower) || lower.includes(s.name.toLowerCase())) ||
+    null
+  );
+}
+
+export function getAssignmentsForStudent(student) {
+  const all = getCohortAssignments();
+  if (!student) return all;
+  
+  const dept = (student.department || '').toLowerCase();
+  const isEce = dept.includes('ece') || dept.includes('communication') || dept.includes('electronics');
+  
+  // Return all assignments that are assigned to the whole class, or specifically to student's department or assignedSubjects
+  const filtered = all.filter(a => {
+    if (!a.assignedTo || a.assignedTo.includes('Whole Class') || a.assignedTo.includes('All Cohort')) {
+      return true;
     }
-  ]);
+    if (student.assignedSubjects && a.subjectId && student.assignedSubjects.includes(a.subjectId)) {
+      return true;
+    }
+    if (a.department && isEce && a.department.toLowerCase().includes('ece')) {
+      return true;
+    }
+    if (student.section && a.assignedTo.includes(student.section)) {
+      return true;
+    }
+    if (student.regNo && a.assignedTo.includes(student.regNo)) {
+      return true;
+    }
+    return false;
+  });
+
+  return filtered.length > 0 ? filtered : all;
 }
 
 export function saveCohortAssignment(assignment) {
   const assignments = getCohortAssignments();
+  
+  // Map to verified subject if available
+  const matchedSubject = getSubjectById(assignment.subjectId || assignment.subject || assignment.subjectName);
+
   const newAssignment = {
-    id: 'assign_' + Date.now(),
-    subjectName: assignment.subjectName,
+    id: assignment.id || ('assign_' + Date.now()),
+    subjectId: matchedSubject ? matchedSubject.id : (assignment.subjectId || 'sub_custom_' + Date.now()),
+    subjectCode: matchedSubject ? matchedSubject.code : (assignment.subjectCode || 'GEN-101'),
+    subject: matchedSubject ? matchedSubject.name : (assignment.subject || assignment.subjectName),
+    subjectName: assignment.subjectName || (matchedSubject ? `${matchedSubject.name} Viva Assessment` : 'Oral Assessment'),
+    topic: assignment.topic || (matchedSubject ? matchedSubject.defaultTopic : 'Engineering Viva'),
+    subtopic: assignment.subtopic || '',
     assignedTo: assignment.assignedTo || 'Whole Class (All Cohort - 1000 Members)',
+    department: assignment.department || (matchedSubject ? matchedSubject.department : 'Engineering'),
     facultyName: assignment.facultyName || 'Faculty In-Charge',
+    facultyId: assignment.facultyId || 'FAC-01',
     totalMarks: assignment.totalMarks || 100,
     deadlineMinutes: assignment.deadlineMinutes || 15,
+    questionCount: assignment.questionCount || 10,
+    difficultyPolicy: assignment.difficultyPolicy || 'Adaptive (Bloom Dynamic Scale)',
+    hintPolicy: assignment.hintPolicy || 'Progressive 4-Level Guidance',
+    mode: assignment.mode || 'Mixed',
     status: 'ACTIVE',
     assignedDate: new Date().toLocaleDateString(),
     ...assignment
   };
   assignments.unshift(newAssignment);
   setInStorage(ASSIGNMENTS_KEY, assignments);
-  logAudit('COHORT_ASSIGNMENT_CREATED', 'FACULTY', `Assigned "${newAssignment.subjectName}" to ${newAssignment.assignedTo}`);
+  logAudit('COHORT_ASSIGNMENT_CREATED', 'FACULTY', `Assigned "${newAssignment.subject}" (${newAssignment.subjectCode}) to ${newAssignment.assignedTo}`);
   return newAssignment;
 }
 

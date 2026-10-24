@@ -11,29 +11,51 @@ export default function ProgressiveHintEngine({
 }) {
   if (!isOpen) return null;
 
+  const getHintText = (lvl) => {
+    const idx = lvl - 1;
+    if (Array.isArray(question?.hints) && question.hints[idx]) {
+      return question.hints[idx];
+    }
+    if (question?.hints && question.hints[`level${lvl}`]) {
+      return question.hints[`level${lvl}`];
+    }
+    // Dynamic contextual fallback grounded in the actual question keywords
+    const keyword = question?.expectedKeywords?.[0] || 'the governing principle';
+    if (lvl === 1) {
+      return `Identify the foundational operational laws and primary parameters governing ${keyword}.`;
+    }
+    if (lvl === 2) {
+      return `Analyze how primary input excitations alter internal equilibrium or state variables in this system.`;
+    }
+    if (lvl === 3) {
+      return `Examine the mathematical formulations, boundary conditions, or circuit/signal relationships involved.`;
+    }
+    return `Synthesize the complete step-by-step causal derivation or engineering trade-off for this scenario.`;
+  };
+
   const hintTiers = [
     {
       level: 1,
       title: 'Level 1: Tiny Clue',
-      description: question?.hints?.[0] || 'Consider the boundary condition at the semiconductor-oxide interface under equilibrium.',
+      description: getHintText(1),
       note: 'Foundational concept reminder'
     },
     {
       level: 2,
       title: 'Level 2: Concept Direction',
-      description: question?.hints?.[1] || 'Relate the applied gate bias directly to band bending and surface potential (ψs = 2ψB).',
+      description: getHintText(2),
       note: 'Directional principle hint'
     },
     {
       level: 3,
       title: 'Level 3: Structured Guidance',
-      description: question?.hints?.[2] || 'Examine how mobile carrier inversion alters the electric field gradient across the depletion region.',
+      description: getHintText(3),
       note: 'Structural analytical guidance'
     },
     {
       level: 4,
       title: 'Level 4: Reasoning Path',
-      description: question?.hints?.[3] || 'Combine Gauss law with Poisson equation to derive the channel charge proportionality equation.',
+      description: getHintText(4),
       note: 'Final cognitive pathway'
     }
   ];
@@ -42,7 +64,7 @@ export default function ProgressiveHintEngine({
   const isMaxLevel = currentLevel >= 4;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#2D3748]/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[70] bg-[#2D3748]/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className="ent-card max-w-lg w-full bg-[#FFFCF4] border-[#E2D3A7] p-6 sm:p-8 space-y-6 shadow-[0px_12px_32px_rgba(183,121,31,0.15)]">
         
         {/* Header */}
