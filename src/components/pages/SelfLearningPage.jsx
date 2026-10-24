@@ -31,7 +31,7 @@ export default function SelfLearningPage({ onTopicSelected }) {
 
   const questionPresets = [5, 10, 15, 20, 25, 30, 50, 75, 100];
 
-  const handleStart = (topicName) => {
+  const handleStart = async (topicName) => {
     const chosen = topicName || topicInput.trim() || 'Communication Engineering';
     const count = Math.min(100, Math.max(1, parseInt(questionCount, 10) || 10));
 

@@ -384,7 +384,8 @@ export default function QuestionPage({
                 );
               })}
             </div>
-          ) : (
+          </div>
+        ) : (
             <div className="space-y-2">
               <textarea
                 value={textAnswer}
@@ -427,23 +428,7 @@ export default function QuestionPage({
               <Send className="w-5 h-5 ml-1" />
             </button>
           </div>
-        ) : (
-          <div className="space-y-2 w-full">
-            <textarea
-              value={textAnswer}
-              onChange={(e) => setTextAnswer(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              placeholder="State your technical answer clearly. Articulate physical operational mechanisms, governing laws, or analytical derivations..."
-              className="w-full min-h-[220px] text-base sm:text-[18px] p-5 rounded-[14px] bg-[#FFFDF8] border border-[#E2D3A7] text-[#2D3748] outline-none resize-vertical leading-[1.6] shadow-inner focus:border-[#B7791F] focus:ring-3 focus:ring-[#B7791F]/15 transition-all font-sans break-words"
-              required
-            />
-          </div>
-        )}
-
         </form>
-
-      </div>
 
     </div>
   );

@@ -49,9 +49,11 @@ export default function AnswerEvaluationPage({
         </button>
       </div>
 
-      {/* Main Evaluation Card */}
-      <div className="w-full max-w-3xl mx-auto text-left">
-        <div className="ent-card p-6 sm:p-8 space-y-6 bg-[#FFFCF4] border-[#E2D3A7]">
+      {/* 2-Column Evaluation Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (7 cols): Main Evaluation Card */}
+        <div className="lg:col-span-7">
+          <div className="ent-card p-6 sm:p-8 space-y-6 bg-[#FFFCF4] border-[#E2D3A7]">
           
           {/* Status Display: Correct / Partially Correct / Needs Improvement */}
           <div className="flex items-center gap-4 border-b border-[#E2D3A7] pb-6">
