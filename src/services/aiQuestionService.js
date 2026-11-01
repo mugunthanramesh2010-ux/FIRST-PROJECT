@@ -278,6 +278,12 @@ export function validateQuestionPackage(pkg, topic = '') {
 
   const sanitized = {
     id: qId,
+    subject: pkg.subject || '',
+    topic: pkg.topic || topic || '',
+    concept: pkg.concept || pkg.topic || topic || '',
+    learningObjective: pkg.learningObjective || '',
+    format: pkg.format || (validatedType === 'mcq' ? 'MCQ' : 'Theory'),
+    diagramSvg: pkg.diagramSvg || null,
     level: pkg.level || 1,
     bloomLevel: pkg.bloomLevel || 'Understanding',
     type: validatedType,
@@ -304,7 +310,7 @@ export function validateQuestionPackage(pkg, topic = '') {
 }
 
 // Normalize question structure, enforce 4 progressive anti-leak hints, and rotate/shuffle options
-export function normalizeQuestion(q, idx, topic) {
+export function normalizeQuestion(q, idx, topic, subject = '') {
   const validation = validateQuestionPackage(q, topic);
   const sanitized = validation.sanitized;
 
@@ -314,6 +320,13 @@ export function normalizeQuestion(q, idx, topic) {
   } else {
     sanitized.id = `q_ai_${idx + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   }
+
+  sanitized.subject = q.subject || subject || sanitized.subject || topic;
+  sanitized.topic = q.topic || topic || sanitized.topic;
+  sanitized.concept = q.concept || sanitized.concept || sanitized.topic;
+  if (q.diagramSvg) sanitized.diagramSvg = q.diagramSvg;
+  if (q.learningObjective) sanitized.learningObjective = q.learningObjective;
+  if (q.format) sanitized.format = q.format;
 
   // Shuffle MCQ options and systematically rotate correct answer position across choices (A, B, C, D)
   // Ensures Option A is NEVER statically correct; shifts dynamically to 1st, 2nd, 3rd, or 4th position

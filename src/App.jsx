@@ -170,8 +170,8 @@ export default function App() {
     if (!rawQ) return null;
     const isStudentAssessment = currentUser?.role === 'student' || Boolean(activeAssignmentId);
     const resolvedSubject = rawQ.subject || topicModel?.subject || activeSubjectName || 'Academic Discipline';
-    const resolvedTopic = rawQ.topic || topicModel?.topic || (activeSubjectName ? activeSubjectName + ' Core Topics' : 'Fundamentals');
-    const resolvedConcept = rawQ.concept || (resolvedTopic ? resolvedTopic + ' Principles' : 'Foundations');
+    const resolvedTopic = rawQ.topic || topicModel?.topic || topicModel?.title || 'Syllabus Topic';
+    const resolvedConcept = rawQ.concept || rawQ.topic || resolvedTopic;
 
     if (!isStudentAssessment) {
       return {
@@ -193,8 +193,24 @@ export default function App() {
   // Topic & Subject Selection (Any Subject, 1 to 100 Questions, Assigned Mode)
   const handleTopicSelected = (newModel, subjectName = '', totalMarks = 100, mode = 'Mixed', assignmentId = null) => {
     setActiveAssignmentId(assignmentId || null);
-    setTopicModel(newModel);
-    if (subjectName) setActiveSubjectName(subjectName);
+    const authSubject = subjectName || newModel?.subject || newModel?.domain || 'Academic Discipline';
+    const authTopic = newModel?.topic || newModel?.title || 'Core Topic';
+
+    // Authoritative propagation: Ensure model and every single question carries authoritative subject and topic
+    const patchedModel = {
+      ...newModel,
+      subject: authSubject,
+      topic: authTopic,
+      questions: (newModel?.questions || []).map((q, idx) => ({
+        ...q,
+        subject: q.subject || authSubject,
+        topic: q.topic || authTopic,
+        concept: q.concept || authTopic
+      }))
+    };
+
+    setTopicModel(patchedModel);
+    setActiveSubjectName(authSubject);
     if (totalMarks) setActiveFacultyTotalMarks(totalMarks);
     setActiveAssignmentMode(mode || 'Mixed');
     setCurrentQuestionIndex(0);
@@ -385,10 +401,13 @@ export default function App() {
       const currentTopic = topicModel?.title || 'Subject';
 
       if (lastEval) {
+        const authSubject = topicModel?.subject || activeSubjectName || 'Academic Discipline';
+        const authTopic = topicModel?.topic || topicModel?.title || 'Core Topic';
+
         try {
           const adaptivePkg = selectAdaptiveNextQuestion({
-            subjectName: topicModel?.subject || 'Biotechnology',
-            topicName: topicModel?.topic || 'Bioreactor Design',
+            subjectName: authSubject,
+            topicName: authTopic,
             masteryModel: adaptiveEngine?.masteryModel,
             lastEvaluation: lastEval,
             previousQuestions: questions.slice(0, nextIdx),
@@ -400,8 +419,8 @@ export default function App() {
               ...targetQ,
               ...adaptivePkg,
               index: nextIdx,
-              subject: topicModel?.subject || targetQ.subject,
-              topic: topicModel?.topic || targetQ.topic,
+              subject: authSubject,
+              topic: authTopic,
               adaptiveNote: adaptivePkg.adaptiveReason || targetQ.adaptiveNote
             };
           }
@@ -427,11 +446,11 @@ export default function App() {
         }
 
         // Authoritative context safety gate: Never allow targetQ to diverge from active topicModel subject/topic
-        if (targetQ.subject !== topicModel?.subject || targetQ.topic !== topicModel?.topic) {
+        if (targetQ.subject !== authSubject || targetQ.topic !== authTopic) {
           const regenerated = GenerateAcademicQuestionPackage({
-            subjectName: topicModel?.subject || 'Biotechnology',
-            topic: topicModel?.topic || 'Bioreactor Design',
-            concept: targetQ.concept || topicModel?.topic || 'Oxygen Transfer',
+            subjectName: authSubject,
+            topic: authTopic,
+            concept: targetQ.concept || authTopic,
             questionType: targetQ.type || 'mcq',
             difficulty: targetQ.difficulty,
             index: nextIdx + 1
@@ -440,8 +459,8 @@ export default function App() {
             ...targetQ,
             ...regenerated,
             index: nextIdx,
-            subject: topicModel?.subject || 'Biotechnology',
-            topic: topicModel?.topic || 'Bioreactor Design'
+            subject: authSubject,
+            topic: authTopic
           };
         }
 

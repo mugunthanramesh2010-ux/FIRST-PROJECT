@@ -678,11 +678,16 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
   if (!model) {
     const words = cleanTopic.split(/\s+/).filter(Boolean);
     const primaryTerm = words.slice(0, 3).join(' ');
+    const authSubj = (domainHint && domainHint !== 'Universal Domain' && domainHint !== 'Universal Cognitive Domain')
+      ? domainHint
+      : (cleanTopic.toLowerCase().includes('engineering') ? cleanTopic : `${cleanTopic} Studies`);
 
     const synthesized = {
       title: cleanTopic,
       fullName: cleanTopic,
-      domain: domainHint || 'Universal Cognitive Domain',
+      subject: authSubj,
+      topic: cleanTopic,
+      domain: authSubj,
       category: 'Universal Dynamic Synthesis',
       complexity: Math.min(5, Math.max(3, Math.ceil(words.length / 2) + 2)),
       prerequisites: [
@@ -720,7 +725,7 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
         { from: 'node_inter', to: 'node_adv' },
         { from: 'node_adv', to: 'node_future' }
       ],
-      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText, domainHint),
+      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText, authSubj),
       innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
       industryReadiness: {
         engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,
@@ -731,10 +736,22 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
     model = synthesized;
   }
 
+  // Ensure authoritative subject & topic are explicitly populated
+  model.subject = model.subject || model.domain || domainHint || cleanTopic;
+  model.topic = model.topic || model.title || cleanTopic;
+
   // Expand questions to requested count (e.g. 5, 10, 20, up to 100) and guarantee option swiping
   const qCount = targetCount ? Math.min(100, Math.max(1, targetCount)) : Math.max(5, model.questions?.length || 5);
-  model.questions = expandQuestionsForTopic(model.questions || [], model.title || cleanTopic, qCount, documentText);
-  model.questions = (model.questions || []).map((q, idx) => normalizeQuestion(q, idx, model.title || cleanTopic));
+  model.questions = expandQuestionsForTopic(model.questions || [], model.topic, qCount, documentText);
+  model.questions = (model.questions || []).map((q, idx) => {
+    const norm = normalizeQuestion(q, idx, model.topic, model.subject);
+    return {
+      ...norm,
+      subject: norm.subject || model.subject,
+      topic: norm.topic || model.topic,
+      concept: norm.concept || model.topic
+    };
+  });
 
   return model;
 }

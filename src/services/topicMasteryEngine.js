@@ -571,14 +571,16 @@ export const TOPIC_KNOWLEDGE_MAPS = {
  * Retrieve the fine-grained knowledge map for any subject and topic
  */
 export function getTopicKnowledgeMap(subjectName, topicName) {
-  const normSubj = normalizeString(subjectName);
-  const normTopic = normalizeString(topicName);
+  const normSubj = normalizeString(subjectName || '');
+  const normTopic = normalizeString(topicName || '');
 
-  for (const [sKey, sMap] of Object.entries(TOPIC_KNOWLEDGE_MAPS)) {
-    if (normSubj.includes(sKey) || sKey.includes(normSubj) || normalizeString(sMap.subjectName).includes(normSubj)) {
-      for (const [tKey, tMap] of Object.entries(sMap.topics)) {
-        if (normTopic.includes(tKey) || tKey.includes(normTopic) || normalizeString(tMap.topicName).includes(normTopic)) {
-          return tMap;
+  if (normSubj.length >= 3 && normTopic.length >= 3) {
+    for (const [sKey, sMap] of Object.entries(TOPIC_KNOWLEDGE_MAPS)) {
+      if (normSubj.includes(sKey) || sKey.includes(normSubj) || normalizeString(sMap.subjectName).includes(normSubj)) {
+        for (const [tKey, tMap] of Object.entries(sMap.topics)) {
+          if (normTopic.includes(tKey) || tKey.includes(normTopic) || normalizeString(tMap.topicName).includes(normTopic)) {
+            return tMap;
+          }
         }
       }
     }

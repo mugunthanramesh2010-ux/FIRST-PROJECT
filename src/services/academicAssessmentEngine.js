@@ -4180,11 +4180,17 @@ export function ValidateQuestion(questionPackage = {}, context = {}) {
   const isCommContext = subjLower.includes('communication') || topicLower.includes('modulation') || topicLower.includes('gmsk') || topicLower.includes('pcm') || topicLower.includes('transmission line');
   const isCSContext = subjLower.includes('computer science') || subjLower.includes('dsa') || topicLower.includes('operating system') || topicLower.includes('database') || topicLower.includes('algorithm') || topicLower.includes('kruskal') || topicLower.includes('hashing');
 
+  const conceptLower = qConcept.toLowerCase();
+
   if (isCommContext) {
     const invalidCommPhrases = [
       'conservation law', 'dynamic equilibrium', 'mass flux', 'dissipated work', 'thermodynamic dissipation',
-      'governing conservation equations', 'internal mass and energy', 'bioreactor', 'oxygen transfer'
+      'governing conservation equations', 'internal mass and energy', 'bioreactor', 'oxygen transfer',
+      'aerobic', 'fermentation', 'kla', 'sparged', 'culture broth', 'dissolved oxygen'
     ];
+    if (conceptLower.includes('oxygen transfer') || conceptLower.includes('bioreactor') || conceptLower.includes('sterilization')) {
+      failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Communication Engineering cannot assess Biotechnology concept "${qConcept}".`);
+    }
     for (const phrase of invalidCommPhrases) {
       if (qLower.includes(phrase)) {
         failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Communication Engineering context contains unrelated physical phrase "${phrase}".`);
@@ -4467,14 +4473,29 @@ export function ValidateQuestion(questionPackage = {}, context = {}) {
   }
 
   // ----------------------------------------------------
-  // GATE H: MEDIA INTEGRITY
+  // GATE H: MEDIA & DIAGRAM RELEVANCE INTEGRITY
   // ----------------------------------------------------
-  if (questionPackage.format === 'Diagram' || questionPackage.format === 'Graph') {
-    if (!questionPackage.diagramSvg || typeof questionPackage.diagramSvg !== 'string') {
+  if (questionPackage.diagramSvg) {
+    if (typeof questionPackage.diagramSvg !== 'string' || !questionPackage.diagramSvg.includes('<svg') || !questionPackage.diagramSvg.includes('</svg>')) {
       failGate('gateH', 'Gate H (Media Integrity)', 'Visual question format requires valid SVG diagram code.');
-    } else if (!questionPackage.diagramSvg.includes('<svg') || !questionPackage.diagramSvg.includes('</svg>')) {
-      failGate('gateH', 'Gate H (Media Integrity)', 'Invalid SVG markup: missing <svg> opening or closing tags.');
+    } else {
+      const svgLower = questionPackage.diagramSvg.toLowerCase();
+      const captionLower = String(questionPackage.diagramCaption || '').toLowerCase();
+      const combinedSvg = `${svgLower} ${captionLower}`;
+
+      // Cross-discipline diagram validation: reject unrelated equipment schematics
+      if (isCommContext && (combinedSvg.includes('bioreactor') || combinedSvg.includes('gas bubble') || combinedSvg.includes('oxygen transfer') || combinedSvg.includes('liquid film'))) {
+        failGate('gateH', 'Gate H (Media Integrity)', 'Cross-discipline diagram violation: Bioreactor oxygen-transfer schematic cannot be attached to Communication Engineering.');
+      } else if (isMotorDriveContext && (combinedSvg.includes('bioreactor') || combinedSvg.includes('gas bubble') || combinedSvg.includes('oxygen transfer'))) {
+        failGate('gateH', 'Gate H (Media Integrity)', 'Cross-discipline diagram violation: Bioreactor diagram cannot be attached to Motor Drive.');
+      } else if (isCSContext && (combinedSvg.includes('bioreactor') || combinedSvg.includes('gas bubble') || combinedSvg.includes('oxygen transfer'))) {
+        failGate('gateH', 'Gate H (Media Integrity)', 'Cross-discipline diagram violation: Bioreactor diagram cannot be attached to Computer Science.');
+      } else if (subjLower.includes('biotechnology') && (combinedSvg.includes('qpsk') || combinedSvg.includes('constellation') || combinedSvg.includes('induction motor') || combinedSvg.includes('bode plot'))) {
+        failGate('gateH', 'Gate H (Media Integrity)', 'Cross-discipline diagram violation: Electronics/control diagram cannot be attached to Biotechnology.');
+      }
     }
+  } else if (questionPackage.format === 'Diagram' || questionPackage.format === 'Graph') {
+    failGate('gateH', 'Gate H (Media Integrity)', 'Visual question format requires valid SVG diagram code.');
   }
 
   // ----------------------------------------------------
