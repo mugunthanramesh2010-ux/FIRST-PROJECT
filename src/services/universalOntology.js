@@ -299,6 +299,64 @@ export const DOMAIN_CATEGORIES = [
 // Machine Design, Remote Sensing, Embedded AI, Robotics Navigation, Climate Change, Supply Chain Optimization.
 
 const BENCHMARK_TOPICS = {
+  neurophysics: {
+    title: 'Neurophysics',
+    fullName: 'Cellular Electrophysiology & Neurophysics',
+    domain: 'Neurophysics',
+    category: 'Biophysics & Neuroscience',
+    complexity: 4,
+    prerequisites: [
+      { id: 'electro', name: 'Electrochemical Gradients & Nernst Potential', level: 'Fundamental', desc: 'Thermodynamic equilibrium of ions across lipid membranes.' },
+      { id: 'cable', name: 'Axonal Cable Theory & Time/Space Constants', level: 'Intermediate', desc: 'Passive electrotonic signal decay along cylindrical membranes.' }
+    ],
+    graphNodes: [
+      { id: 'nernst', label: 'Resting Potential & Nernst', status: 'mastered', x: 80, y: 160 },
+      { id: 'ghk', label: 'Goldman-Hodgkin-Katz Equation', status: 'active', x: 260, y: 120 },
+      { id: 'hh', label: 'Hodgkin-Huxley Dynamics', status: 'unvisited', x: 440, y: 180 },
+      { id: 'cable', label: 'Axonal Cable Theory', status: 'unvisited', x: 620, y: 130 },
+      { id: 'saltatory', label: 'Saltatory Conduction', status: 'unvisited', x: 800, y: 190 },
+      { id: 'synapse', label: 'Quantal Synaptic Release', status: 'unvisited', x: 920, y: 140 }
+    ],
+    graphEdges: [
+      { from: 'nernst', to: 'ghk' },
+      { from: 'ghk', to: 'hh' },
+      { from: 'hh', to: 'cable' },
+      { from: 'cable', to: 'saltatory' },
+      { from: 'saltatory', to: 'synapse' }
+    ],
+    questions: [
+      {
+        id: 'np_q1',
+        level: 1,
+        evolutionStage: 'Stage 1: Fundamentals (What)',
+        type: 'mcq',
+        mode: 'MCQ',
+        text: 'In cellular neurophysics, why is the resting membrane potential of an unstimulated neuron (-70 mV) dominated by potassium rather than sodium ions?',
+        options: [
+          'Because open potassium leak channels grant far higher resting membrane permeability to K⁺ than to Na⁺ (P_K >> P_Na)',
+          'Because the membrane is completely impermeable to all cations except sodium',
+          'Because the Na⁺/K⁺ pump directly generates 100% of the resting potential with zero passive ion diffusion',
+          'Because extracellular chloride ions freely diffuse to equal concentrations across the membrane'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: {
+          level1: 'Consider the Goldman-Hodgkin-Katz (GHK) voltage equation.',
+          level2: 'Which ion has the highest density of constitutively open leak channels at rest?',
+          level3: 'Resting permeability to potassium (P_K) is roughly 25 to 50 times greater than to sodium (P_Na).',
+          level4: 'This draws the membrane potential close to the potassium equilibrium potential E_K (-90 mV).'
+        },
+        reasonWhy: 'Stage 1 Fundamental: Core biophysical basis of neural excitability.',
+        industryApplication: 'Critical for neuropharmacology, anesthetic design, and neural interface electrodes.'
+      }
+    ],
+    innovationChallenge: 'Develop high-bandwidth neuromorphic CMOS devices that model Hodgkin-Huxley gating variables with sub-femtojoule energy dissipation per spike.',
+    industryReadiness: {
+      engineerPerspective: 'Analyzes electrode-tissue impedance and signal-to-noise ratio in multi-electrode arrays.',
+      researcherPerspective: 'Models nonlinear bifurcation dynamics and patch-clamp single-channel stochasticity.',
+      startupFounderPerspective: 'Designs non-invasive brain-computer interfaces for high-throughput neural prosthetics.'
+    }
+  },
   mosfet: {
     title: 'MOSFET',
     fullName: 'Metal-Oxide-Semiconductor Field-Effect Transistor',

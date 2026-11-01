@@ -10,6 +10,27 @@ import { GenerateAcademicQuestionPackage, ValidateQuestion } from './academicAss
  */
 export const UNIVERSAL_SUBJECTS = [
   {
+    id: 'neurophysics',
+    name: 'Neurophysics & Biophysics',
+    icon: '🧠',
+    category: 'Sciences & Interdisciplinary',
+    description: 'Cellular Electrophysiology, Hodgkin-Huxley Dynamics, Synaptic Transmission & Axonal Cable Theory',
+    topics: [
+      {
+        id: 'neurophysics_core',
+        name: 'Neurophysics',
+        concepts: [
+          'Resting Membrane Potential & Nernst Equation (Equilibrium Potentials, Ion Gradients)',
+          'Hodgkin-Huxley Model & Action Potential Dynamics (Voltage-Gated Na+/K+ Channels)',
+          'Goldman-Hodgkin-Katz (GHK) Voltage Equation & Relative Ion Permeabilities',
+          'Axonal Cable Theory & Saltatory Conduction (Length Constant, Time Constant, Myelination)',
+          'Synaptic Neurotransmission & Quantal Release (Vesicle Fusion, EPSPs, IPSPs)',
+          'Patch-Clamp Electrophysiology & Single-Channel Conductance'
+        ]
+      }
+    ]
+  },
+  {
     id: 'cs_it',
     name: 'Computer Science & IT',
     icon: '💻',
@@ -570,6 +591,7 @@ export function autoDetectConcepts(subjectName = '', topicName = '') {
   }
 
   // 2. Synthesize domain-grounded concept progression based on analytical semantic cues
+  const isNeuro = /neuro|brain|synap|axon|action potential|electrophysiology|ion channel|nernst|hodgkin|patch.?clamp|dendrit|refractory/i.test(combined);
   const isCS = /code|software|program|data|algorithm|database|cloud|network|security|web|os|compiler|ai|machine learning|mlops/i.test(combined);
   const isComm = /communication|telecom|signal|rf|antenna|modulation|wireless|cellular|radar/i.test(combined);
   const isEngineering = /mechanical|aerospace|civil|electrical|electronics|circuit|thermal|fluid|structure|materials|robotics/i.test(combined);
@@ -579,7 +601,16 @@ export function autoDetectConcepts(subjectName = '', topicName = '') {
 
   let synthesizedConcepts = [];
 
-  if (isCS) {
+  if (isNeuro) {
+    synthesizedConcepts = [
+      `Resting Membrane Potential & Nernst Equation (Equilibrium Potentials, Ion Gradients)`,
+      `Hodgkin-Huxley Model & Action Potential Dynamics (Voltage-Gated Na+/K+ Channels)`,
+      `Goldman-Hodgkin-Katz (GHK) Voltage Equation & Relative Ion Permeabilities`,
+      `Axonal Cable Theory & Saltatory Conduction (Length Constant, Time Constant, Myelination)`,
+      `Synaptic Neurotransmission & Quantal Release (Vesicle Fusion, EPSPs, IPSPs)`,
+      `Patch-Clamp Electrophysiology & Single-Channel Conductance Kinetics`
+    ];
+  } else if (isCS) {
     synthesizedConcepts = [
       `Architectural Foundations & Core Abstract Data Types in ${cleanTop || 'Computer Science'}`,
       `State Management, Concurrency Control & Synchronization Invariants in ${cleanTop || 'Computer Science'}`,
@@ -630,11 +661,11 @@ export function autoDetectConcepts(subjectName = '', topicName = '') {
   } else {
     const targetFocus = cleanTop || cleanSubj || 'Core System Dynamics';
     synthesizedConcepts = [
-      `Core Theoretical Foundations, Dynamic Principles, and Governing Invariants in ${targetFocus}`,
-      `State Variables, Transfer Characteristics, and Operational Thresholds in ${targetFocus}`,
-      `System Architecture, Parameter Sensitivities, and Component Interactions in ${targetFocus}`,
-      `Failure Mechanisms, Anomaly Diagnostics, and Operational Safeguards in ${targetFocus}`,
-      `Design Optimization, Efficiency Trade-Offs, and Implementation Standards in ${targetFocus}`
+      `Fundamental Principles, Definitions & Governing Equations of ${targetFocus}`,
+      `Constitutive State Equations, Parameter Bounds & Equilibrium Behavior in ${targetFocus}`,
+      `Dynamic Response, Critical Thresholds & Rate Formulations in ${targetFocus}`,
+      `System Architecture, Trade-Off Analysis & Sensitivities in ${targetFocus}`,
+      `Empirical Verification, Failure Diagnostics & Applied Diagnostics in ${targetFocus}`
     ];
   }
 

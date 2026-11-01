@@ -136,7 +136,12 @@ export class AssessmentManager {
       // Procedurally synthesize and validate guaranteed domain questions
       const generated = [];
       const formats = Array.isArray(data.questionFormats) && data.questionFormats.length > 0 ? data.questionFormats : ['mcq', 'descriptive'];
-      const conceptsList = Array.isArray(data.concepts) && data.concepts.length > 0 ? data.concepts : [topic];
+      const isBiotechSubj = /biotech|bio/i.test(subject);
+      let conceptsList = Array.isArray(data.concepts) && data.concepts.length > 0 ? data.concepts : [topic];
+      if (!isBiotechSubj) {
+        conceptsList = conceptsList.filter(c => !/oxygen transfer|bioreactor|kla|fermentation|culture broth|sterilization/i.test(c));
+        if (conceptsList.length === 0) conceptsList = [topic];
+      }
 
       for (let i = 0; i < questionCount; i++) {
         const qFormat = formats[i % formats.length];

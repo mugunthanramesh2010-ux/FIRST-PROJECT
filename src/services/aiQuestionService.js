@@ -362,6 +362,70 @@ export function normalizeQuestion(q, idx, topic, subject = '') {
 // Deep Subject-Specific Knowledge Base (Engineering, Sciences, CS, etc.)
 // Guarantees 100% subject-accurate questions for FPGA, VLSI, Strength of Materials, Thermodynamics, Civil, CS, etc.
 const SUBJECT_DOMAINS = {
+  // Neurophysics & Cellular Electrophysiology
+  neurophysics: {
+    matchKeywords: ['neurophysics', 'neuroscience', 'biophysics', 'electrophysiology', 'action potential', 'hodgkin huxley', 'membrane potential', 'nernst equation', 'cable theory', 'saltatory conduction'],
+    questions: [
+      {
+        questionText: 'In cellular neurophysics, which physical mechanism explains why the resting membrane potential of a neuron (-70 mV) is primarily determined by potassium ions rather than sodium ions?',
+        type: 'mcq',
+        options: [
+          'The resting membrane has a far higher permeability to potassium (P_K >> P_Na) through open leak channels, driving the membrane potential toward the potassium Nernst potential',
+          'The lipid bilayer is completely impermeable to all cations except sodium, forcing sodium depletion',
+          'The Na⁺/K⁺ pump directly produces the entire -70 mV transmembrane voltage with zero passive ion leakage',
+          'Intracellular chloride concentrations spontaneously match extracellular concentrations without any electrical gradient'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Recall the Goldman-Hodgkin-Katz (GHK) voltage equation for transmembrane potential.',
+          'Identify which ion channel type is predominantly open in an unstimulated resting neuron.',
+          'Potassium leak channels provide high resting conductance for K⁺ ions.',
+          'High relative permeability P_K drives the resting membrane potential close to E_K (-90 mV).'
+        ],
+        expectedKeywords: ['potassium', 'permeability', 'leak channels', 'nernst', 'goldman hodgkin katz']
+      },
+      {
+        questionText: 'In the Hodgkin-Huxley model of neuronal action potentials, which gating variables control the activation and inactivation of voltage-gated sodium channels?',
+        type: 'mcq',
+        options: [
+          'Three activation m-gates and one inactivation h-gate (m³h conductance formulation)',
+          'Four activation n-gates with zero inactivation particles',
+          'Two leak l-gates coupled to calcium-activated potassium channels',
+          'A single static pore without voltage-sensitive conformational transitions'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Understanding',
+        hints: [
+          'Recall the classic Hodgkin-Huxley squid giant axon mathematical model.',
+          'Sodium conductance depends on both activation (opening upon depolarization) and inactivation (closing upon sustained depolarization).',
+          'Hodgkin and Huxley represented sodium activation as m³ and inactivation as h.',
+          'Potassium conductance is represented by n⁴.'
+        ],
+        expectedKeywords: ['hodgkin huxley', 'm3h', 'activation', 'inactivation', 'sodium channel']
+      },
+      {
+        questionText: 'In axonal cable theory, how does myelination accelerate action potential conduction along an axon?',
+        type: 'mcq',
+        options: [
+          'It increases membrane resistance and decreases membrane capacitance, enabling rapid electrotonic current spread between nodes of Ranvier (saltatory conduction)',
+          'It converts electrical nerve impulses into purely acoustic pressure waves that travel at the speed of sound',
+          'It eliminates all nodes of Ranvier, allowing continuous sodium channel activation without gaps',
+          'It heats the axon to 50°C to accelerate biochemical enzymatic reaction rates'
+        ],
+        correctIndex: 0,
+        bloomLevel: 'Analysis',
+        hints: [
+          'Recall how the myelin sheath affects physical membrane capacitance C_m and resistance R_m.',
+          'Increasing dielectric thickness reduces capacitance, requiring less charge to depolarize the membrane.',
+          'High membrane resistance prevents charge from leaking across the internodal membrane.',
+          'This allows fast saltatory conduction from one node of Ranvier to the next.'
+        ],
+        expectedKeywords: ['myelination', 'capacitance', 'saltatory conduction', 'nodes of ranvier', 'cable theory']
+      }
+    ]
+  },
+
   // General Engineering, Engineering Mechanics & Fundamental Axioms
   general_engineering: {
     matchKeywords: ['general engineering', 'engineering physics', 'engineering mechanics', 'si units', 'fundamental engineering', 'basic engineering', 'first year engineering'],

@@ -122,9 +122,9 @@ export default function App() {
   const [installModalOpen, setInstallModalOpen] = useState(false);
 
   // Core Intelligence Engines (100% Subject-Locked Academic Engine)
-  const [topicModel, setTopicModel] = useState(() => buildInitialVivaTopicModel());
+  const [topicModel, setTopicModel] = useState(() => buildInitialVivaTopicModel(currentUser));
   const [adaptiveEngine, setAdaptiveEngine] = useState(() => new AdaptiveEngine());
-  const [activeSubjectName, setActiveSubjectName] = useState('Biotechnology');
+  const [activeSubjectName, setActiveSubjectName] = useState(() => currentUser?.department?.toLowerCase().includes('ece') ? 'Communication Engineering' : 'Biotechnology');
   const [activeFacultyTotalMarks, setActiveFacultyTotalMarks] = useState(100);
 
   // Assessment Runtime State (Page 12, 13, 14, 15)
@@ -197,18 +197,43 @@ export default function App() {
     const authTopic = newModel?.topic || newModel?.title || 'Core Topic';
 
     // Authoritative propagation: Ensure model and every single question carries authoritative subject and topic
+    const isBiotech = /biotech|bio/i.test(authSubject);
+    const patchedQuestions = (newModel?.questions || []).map((q, idx) => {
+      const hasBioLeak = !isBiotech && /oxygen transfer|bioreactor|kla|fermentation|culture broth/i.test(
+        String(q.concept || '') + ' ' + String(q.learningObjective || '') + ' ' + String(q.questionText || '')
+      );
+      if (q.subject !== authSubject || q.topic !== authTopic || hasBioLeak) {
+        return {
+          ...GenerateAcademicQuestionPackage({
+            subjectName: authSubject,
+            topic: authTopic,
+            concept: hasBioLeak ? authTopic : (q.concept || authTopic),
+            questionType: q.type || 'mcq',
+            difficulty: q.difficulty || 'Intermediate',
+            index: idx + 1
+          }),
+          index: idx,
+          subject: authSubject,
+          topic: authTopic
+        };
+      }
+      return {
+        ...q,
+        subject: authSubject,
+        topic: authTopic,
+        concept: q.concept || authTopic,
+        index: idx
+      };
+    });
+
     const patchedModel = {
       ...newModel,
       subject: authSubject,
       topic: authTopic,
-      questions: (newModel?.questions || []).map((q, idx) => ({
-        ...q,
-        subject: q.subject || authSubject,
-        topic: q.topic || authTopic,
-        concept: q.concept || authTopic
-      }))
+      questions: patchedQuestions
     };
 
+    setAdaptiveEngine(new AdaptiveEngine());
     setTopicModel(patchedModel);
     setActiveSubjectName(authSubject);
     if (totalMarks) setActiveFacultyTotalMarks(totalMarks);
@@ -446,22 +471,34 @@ export default function App() {
         }
 
         // Authoritative context safety gate: Never allow targetQ to diverge from active topicModel subject/topic
-        if (targetQ.subject !== authSubject || targetQ.topic !== authTopic) {
+        const isBiotechTarget = /biotech|bio/i.test(authSubject);
+        const hasAlienBioLeak = !isBiotechTarget && /oxygen transfer|bioreactor|kla|fermentation|culture broth/i.test(
+          String(targetQ.concept || '') + ' ' + String(targetQ.learningObjective || '') + ' ' + String(targetQ.questionText || '')
+        );
+
+        if (targetQ.subject !== authSubject || targetQ.topic !== authTopic || hasAlienBioLeak) {
           const regenerated = GenerateAcademicQuestionPackage({
             subjectName: authSubject,
             topic: authTopic,
-            concept: targetQ.concept || authTopic,
+            concept: hasAlienBioLeak ? authTopic : (targetQ.concept || authTopic),
             questionType: targetQ.type || 'mcq',
             difficulty: targetQ.difficulty,
             index: nextIdx + 1
           });
           targetQ = {
-            ...targetQ,
             ...regenerated,
             index: nextIdx,
             subject: authSubject,
             topic: authTopic
           };
+        }
+
+        // Quarantine learningObjective & diagramSvg against cross-discipline leakage
+        if (!isBiotechTarget && /oxygen transfer|bioreactor|kla|fermentation/i.test(targetQ.learningObjective || '')) {
+          targetQ.learningObjective = `Demonstrate rigorous technical reasoning in ${authTopic}`;
+        }
+        if (!isBiotechTarget && /bioreactor|gas bubble|oxygen transfer|liquid film/i.test(targetQ.diagramSvg || '')) {
+          targetQ.diagramSvg = null;
         }
 
         // Shuffle options for next question so correct answer is randomly positioned (A, B, C, or D)

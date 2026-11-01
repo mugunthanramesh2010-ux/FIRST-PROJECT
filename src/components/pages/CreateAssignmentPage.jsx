@@ -40,17 +40,28 @@ const BLOOM_LEVELS = ['Remembering', 'Understanding', 'Application', 'Analysis',
 const QUESTION_FORMATS = ['mcq', 'descriptive', 'numerical', 'scenario', 'diagram'];
 
 export default function CreateAssignmentPage({ currentUser, onNavigate }) {
+  const dept = currentUser?.department || '';
+  const isECE = /ece|electronic|communicat/i.test(dept);
+  const isCSE = /cse|computer|software/i.test(dept);
+  const isMech = /mech/i.test(dept);
+
+  const initSubject = isECE ? 'Communication Engineering' : (isCSE ? 'Computer Science' : (isMech ? 'Mechanical Engineering' : 'Communication Engineering'));
+  const initSubjId = isECE ? 'ECE-401' : (isCSE ? 'CS-301' : (isMech ? 'ME-301' : 'ECE-401'));
+  const initTopic = isECE ? 'Modulation' : (isCSE ? 'Database Normalization' : (isMech ? 'Heat Transfer' : 'Modulation'));
+  const initConcepts = isECE ? 'Carrier Modulation, Bandwidth, Noise Figure' : (isCSE ? '1NF, 2NF, 3NF, BCNF' : (isMech ? 'Fourier Conduction, Thermal Resistance' : 'Carrier Modulation, Bandwidth, Noise Figure'));
+  const initDept = isECE ? 'Electronics and Communication Engineering' : (isCSE ? 'Computer Science and Engineering' : (isMech ? 'Mechanical Engineering' : 'Electronics and Communication Engineering'));
+
   const [formData, setFormData] = useState({
     title: '',
     academicYear: '2026-2027',
     semester: 'Semester 5',
-    subject: 'Biotechnology',
-    subjectId: 'BIO-301',
-    topic: 'Bioreactor Design',
-    concepts: 'Oxygen Transfer, Sterilization, Bioreactor Kinetics',
+    subject: initSubject,
+    subjectId: initSubjId,
+    topic: initTopic,
+    concepts: initConcepts,
     targetYear: 'III',
     targetSections: ['A'], // Default to Section A to prevent accidental institution-wide assignment
-    targetDepartment: 'Biotechnology',
+    targetDepartment: initDept,
     instructions: 'Authoritative viva examination. Complete all questions within the allocated duration. Progressive hints are enabled.',
     durationMinutes: 15,
     totalMarks: 100,
@@ -188,7 +199,13 @@ export default function CreateAssignmentPage({ currentUser, onNavigate }) {
 
     setLoading(true);
     try {
-      const conceptsList = formData.concepts.split(',').map(c => c.trim()).filter(Boolean);
+      const isBiotechSubj = /biotech|bio/i.test(formData.subject);
+      let conceptsList = formData.concepts.split(',').map(c => c.trim()).filter(Boolean);
+      if (!isBiotechSubj) {
+        // Quarantine any accidental biotechnology concepts from contaminating non-biotech assignments
+        conceptsList = conceptsList.filter(c => !/oxygen transfer|bioreactor|kla|fermentation|culture broth|sterilization/i.test(c));
+        if (conceptsList.length === 0) conceptsList = [formData.topic.trim()];
+      }
 
       const payload = {
         title: formData.title.trim(),

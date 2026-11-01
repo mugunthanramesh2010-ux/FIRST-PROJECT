@@ -579,7 +579,10 @@ export function getTopicKnowledgeMap(subjectName, topicName) {
       if (normSubj.includes(sKey) || sKey.includes(normSubj) || normalizeString(sMap.subjectName).includes(normSubj)) {
         for (const [tKey, tMap] of Object.entries(sMap.topics)) {
           if (normTopic.includes(tKey) || tKey.includes(normTopic) || normalizeString(tMap.topicName).includes(normTopic)) {
-            return tMap;
+            return {
+              ...tMap,
+              subjectName: sMap.subjectName || subjectName
+            };
           }
         }
       }
@@ -592,6 +595,7 @@ export function getTopicKnowledgeMap(subjectName, topicName) {
   const finalTop = resolved.valid ? resolved.topic : (topicName || 'System Analysis');
 
   return {
+    subjectName: finalSubj,
     topicId: normalizeString(finalTop).replace(/\s+/g, '_'),
     topicName: finalTop,
     description: `Curriculum knowledge map for ${finalTop} in ${finalSubj}`,
@@ -1062,8 +1066,19 @@ export function selectAdaptiveNextQuestion({
   const kMap = getTopicKnowledgeMap(subjectName, topicName);
   const depGraph = getConceptDependencyGraph(subjectName, topicName);
 
-  if (masteryModel && (!masteryModel.concepts || Object.keys(masteryModel.concepts).length === 0)) {
-    masteryModel.initializeTopicLedger(kMap);
+  if (masteryModel) {
+    if (masteryModel.subjectName && (masteryModel.subjectName !== subjectName || masteryModel.topicName !== topicName)) {
+      masteryModel.subjectName = subjectName;
+      masteryModel.topicName = topicName;
+      masteryModel.concepts = {};
+      masteryModel.coverageLedger = {};
+      masteryModel.questionHistory = [];
+    }
+    if (!masteryModel.concepts || Object.keys(masteryModel.concepts).length === 0) {
+      masteryModel.subjectName = subjectName;
+      masteryModel.topicName = topicName;
+      masteryModel.initializeTopicLedger(kMap);
+    }
   }
 
   const seenIds = new Set(previousQuestions.map(q => q.id).filter(Boolean));
@@ -1159,6 +1174,12 @@ export function selectAdaptiveNextQuestion({
       targetFormat = 'Scenario';
       adaptiveReason = `Reducing assessment uncertainty on "${targetConcept.name}" via advanced synthesis`;
     }
+  }
+
+  // Strict Subject Isolation Gate: Ensure targetConcept strictly aligns with subject domain
+  const isBiotechSubj = /biotech|bio/i.test(subjectName || kMap.subjectName);
+  if (!isBiotechSubj && /oxygen transfer|bioreactor|kla|fermentation|culture broth/i.test(targetConcept?.name || '')) {
+    targetConcept = kMap.concepts[0];
   }
 
   // 3. Generate candidate question grounded in target concept and representation
