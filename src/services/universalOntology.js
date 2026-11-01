@@ -720,7 +720,7 @@ export function generateUniversalTopicModel(rawTopic, domainHint = 'Universal Do
         { from: 'node_inter', to: 'node_adv' },
         { from: 'node_adv', to: 'node_future' }
       ],
-      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText),
+      questions: generateOfflineDeepQuestions(cleanTopic, targetCount || 10, documentText, domainHint),
       innovationChallenge: `What disruptive paradigm or analytical modification could advance our understanding and application of ${cleanTopic}?`,
       industryReadiness: {
         engineerPerspective: `Focuses on reliability, safety factor, and structural integrity for ${cleanTopic}.`,

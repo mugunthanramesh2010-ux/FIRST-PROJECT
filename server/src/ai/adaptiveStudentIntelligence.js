@@ -187,14 +187,23 @@ export class AdaptiveStudentIntelligence {
       timestamp: now
     });
 
+    // Compute fine-grained continuous percentage proficiency (0 to 100 with single percentage precision)
+    const proficiencyPercent = Math.max(0, Math.min(100, Math.round(cm.pMastery * 100)));
+    const bandInfo = getProficiencyBand(proficiencyPercent);
+
     return {
       topicLocked: true,
       assignedTopic: topic,
       assignedSubject: subject,
       conceptId,
       pMastery: cm.pMastery,
-      confidence: 1.0 - cm.uncertainty,
-      uncertainty: cm.uncertainty,
+      proficiencyPercent,
+      proficiencyBand: bandInfo.band,
+      intermediateLabel: bandInfo.label,
+      interpretation: bandInfo.interpretation,
+      evidenceCount: cm.attempts,
+      confidence: Number((1.0 - cm.uncertainty).toFixed(3)),
+      uncertainty: Number(cm.uncertainty.toFixed(3)),
       ledgerStatus: cm.status,
       errorCategory,
       errorClassification: errorCategory,
@@ -202,7 +211,12 @@ export class AdaptiveStudentIntelligence {
       recommendedAction: nextAction,
       masterySummary: {
         estimatedMastery: cm.pMastery,
+        proficiencyPercent,
+        proficiencyBand: bandInfo.band,
+        intermediateLabel: bandInfo.label,
         uncertainty: cm.uncertainty,
+        confidence: 1.0 - cm.uncertainty,
+        evidenceCount: cm.attempts,
         status: cm.status
       },
       adaptiveDecision: {
@@ -214,6 +228,89 @@ export class AdaptiveStudentIntelligence {
       }
     };
   }
+
+  /**
+   * Generates initial diagnostic assessment plan of `count` questions (default 2)
+   * covering different concepts within the assigned topic.
+   */
+  initialDiagnosticPlan(topic, subject, count = 2) {
+    const cleanTopic = String(topic || '').trim();
+    const cleanSubject = String(subject || '').trim();
+    return {
+      topicLocked: true,
+      assignedTopic: cleanTopic,
+      assignedSubject: cleanSubject,
+      diagnosticCount: count,
+      initialBands: '0–10% (Initial understanding)',
+      instructions: `Initial diagnostic baseline for ${cleanTopic}: 2 targeted diagnostic items evaluating distinct concept facets.`
+    };
+  }
+
+  /**
+   * Selects the next concept adaptively for a student based on their knowledge profile,
+   * prioritizing concepts with identified gaps, misconceptions, or lowest proficiency.
+   */
+  selectNextConcept({ studentId, subject, topic, availableConcepts = [] }) {
+    const state = this.getStudentState(studentId, subject, topic);
+    if (!availableConcepts || availableConcepts.length === 0) {
+      return { concept: topic, topicLocked: true, assignedTopic: topic };
+    }
+
+    // Prioritize concepts with demonstrated deficiencies (attempts > 0 and pMastery < 0.65),
+    // then unattempted concepts for diagnostic coverage, then mastered concepts
+    const scored = availableConcepts.map(c => {
+      const cm = state.conceptMastery[c] || { pMastery: 0.25, uncertainty: 1.0, attempts: 0 };
+      let priorityGroup = 2; // unattempted
+      if (cm.attempts > 0) {
+        if (cm.pMastery < 0.65) {
+          priorityGroup = 1; // demonstrated weakness / error needing remediation
+        } else {
+          priorityGroup = 3; // demonstrated mastery
+        }
+      }
+      return {
+        concept: c,
+        priorityGroup,
+        pMastery: cm.pMastery,
+        uncertainty: cm.uncertainty,
+        attempts: cm.attempts,
+        score: cm.pMastery - (cm.uncertainty * 0.1)
+      };
+    });
+
+    scored.sort((a, b) => {
+      if (a.priorityGroup !== b.priorityGroup) return a.priorityGroup - b.priorityGroup;
+      return a.score - b.score;
+    });
+    const selected = scored[0].concept;
+
+    return {
+      concept: selected,
+      topicLocked: true,
+      assignedTopic: topic,
+      assignedSubject: subject,
+      pMastery: scored[0].pMastery,
+      proficiencyPercent: Math.round(scored[0].pMastery * 100),
+      reason: `Targeting concept "${selected}" based on student performance evidence.`
+    };
+  }
+}
+
+/**
+ * Maps continuous 0-100 percentage proficiency to configurable standard bands & intermediate labels
+ */
+export function getProficiencyBand(percent) {
+  const p = Math.max(0, Math.min(100, Math.round(percent)));
+  if (p <= 10) return { band: '0–10%', interpretation: 'Initial understanding', label: 'Slightly low' };
+  if (p <= 20) return { band: '11–20%', interpretation: 'Very limited understanding', label: 'Low' };
+  if (p <= 30) return { band: '21–30%', interpretation: 'Developing foundation', label: 'Low' };
+  if (p <= 40) return { band: '31–40%', interpretation: 'Basic understanding', label: 'Slightly moderate' };
+  if (p <= 50) return { band: '41–50%', interpretation: 'Emerging competence', label: 'Moderate' };
+  if (p <= 60) return { band: '51–60%', interpretation: 'Moderate understanding', label: 'Moderate' };
+  if (p <= 70) return { band: '61–70%', interpretation: 'Good understanding', label: 'Slightly high' };
+  if (p <= 80) return { band: '71–80%', interpretation: 'Strong understanding', label: 'High' };
+  if (p <= 90) return { band: '81–90%', interpretation: 'Advanced understanding', label: 'Advanced' };
+  return { band: '91–100%', interpretation: 'Demonstrated high mastery', label: 'Tricky reasoning capability' };
 }
 
 export const adaptiveStudentIntelligence = new AdaptiveStudentIntelligence();

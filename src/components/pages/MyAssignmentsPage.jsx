@@ -45,10 +45,10 @@ export default function MyAssignmentsPage({ currentUser, onStartAssignment, onVi
         studentUser: {
           username: currentUser?.regNo || currentUser?.username || 'student_a',
           name: currentUser?.fullName || currentUser?.name || 'Student',
-          regNo: currentUser?.regNo || '22ECE042',
+          regNo: currentUser?.regNo || currentUser?.username || 'STUDENT_01',
           year: currentUser?.year || 'III',
           section: currentUser?.section || 'A',
-          department: currentUser?.department || 'Biotechnology'
+          department: currentUser?.department || 'All'
         }
       })
     })

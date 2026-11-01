@@ -416,7 +416,7 @@ export class AssessmentManager {
 
     // 3. Department check (if targetDepartment is specified and not 'all')
     const targetDept = String(assessment.department || '').trim().toLowerCase();
-    if (targetDept && targetDept !== 'all' && targetDept !== 'all departments' && !targetDept.includes(studentDept) && !studentDept.includes(targetDept)) {
+    if (targetDept && targetDept !== 'all' && targetDept !== 'all departments' && studentDept && studentDept !== 'all' && !targetDept.includes(studentDept) && !studentDept.includes(targetDept)) {
       return {
         eligible: false,
         reason: `Assessment assigned strictly to ${assessment.department}. Student is enrolled in ${student.department || 'Other'}.`

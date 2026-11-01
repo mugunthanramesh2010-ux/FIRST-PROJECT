@@ -235,6 +235,96 @@ export const ACADEMIC_REGISTRY = {
             ]
           }
         }
+      },
+
+      'sterilization': {
+        name: 'Sterilization',
+        prerequisites: ['Microbiology', 'Chemical Reaction Kinetics', 'Thermodynamics'],
+        concepts: {
+          'thermal death kinetics and del factor': {
+            name: 'Thermal Death Kinetics and Del Factor',
+            learningObjective: 'Analyze thermal death kinetics of bacterial endospores, Del factor calculation, and batch vs continuous media sterilization.',
+            questions: [
+              {
+                id: 'bt_st_del_1',
+                questionText: 'In thermal media sterilization kinetics, what does the Del factor (nabla) represent mathematically and operationally?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'The natural logarithm of the ratio of initial to final viable spore count: nabla = ln(N0 / Nt) = integral(kd * dt)',
+                  'The decimal reduction time (D-value) required to kill 90% of the microbial population',
+                  'The total mechanical energy transferred by steam injection into the media',
+                  'The temperature increase required to decrease the D-value by a factor of 10'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'The Del factor (nabla) is defined as the natural logarithm of the ratio of initial spore population (N0) to the final surviving spore population (Nt), given by nabla = ln(N0/Nt) = integral(kd * dt), quantifying the overall sterilization severity.',
+                explanation: 'Option A is correct: the Del factor nabla = ln(N0 / Nt) = kd * t (for isothermal hold) measures the fractional reduction in viable organisms on a natural log scale. Option B describes the D-value. Option D describes the z-value. Option C is unrelated thermodynamics.',
+                hints: [
+                  'Recall that microbial thermal death follows first-order reaction kinetics: dN/dt = -kd * N.',
+                  'Integrate this rate equation from initial population N0 at time zero to population Nt at time t.',
+                  'Notice that integrating dN/N yields a natural logarithmic ratio of initial to surviving organisms.',
+                  'Express the Del factor formula nabla = ln(N0 / Nt), which equals the integral of the specific death rate kd over time.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Accurately defines Del factor nabla = ln(N0 / Nt) based on first-order thermal death kinetics.' },
+                  { index: 1, isCorrect: false, type: 'Plausible Misconception', rationale: 'Confuses Del factor with D-value (decimal reduction time in minutes).' },
+                  { index: 2, isCorrect: false, type: 'Irrelevant Concept', rationale: 'Describes mechanical heat exchange energy rather than microbial kill kinetics.' },
+                  { index: 3, isCorrect: false, type: 'Plausible Misconception', rationale: 'Confuses Del factor with z-value (thermal resistance temperature sensitivity).' }
+                ],
+                expectedKeywords: ['del factor', 'nabla', 'thermal death kinetics', 'first order', 'spore count', 'd-value'],
+                rubric: {
+                  'Mathematical Definition': '50% for nabla = ln(N0/Nt)',
+                  'Kinetic Basis': '50% for linking to first-order thermal death rate kd'
+                },
+                diagramSvg: null
+              },
+              {
+                id: 'bt_st_del_num_1',
+                questionText: 'An industrial aerobic fermenter contains culture medium with an initial bacterial spore population of N0 = 10^9 spores. If the acceptable microbial contamination risk is Nt = 10^-3 spores (one contaminated batch per 1,000 runs), calculate the required design Del factor (nabla).',
+                type: 'mcq',
+                format: 'Numerical',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Application',
+                numericalDetails: {
+                  formula: 'nabla = ln(N0 / Nt) = ln(10^9 / 10^-3) = ln(10^12) = 12 * ln(10) = 12 * 2.3026 = 27.63',
+                  givenParameters: { 'N0': '10^9 spores', 'Nt': '10^-3 spores' },
+                  stepByStep: '1. Ratio N0 / Nt = 10^9 / 10^-3 = 10^12. 2. nabla = ln(10^12) = 12 * 2.302585 = 27.63.',
+                  unit: 'dimensionless',
+                  calculatedValue: 27.63
+                },
+                options: [
+                  '27.63 (approx 27.6)',
+                  '13.82 (approx 13.8)',
+                  '12.00',
+                  '55.26 (approx 55.3)'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'The required Del factor is nabla = ln(N0 / Nt) = ln(10^9 / 10^-3) = ln(10^12) = 12 * ln(10) = 12 * 2.3026 = 27.63.',
+                explanation: 'Option A is correct: the ratio N0 / Nt is 10^(9 - (-3)) = 10^12. The natural log of 10^12 is 12 * 2.3026 = 27.63. Option B uses base-10 logarithm scaling mistakenly divided by 2, Option C uses log10 directly without converting to natural log, and Option D doubles the result.',
+                hints: [
+                  'Recall the definition of the design Del factor: nabla = ln(N0 / Nt).',
+                  'Divide N0 = 10^9 by Nt = 10^-3 to get the overall spore reduction ratio: 10^12.',
+                  'Take the natural logarithm (ln) of 10^12, using ln(10^12) = 12 * ln(10).',
+                  'Multiply 12 by ln(10) ≈ 2.3026 to obtain the numerical Del factor: 27.63.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Accurately computes nabla = ln(10^12) = 27.63.' },
+                  { index: 1, isCorrect: false, type: 'Calculation Error', rationale: 'Halves result through erroneous exponent subtraction.' },
+                  { index: 2, isCorrect: false, type: 'Logarithm Base Error', rationale: 'Uses common log log10(10^12) = 12 instead of natural logarithm ln.' },
+                  { index: 3, isCorrect: false, type: 'Calculation Error', rationale: 'Doubled result from misapplied kinetic factor.' }
+                ],
+                expectedKeywords: ['del factor', 'nabla', '27.63', 'ln(n0/nt)', 'spore reduction'],
+                rubric: {
+                  'Logarithmic Ratio Setup': '50% for ln(10^9 / 10^-3) = ln(10^12)',
+                  'Natural Logarithm Evaluation': '50% for 12 * 2.3026 = 27.63'
+                },
+                diagramSvg: null
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -1724,6 +1814,352 @@ export const ACADEMIC_REGISTRY = {
             ]
           }
         }
+      },
+
+      'shaft design': {
+        name: 'Shaft Design',
+        prerequisites: ['Mechanics of Solids', 'Engineering Materials', 'Torsion of Circular Shafts'],
+        concepts: {
+          'torsional shear stress and shaft diameter': {
+            name: 'Torsional Shear Stress and Shaft Diameter',
+            learningObjective: 'Analyze pure torsion in circular shafts, calculate polar moment of inertia, evaluate maximum shear stress, and size solid and hollow shaft diameters.',
+            questions: [
+              {
+                id: 'me_sd_tss_1',
+                questionText: 'In pure elastic torsion of a solid circular transmission shaft governed by tau / r = T / J = G * theta / L, why does the maximum torsional shear stress occur at the outermost surface radius (r = d/2)?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'Shear strain varies linearly with radial distance from the centroidal axis, reaching maximum distortion at the outer boundary where r = d/2',
+                  'Internal friction accumulates entirely at the core axis while surface boundaries experience zero shear distortion',
+                  'Centrifugal acceleration expels rotational momentum outwards, creating zero stress along the shaft exterior',
+                  'Shear stress is invariant and uniform across the entire cross-section regardless of radial position'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'In circular shafts subjected to torque T, torsional shear stress is given by tau = (T * r) / J, where J is the polar moment of inertia. Assuming planar cross-sections remain plane and rotate without warping, shear strain gamma varies linearly from zero at the center (r = 0) to a maximum at the outer surface (r = d/2). Therefore, maximum torsional shear stress occurs at the outermost boundary.',
+                explanation: 'Option A is correct: the torsion equation tau / r = T / J indicates that shear stress is directly proportional to radius r, attaining its maximum value tau_max = (16 * T) / (pi * d^3) at the surface r = d/2. Options B, C, and D contradict elementary elasticity and torsion kinematics.',
+                hints: [
+                  'Recall the fundamental circular torsion equation: tau / r = T / J = G * theta / L.',
+                  'Consider how circumferential displacement and shear strain gamma change as radial distance r increases from the center to the periphery.',
+                  'Evaluate the equation at r = 0 (the centroidal axis) and at r = d/2 (the exterior boundary).',
+                  'Conclude that linear radial strain progression places maximum shear stress directly at the outer surface.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly applies tau = T*r/J showing linear increase from zero at center to maximum at outer radius.' },
+                  { index: 1, isCorrect: false, type: 'Plausible Misconception', rationale: 'Inverts the radial distribution, wrongly asserting maximum stress at the center.' },
+                  { index: 2, isCorrect: false, type: 'Irrelevant Physics', rationale: 'Confuses static torsional shear stress with dynamic centrifugal body forces.' },
+                  { index: 3, isCorrect: false, type: 'Plausible Misconception', rationale: 'Wrongly assumes uniform stress distribution like axial tension.' }
+                ],
+                expectedKeywords: ['torsion', 'shear stress', 'polar moment of inertia', 'outer radius', 'linear variation', 'tau = t*r/j'],
+                rubric: {
+                  'Torsion Equation Identification': '50% for citing tau / r = T / J',
+                  'Linear Strain Variation': '50% for explaining zero stress at center and maximum at outer radius'
+                },
+                diagramSvg: null
+              },
+              {
+                id: 'me_sd_diam_num_1',
+                questionText: 'A solid steel transmission shaft transmits power P = 31.4 kW at a rotational speed N = 600 rpm. If the allowable torsional shear stress for the shaft material is tau_allow = 50 MPa (50 N/mm^2), calculate the transmitted torque T and the minimum required shaft diameter d.',
+                type: 'mcq',
+                format: 'Numerical',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Application',
+                numericalDetails: {
+                  formula: 'T = (P * 60) / (2 * pi * N) = (31400 * 60) / (2 * pi * 600) = 500 N*m; d = ((16 * T) / (pi * tau_allow))^(1/3) = ((16 * 500) / (pi * 50e6))^(1/3) = 0.0371 m = 37.1 mm',
+                  givenParameters: { 'P': '31.4 kW = 31,400 W', 'N': '600 rpm', 'tau_allow': '50 MPa = 50e6 N/m^2' },
+                  stepByStep: '1. Torque T = P / omega = 31400 / (2 * pi * 600 / 60) = 500 N*m. 2. Diameter d = ((16 * 500) / (pi * 50 * 10^6))^(1/3) = (5.093e-5)^(1/3) = 0.03707 m = 37.1 mm.',
+                  unit: 'mm',
+                  calculatedValue: 37.1
+                },
+                options: [
+                  'Torque T = 500 N*m; Minimum diameter d = 37.1 mm',
+                  'Torque T = 250 N*m; Minimum diameter d = 18.5 mm',
+                  'Torque T = 1,000 N*m; Minimum diameter d = 74.2 mm',
+                  'Torque T = 500 N*m; Minimum diameter d = 14.8 mm'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'The transmitted torque is T = (P * 60) / (2 * pi * N) = (31400 * 60) / (2 * pi * 600) = 500 N*m. Sizing from allowable shear stress d = ((16 * T) / (pi * tau_allow))^(1/3) = ((16 * 500) / (pi * 50 * 10^6))^(1/3) = 0.03707 m = 37.1 mm.',
+                explanation: 'Option A is correct: angular velocity omega = 2 * pi * 600 / 60 = 62.83 rad/s; T = 31400 / 62.83 = 500 N*m. Applying the solid shaft sizing equation gives d = (16 * 500 / (pi * 50e6))^(1/3) = 37.1 mm. Options B, C, and D stem from speed conversion mistakes or square root arithmetic instead of cube root.',
+                hints: [
+                  'Step 1: Compute transmitted torque from power P and speed N: T = (60 * P) / (2 * pi * N).',
+                  'Notice that (31,400 * 60) / (2 * 3.1416 * 600) simplifies directly to 500 N*m.',
+                  'Step 2: Recall the solid circular shaft sizing relationship: d = ((16 * T) / (pi * tau_allow))^(1/3).',
+                  'Substitute T = 500 N*m and tau_allow = 50 * 10^6 N/m^2 into the cube root to find the diameter in meters.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Accurately calculates T = 500 N*m and d = (16*500/(pi*50e6))^(1/3) = 37.1 mm.' },
+                  { index: 1, isCorrect: false, type: 'Calculation Error', rationale: 'Halves torque and diameter through arithmetic error.' },
+                  { index: 2, isCorrect: false, type: 'Calculation Error', rationale: 'Doubles torque and diameter through inverted angular speed conversion.' },
+                  { index: 3, isCorrect: false, type: 'Calculation Error', rationale: 'Uses square root instead of cube root in shaft sizing formula.' }
+                ],
+                expectedKeywords: ['shaft diameter', 'torque', '500 n*m', '37.1 mm', 'allowable shear stress', 'cube root'],
+                rubric: {
+                  'Torque Calculation': '50% for calculating T = 500 N*m',
+                  'Diameter Sizing': '50% for applying d = (16T / (pi * tau))^(1/3) = 37.1 mm'
+                },
+                diagramSvg: null
+              }
+            ]
+          },
+          'fatigue loading and stress concentration': {
+            name: 'Fatigue Loading and Stress Concentration',
+            learningObjective: 'Evaluate fatigue limits under cyclic reversed bending and steady torque, analyze stress concentration factors (Kt) at keyways and fillets, and apply Soderberg/Goodman criteria.',
+            questions: [
+              {
+                id: 'me_sd_fat_1',
+                questionText: 'When a rotating power transmission shaft operates under cyclic reversed bending combined with steady torsion, why must geometric stress concentration factors (Kt) at keyways and shoulder fillets be evaluated using fatigue endurance limits rather than static yield strength?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'Cyclic alternating stresses initiate progressive microscopic fatigue cracks at geometric stress raisers well below the static yield strength',
+                  'Keyways completely eliminate torsional compliance, causing spontaneous brittle explosion under steady torque',
+                  'Geometric stress concentrations only matter during assembly and have zero influence during continuous rotational cycles',
+                  'Shoulder fillets automatically increase the fatigue endurance limit to infinity regardless of notch radius'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'In rotating shafts, each revolution subjects the outer fibers to completely reversed tension and compression (alternating bending). Geometric discontinuities such as keyways, splines, and shoulder fillets cause localized stress concentrations where cyclic peak stresses initiate microscopic fatigue cracks. These cracks propagate progressively until sudden fatigue failure occurs at nominal stresses far below the material yield strength.',
+                explanation: 'Option A is correct: fatigue under rotating reversed bending is the dominant failure mode in transmission shafts, and keyway stress raisers dramatically reduce endurance life through notch sensitivity. Options B, C, and D represent impossible or nonsensical engineering assertions.',
+                hints: [
+                  'Consider what happens to the surface fibers of a rotating shaft as it turns 360 degrees under a transverse bending load.',
+                  'Notice that fibers alternate continuously between tension and compression in each revolution.',
+                  'Examine how geometric notches, keyways, and fillets amplify the localized alternating stress field.',
+                  'Conclude that fatigue crack initiation at stress raisers occurs at stresses significantly lower than static yield strength.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly identifies cyclic alternating stress fatigue crack initiation at localized stress concentrations.' },
+                  { index: 1, isCorrect: false, type: 'Plausible Misconception', rationale: 'Exaggerates keyway effect into spontaneous explosion rather than progressive fatigue cracking.' },
+                  { index: 2, isCorrect: false, type: 'Fundamental Error', rationale: 'Falsely asserts stress concentrations do not matter during rotational operation.' },
+                  { index: 3, isCorrect: false, type: 'Absurd Physics', rationale: 'Claims infinite endurance limit regardless of fillet geometry.' }
+                ],
+                expectedKeywords: ['fatigue loading', 'stress concentration', 'reversed bending', 'keyway', 'endurance limit', 'crack initiation'],
+                rubric: {
+                  'Cyclic Stress Nature': '50% for explaining alternating tension-compression in rotating shafts',
+                  'Notch Fatigue Mechanism': '50% for identifying crack initiation at stress concentrations below yield strength'
+                },
+                diagramSvg: null
+              }
+            ]
+          },
+          'combined bending and torsion': {
+            name: 'Combined Bending and Torsion',
+            learningObjective: 'Apply principal stress theories (Maximum Shear Stress / Tresca and Distortion Energy / von Mises) to evaluate equivalent torque and equivalent bending moment on shafts.',
+            questions: [
+              {
+                id: 'me_sd_comb_1',
+                questionText: 'According to the Maximum Shear Stress (Guest / Tresca) theory for a ductile transmission shaft subjected simultaneously to bending moment M and twisting moment T, what is the expression for equivalent twisting moment (Te)?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'Te = sqrt(M^2 + T^2)',
+                  'Te = M + T',
+                  'Te = 0.5 * (M + sqrt(M^2 + T^2))',
+                  'Te = M^2 - T^2'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'The Maximum Shear Stress theory states that yielding begins when the maximum shear stress tau_max reaches the shear yield strength. For a circular shaft subjected to bending stress sigma = 32M / (pi*d^3) and shear stress tau = 16T / (pi*d^3), Mohr\'s circle gives tau_max = 0.5 * sqrt(sigma^2 + 4*tau^2) = (16 / (pi*d^3)) * sqrt(M^2 + T^2). Defining equivalent twisting moment such that tau_max = (16 * Te) / (pi*d^3) yields Te = sqrt(M^2 + T^2).',
+                explanation: 'Option A is correct: the equivalent twisting moment under Tresca theory is Te = sqrt(M^2 + T^2). Option C is the equivalent bending moment Me = 0.5 * (M + sqrt(M^2 + T^2)) under Maximum Principal Stress (Rankine) theory. Options B and D are physically invalid algebraic sums.',
+                hints: [
+                  'Recall how bending stress sigma and torsional shear stress tau combine on the surface element of a shaft using Mohr\'s circle.',
+                  'Formulate maximum shear stress: tau_max = sqrt((sigma / 2)^2 + tau^2).',
+                  'Substitute sigma = 32M / (pi*d^3) and tau = 16T / (pi*d^3).',
+                  'Factor out 16 / (pi*d^3) so the remaining radical expression represents the equivalent twisting moment.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly identifies Te = sqrt(M^2 + T^2) from Mohr circle maximum shear stress.' },
+                  { index: 1, isCorrect: false, type: 'Algebraic Error', rationale: 'Simple scalar addition ignoring perpendicular tensor stress directions.' },
+                  { index: 2, isCorrect: false, type: 'Plausible Misconception', rationale: 'Confuses equivalent twisting moment (Te) with equivalent bending moment (Me) under Rankine theory.' },
+                  { index: 3, isCorrect: false, type: 'Nonsensical Formula', rationale: 'Dimensions and sign incompatible with stress invariants.' }
+                ],
+                expectedKeywords: ['equivalent twisting moment', 'tresca', 'maximum shear stress theory', 'sqrt(m^2 + t^2)', 'combined loading'],
+                rubric: {
+                  'Formula Identification': '50% for identifying Te = sqrt(M^2 + T^2)',
+                  'Stress State Justification': '50% for linking to Mohr circle shear stress maximum'
+                },
+                diagramSvg: null
+              }
+            ]
+          }
+        }
+      },
+
+      'strength of materials': {
+        name: 'Strength of Materials',
+        prerequisites: ['Engineering Mechanics', 'Statics', 'Calculus'],
+        concepts: {
+          'bending stress in beams and neutral axis': {
+            name: 'Bending Stress in Beams and Neutral Axis',
+            learningObjective: 'Apply the flexural formula (sigma / y = M / I = E / R), calculate second moment of area, and evaluate stress distribution across cross-sections.',
+            questions: [
+              {
+                id: 'me_som_bs_1',
+                questionText: 'In pure bending of a straight prismatic beam governed by the flexure formula sigma / y = M / I = E / R, what defines the physical significance of the neutral axis across the beam cross-section?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'It is the longitudinal surface where normal bending stress and longitudinal strain are identically zero, passing through the centroid of the cross-section',
+                  'It is the plane experiencing maximum compressive stress and zero transverse shear stress',
+                  'It represents the extreme outer fiber subjected to maximum tensile elongation during downward flexure',
+                  'It shifts position dynamically depending on the magnitude of the applied external bending moment'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'In elementary beam theory (Euler-Bernoulli), the neutral axis is the line of intersection of the neutral surface with the beam cross-section. Along this axis, fibers undergo neither elongation nor contraction, so longitudinal strain and bending stress sigma are identically zero. For pure bending without axial load, force equilibrium requires the neutral axis to pass through the area centroid of the cross-section.',
+                explanation: 'Option A is correct: by definition, fibers at the neutral axis experience zero strain and zero bending stress, and the axis passes through the centroid for pure flexure. Option B describes the extreme compressive fiber. Option C describes the extreme tensile fiber. Option D is incorrect because the neutral axis location depends strictly on cross-sectional geometry in linear elasticity, not moment magnitude.',
+                hints: [
+                  'Recall the Euler-Bernoulli bending assumption: plane sections remain plane and perpendicular to the neutral axis.',
+                  'Consider the strain distribution across the beam height as fibers above compress and fibers below elongate.',
+                  'Identify the transition boundary where strain changes from positive (tension) to negative (compression).',
+                  'Conclude that the neutral axis has zero bending strain and passes through the centroid for symmetric pure bending.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly identifies the zero-strain centroidal plane where bending stress is zero.' },
+                  { index: 1, isCorrect: false, type: 'Plausible Misconception', rationale: 'Confuses neutral axis with extreme compressive boundary fiber.' },
+                  { index: 2, isCorrect: false, type: 'Plausible Misconception', rationale: 'Confuses neutral axis with extreme tensile boundary fiber.' },
+                  { index: 3, isCorrect: false, type: 'Fundamental Error', rationale: 'Falsely asserts neutral axis position varies with applied moment magnitude in linear elasticity.' }
+                ],
+                expectedKeywords: ['neutral axis', 'bending stress', 'centroid', 'zero strain', 'flexure formula', 'sigma/y = m/i'],
+                rubric: {
+                  'Definition of Neutral Axis': '50% for stating zero strain and zero bending stress',
+                  'Centroidal Location': '50% for explaining passage through cross-section centroid'
+                },
+                diagramSvg: null
+              },
+              {
+                id: 'me_som_bs_num_1',
+                questionText: 'A simply supported steel beam experiences a maximum internal bending moment M = 24 kN*m. The beam has a solid rectangular cross-section of width b = 100 mm and depth h = 200 mm. Calculate the maximum bending stress (sigma_max) in the outermost fibers.',
+                type: 'mcq',
+                format: 'Numerical',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Application',
+                numericalDetails: {
+                  formula: 'sigma_max = M / Z = (6 * M) / (b * h^2) = (6 * 24000) / (0.10 * 0.20^2) = 144000 / 0.004 = 36,000,000 Pa = 36 MPa',
+                  givenParameters: { 'M': '24 kN*m = 24,000 N*m', 'b': '100 mm = 0.10 m', 'h': '200 mm = 0.20 m' },
+                  stepByStep: '1. Section modulus Z = (b * h^2) / 6 = (0.10 * 0.04) / 6 = 6.667e-4 m^3. 2. sigma_max = M / Z = 24000 / 6.667e-4 = 36 * 10^6 Pa = 36 MPa.',
+                  unit: 'MPa',
+                  calculatedValue: 36
+                },
+                options: [
+                  '36 MPa',
+                  '18 MPa',
+                  '72 MPa',
+                  '9 MPa'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'The section modulus for a rectangular section is Z = (b * h^2) / 6 = (100 * 200^2) / 6 = 666,667 mm^3. Maximum bending stress is sigma_max = M / Z = (24 * 10^6 N*mm) / (666,667 mm^3) = 36 MPa (36 N/mm^2).',
+                explanation: 'Option A is correct: sigma_max = M * y_max / I = (24,000 * 0.10) / (0.10 * 0.20^3 / 12) = 2400 / 6.667e-5 = 36 MPa. Options B, C, and D result from dividing by h instead of h^2, doubling from incorrect centroid distance, or factor-of-four arithmetic errors.',
+                hints: [
+                  'Recall the flexure formula for maximum fiber stress: sigma_max = M / Z, where Z is the section modulus.',
+                  'Compute rectangular section modulus: Z = (b * h^2) / 6.',
+                  'Convert dimensions to consistent units: b = 100 mm, h = 200 mm, M = 24 * 10^6 N*mm.',
+                  'Divide bending moment M by section modulus Z: 24,000,000 / 666,667 = 36 MPa.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Accurately computes Z = b*h^2/6 and sigma = M/Z = 36 MPa.' },
+                  { index: 1, isCorrect: false, type: 'Calculation Error', rationale: 'Halves result by using y = h/4 instead of h/2.' },
+                  { index: 2, isCorrect: false, type: 'Calculation Error', rationale: 'Doubles result by using Z = b*h^2/12 instead of /6.' },
+                  { index: 3, isCorrect: false, type: 'Calculation Error', rationale: 'Divided by area instead of section modulus.' }
+                ],
+                expectedKeywords: ['bending stress', 'section modulus', '36 mpa', 'flexure formula', 'rectangle'],
+                rubric: {
+                  'Section Modulus Calculation': '50% for calculating Z = b*h^2/6 = 6.667e-4 m^3',
+                  'Bending Stress Evaluation': '50% for calculating sigma = M/Z = 36 MPa'
+                },
+                diagramSvg: null
+              }
+            ]
+          }
+        }
+      },
+
+      'motor drive': {
+        name: 'Motor Drive',
+        learningObjective: 'Analyze variable frequency drives, induction motor speed-torque regulation, V/f control, slip dynamics, and electric braking.',
+        prerequisites: ['Electric Machines', 'Power Electronics', 'AC Circuits'],
+        concepts: {
+          'variable frequency drives and torque regulation': {
+            name: 'Variable Frequency Drives and Torque Regulation',
+            learningObjective: 'Analyze V/f scalar control below base speed, air-gap flux regulation, inverter PWM, slip torque generation, and regenerative vs dynamic braking.',
+            questions: [
+              {
+                id: 'me_md_vfd_1',
+                questionText: 'In variable frequency (V/f) speed control of a three-phase induction motor operating below the base rated frequency, why must the ratio of stator voltage (V) to supply frequency (f) be maintained approximately constant?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'To keep the air-gap magnetic flux approximately constant and prevent core magnetic saturation while delivering rated maximum torque',
+                  'To operate with zero rotor slip across all load torques and eliminate all rotor copper losses completely',
+                  'To force the rotor mechanical speed to exceed synchronous speed and sustain continuous regenerative braking',
+                  'To fix the motor power factor strictly to unity across all load variations'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'Induced stator EMF is proportional to the product of stator frequency and mutual air-gap magnetic flux: E1 ≈ 4.44 * f * N1 * Phi_m. Maintaining a constant V/f ratio ensures that peak magnetic flux Phi_m remains constant at its rated design level below base speed. Reducing frequency without reducing voltage would cause severe ferromagnetic core saturation and overheating; reducing voltage excessively would diminish available breakdown torque.',
+                explanation: 'Option A is correct: scalar V/f control maintains constant flux (Phi ≈ V/f) below base speed, preserving maximum torque capability without core saturation. Options B, C, and D confuse induction motor physics with synchronous machines, zero-slip superconductivity, or super-synchronous regeneration.',
+                hints: [
+                  'Recall the transformer induced EMF equation for AC machines: E ≈ 4.44 * f * N * Phi.',
+                  'Consider what happens to core magnetic flux Phi if frequency f is reduced while voltage V remains at nominal line value.',
+                  'Examine how ferromagnetic core saturation limits torque and causes high magnetizing current spikes.',
+                  'Conclude that maintaining constant V/f ratio maintains constant magnetic air-gap flux.'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly identifies that holding V/f constant maintains rated air-gap flux and avoids core saturation.' },
+                  { index: 1, isCorrect: false, type: 'Impossible Physics', rationale: 'Induction torque requires non-zero slip; zero slip produces zero rotor current and zero torque.' },
+                  { index: 2, isCorrect: false, type: 'Plausible Misconception', rationale: 'Sub-synchronous motoring does not exceed synchronous speed.' },
+                  { index: 3, isCorrect: false, type: 'Irrelevant Feature', rationale: 'Induction motor power factor is load-dependent and cannot remain unity under scalar V/f.' }
+                ],
+                expectedKeywords: ['v/f control', 'air-gap flux', 'saturation', 'induction motor', 'breakdown torque', 'frequency'],
+                rubric: {
+                  'Flux Relationship': '50% for explaining Phi proportional to V/f',
+                  'Saturation Prevention': '50% for explaining avoidance of core saturation and preservation of torque'
+                },
+                diagramSvg: null
+              },
+              {
+                id: 'me_md_braking_1',
+                questionText: 'In industrial electric motor drive applications, what fundamental operational mechanism distinguishes regenerative braking from dynamic (rheostatic) braking?',
+                type: 'mcq',
+                format: 'Theory',
+                difficulty: 'Intermediate',
+                bloomLevel: 'Understanding',
+                options: [
+                  'Regenerative braking returns mechanical kinetic energy as electrical power back into the AC supply grid or DC link bus, whereas dynamic braking dissipates the energy as heat across an external resistor bank',
+                  'Regenerative braking applies mechanical friction brake calipers directly to the motor rotor shaft while dynamic braking reverses stator phase sequence',
+                  'Regenerative braking disconnects the inverter bridge completely while dynamic braking utilizes permanent magnet field excitation',
+                  'Regenerative braking only operates at standstill (zero speed) while dynamic braking functions exclusively above synchronous speed'
+                ],
+                correctIndex: 0,
+                modelAnswer: 'During regenerative braking, the motor acts as a generator (operating with negative slip in induction motors or negative torque in PM/synchronous drives). The bi-directional power electronic inverter converts this kinetic energy and feeds electrical power back to the supply grid or DC bus capacitors. In contrast, dynamic (rheostatic) braking diverts the generated electrical energy into a braking resistor via a chopper circuit, where it is dissipated entirely as thermal waste heat.',
+                explanation: 'Option A is correct: regenerative braking recovers kinetic energy into the electrical supply system, whereas dynamic braking burns the energy as heat in a resistor. Options B, C, and D confuse mechanical braking, plugging (reverse phase), or standstill locking.',
+                hints: [
+                  'Think about where the kinetic energy of the rotating mechanical load goes when braking is applied.',
+                  'Consider whether the electrical drive returns energy to the grid/DC bus or converts it to thermal dissipation.',
+                  'Recall that dynamic braking utilizes a chopper circuit and a high-wattage resistor bank.',
+                  'Differentiate energy recovery (regeneration) from thermal dissipation across braking resistors (dynamic).'
+                ],
+                distractorRationales: [
+                  { index: 0, isCorrect: true, type: 'Correct Answer', rationale: 'Correctly contrasts electrical grid energy return (regenerative) with thermal resistor dissipation (dynamic).' },
+                  { index: 1, isCorrect: false, type: 'Misclassification', rationale: 'Confuses electrical braking with mechanical friction calipers or plugging.' },
+                  { index: 2, isCorrect: false, type: 'Technical Inaccuracy', rationale: 'Inverter remains active during regeneration to control current return.' },
+                  { index: 3, isCorrect: false, type: 'Operational Inversion', rationale: 'Regenerative braking requires non-zero rotation; at standstill zero EMF is generated.' }
+                ],
+                expectedKeywords: ['regenerative braking', 'dynamic braking', 'braking resistor', 'energy return', 'inverter', 'thermal dissipation'],
+                rubric: {
+                  'Regenerative Mechanism': '50% for explaining return of electrical energy to grid/DC bus',
+                  'Dynamic Braking Mechanism': '50% for explaining dissipation as heat in braking resistor'
+                },
+                diagramSvg: null
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -2676,8 +3112,15 @@ export function resolveAcademicContext(inputContext = {}) {
           break;
         }
         if (normTopic.includes(tKeyNorm) || normTopic.includes(tNameNorm) || tNameNorm.includes(normTopic) ||
+            (normTopic.includes('shaft') && tKey.includes('shaft')) ||
+            (normTopic.includes('machine design') && tKey.includes('shaft')) ||
+            (normTopic.includes('bending') && (tKey.includes('strength') || tKey.includes('structural'))) ||
+            (normTopic.includes('strength') && tKey.includes('strength')) ||
+            (normTopic.includes('steriliz') && tKey.includes('steriliz')) ||
             (normTopic.includes('motor') && tKey.includes('motor')) ||
             (normTopic.includes('drive') && tKey.includes('drive')) ||
+            (normTopic.includes('vfd') && tKey.includes('motor')) ||
+            (normTopic.includes('oxygen') && (tKey.includes('bioreactor') || tKey.includes('oxygen'))) ||
             (normTopic.includes('gmsk') && (tKey.includes('gmsk') || tNameNorm.includes('gmsk'))) ||
             (normTopic.includes('pcm') && (tKey.includes('pcm') || tNameNorm.includes('pcm'))) ||
             (normTopic.includes('sampling') && (tKey.includes('sampling') || tNameNorm.includes('sampling'))) ||
@@ -2715,9 +3158,19 @@ export function resolveAcademicContext(inputContext = {}) {
             break;
           }
           if (normConcept.includes(cKeyNorm) || normConcept.includes(cNameNorm) || cNameNorm.includes(normConcept) ||
-              (normConcept.includes('induction') && cKey.includes('induction')) ||
-              (normConcept.includes('speed') && cKey.includes('speed')) ||
-              (normConcept.includes('v/f') && cKey.includes('induction')) ||
+              (normConcept.includes('torsion') && cKey.includes('torsion')) ||
+              (normConcept.includes('diameter') && cKey.includes('diameter')) ||
+              (normConcept.includes('fatigue') && cKey.includes('fatigue')) ||
+              (normConcept.includes('stress concentration') && cKey.includes('fatigue')) ||
+              (normConcept.includes('combined') && cKey.includes('combined')) ||
+              (normConcept.includes('neutral axis') && cKey.includes('neutral axis')) ||
+              (normConcept.includes('bending stress') && cKey.includes('bending stress')) ||
+              (normConcept.includes('del factor') && cKey.includes('del factor')) ||
+              (normConcept.includes('thermal death') && cKey.includes('del factor')) ||
+              (normConcept.includes('induction') && (cKey.includes('induction') || cKey.includes('torque'))) ||
+              (normConcept.includes('speed') && (cKey.includes('speed') || cKey.includes('torque'))) ||
+              (normConcept.includes('v/f') && (cKey.includes('induction') || cKey.includes('torque'))) ||
+              (normConcept.includes('braking') && cKey.includes('torque')) ||
               (normConcept.includes('pulse') && cKey.includes('gmsk')) ||
               (normConcept.includes('vswr') && cKey.includes('vswr')) ||
               (normConcept.includes('shannon') && cKey.includes('shannon')) ||
@@ -3798,6 +4251,58 @@ export function ValidateQuestion(questionPackage = {}, context = {}) {
         for (const phrase of invalidMotorPhrases) {
           if (oLower.includes(phrase)) {
             failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Motor Drive option ${idx + 1} contains unrelated phrase "${phrase}".`);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  const isShaftDesignContext = topicLower.includes('shaft') || (subjLower.includes('mechanical') && topicLower.includes('machine design'));
+  if (isShaftDesignContext) {
+    const invalidShaftPhrases = [
+      'bioreactor', 'oxygen transfer', 'kla', 'fermentation', 'sparged', 'culture broth',
+      'demand paging', 'virtual memory', 'page table', 'bcnf', 'packet switching',
+      'qpsk', 'carrier phase', 'modulation order', 'bode plot', 'gain margin'
+    ];
+    for (const phrase of invalidShaftPhrases) {
+      if (qLower.includes(phrase)) {
+        failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Shaft Design context contains unrelated phrase "${phrase}".`);
+        break;
+      }
+    }
+    if (Array.isArray(questionPackage.options)) {
+      questionPackage.options.forEach((opt, idx) => {
+        const oLower = String(opt || '').toLowerCase();
+        for (const phrase of invalidShaftPhrases) {
+          if (oLower.includes(phrase)) {
+            failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Shaft Design option ${idx + 1} contains unrelated phrase "${phrase}".`);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  const isStrengthOfMaterialsContext = topicLower.includes('strength of materials') || topicLower.includes('bending stress');
+  if (isStrengthOfMaterialsContext) {
+    const invalidSomPhrases = [
+      'bioreactor', 'oxygen transfer', 'kla', 'fermentation', 'sparged', 'culture broth',
+      'demand paging', 'virtual memory', 'page table', 'bcnf', 'packet switching',
+      'qpsk', 'carrier phase', 'modulation order', 'bode plot', 'gain margin'
+    ];
+    for (const phrase of invalidSomPhrases) {
+      if (qLower.includes(phrase)) {
+        failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Strength of Materials context contains unrelated phrase "${phrase}".`);
+        break;
+      }
+    }
+    if (Array.isArray(questionPackage.options)) {
+      questionPackage.options.forEach((opt, idx) => {
+        const oLower = String(opt || '').toLowerCase();
+        for (const phrase of invalidSomPhrases) {
+          if (oLower.includes(phrase)) {
+            failGate('gateB', 'Gate B (Technical Meaning)', `Cross-discipline violation: Strength of Materials option ${idx + 1} contains unrelated phrase "${phrase}".`);
             break;
           }
         }

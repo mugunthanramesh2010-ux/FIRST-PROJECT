@@ -679,21 +679,7 @@ export function saveStudentTimingRecord(studentRegNo, record) {
 const ASSIGNMENTS_KEY = 'viva_cohort_assignments_v1';
 
 export function getCohortAssignments() {
-  return getFromStorage(ASSIGNMENTS_KEY, [
-    {
-      id: 'assign_default',
-      subjectName: 'Strength of Materials (Stress, Strain & Bending Analysis)',
-      assignedTo: 'Whole Class (All Cohort - 1000 Members)',
-      targetYear: 'III',
-      targetSection: 'A',
-      targetDept: 'Mechanical Engineering',
-      facultyName: 'Dr. S. K. Narayanan',
-      totalMarks: 100,
-      deadlineMinutes: 15,
-      status: 'ACTIVE',
-      assignedDate: new Date().toLocaleDateString()
-    }
-  ]);
+  return getFromStorage(ASSIGNMENTS_KEY, []);
 }
 
 export function saveCohortAssignment(assignment) {
